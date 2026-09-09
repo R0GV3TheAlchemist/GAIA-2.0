@@ -69,6 +69,10 @@ mod tests {
         let err = host.reject_unsigned(None, b"x").unwrap_err();
         assert!(matches!(err, KernelError::Denied(_)));
 
+        assert!(host.invoke("analyst", "{}").unwrap().contains("analyst"));
+        assert!(host.observe("imu").unwrap().contains("imu"));
+        assert_eq!(host.declare("gpu0", "device").unwrap().name, "gpu0");
+
         let stranger = Principal::generate(PrincipalKind::Agent);
         let foreign = SignedBlob {
             algorithm: "ed25519".into(),

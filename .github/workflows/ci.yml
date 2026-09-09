@@ -51,13 +51,13 @@ jobs:
           npm install
           npm test
 
-  rust-placeholders:
+  rust-workspace:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Phase-1 crates not required yet
-        run: |
-          echo "gaia-kernel / gaia-sfs / gaia-memos cargo test is skipped until those crates exist (issue #14+)."
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test Phase 1 workspace (kernel, sfs, memos, rust sdk)
+        run: cargo test --workspace
 
   markdown:
     runs-on: ubuntu-latest
