@@ -4,10 +4,11 @@ Universal open-source **Super Operating System** — a meta-layer above traditio
 
 This repository is the implementation monorepo. Research stays in `Documents/` and `Documents-2/`. Normative contracts live in [`gaia-spec/`](gaia-spec/). Code lives in the layer trees below.
 
-**Status:** Phase 0 foundation (spec v0.1, AIP Manifest v1.0, SDKs, CI, governance). Kernel / SFS / MemOS runtimes are Phase 1+ and are not claimed as implemented.
+**Status:** Phase 0 foundation plus Phase 1 userspace runtime (executor, syscall host, SFS v0.1, MemOS, Ed25519 audit). See [RFC 0001](rfcs/0001-kernel-path.md).
 
 **Parent tracker:** [#1](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/1)  
-**Phase 0 epic:** [#2](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/2)
+**Phase 0 epic:** [#2](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/2)  
+**Phase 1 epic:** [#3](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/3)
 
 ## Principles
 
@@ -44,8 +45,9 @@ Monorepo deviation from the future `github.com/gaia-os/*` org split is intention
 python -m pip install -e gaia-sdk/python
 python -c "from gaia_sdk import GaiaClient; print(GaiaClient().intent('hello gaia'))"
 
-# Rust SDK
-cargo test --manifest-path gaia-sdk/rust/Cargo.toml
+# Rust SDK + Phase 1 workspace (kernel / SFS / MemOS)
+cargo test --workspace
+cargo run -p gaia-kernel --bin gaia-executor
 
 # TypeScript SDK
 cd gaia-sdk/typescript && npm install && npm test

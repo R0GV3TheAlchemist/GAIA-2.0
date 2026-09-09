@@ -1,0 +1,7 @@
+/target
+**/target
+gaia-sdk/typescript/node_modules
+gaia-sdk/typescript/dist
+__pycache__
+*.pyc
+.pytest_cache

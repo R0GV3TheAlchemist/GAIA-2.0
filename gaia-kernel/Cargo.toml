@@ -1,0 +1,27 @@
+[package]
+name = "gaia-kernel"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "GAIA 2.0 userspace kernel path, executor, and syscall ABI"
+
+[dependencies]
+ed25519-dalek = "=1.0.1"
+gaia-memos = { path = "../gaia-memos" }
+gaia-sfs = { path = "../gaia-sfs" }
+hex = "0.4"
+rand = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[[bin]]
+name = "gaia-executor"
+path = "src/bin/gaia-executor.rs"
+
+[[bin]]
+name = "gaia-broker"
+path = "src/bin/gaia-broker.rs"
