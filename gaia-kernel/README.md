@@ -1,10 +1,15 @@
 # gaia-kernel
 
-- **Layer:** L1
+- **Layer:** L1 / L0 executor
 - **License:** Apache-2.0
-- **Implementation phase:** 1
-- **Language (planned):** Rust (core), plus Python/TS where noted in the blueprint
+- **Phase:** 1
 
-Rust framekernel path + executor daemon. Not implemented in Phase 0.
+Userspace kernel path for developer machines. Decision: [RFC 0001](../rfcs/0001-kernel-path.md).
 
-Contracts: [`../gaia-spec/`](../gaia-spec/). Tracker: parent #1, phase epic listed there.
+```bash
+cargo test -p gaia-kernel
+cargo run -p gaia-kernel --bin gaia-executor
+```
+
+The executor **pulls** tasks from an in-process broker. It does not listen
+on a port, so it works behind NAT.
