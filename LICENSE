@@ -1,0 +1,20 @@
+# GAIA 2.0 layered licensing
+
+GAIA 2.0 does not use a single license. Layers have different licenses so
+protocols stay unencumbered while implementation can take patents-friendly
+or maximum-adoption terms.
+
+| Tree | License | File |
+| --- | --- | --- |
+| `gaia-kernel/`, `gaia-sfs/`, `gaia-memos/` | Apache-2.0 | `LICENSE-APACHE-2.0` |
+| `gaia-orchestrator/`, `gaia-agents/`, `gaia-interface/`, `gaia-sdk/`, `gaia-examples/` | MIT | `LICENSE-MIT` |
+| `gaia-spec/`, `rfcs/` (protocol RFCs) | CC0 1.0 | `LICENSE-CC0` |
+| `gaia-docs/` | CC-BY-4.0 | `LICENSE-CC-BY-4.0` |
+| `Documents/`, `Documents-2/` | See each source document (blueprint v0.1 is CC0) | — |
+| Root scaffolding (this file, CONTRIBUTING, templates) | Apache-2.0 unless a more specific file applies | `LICENSE-APACHE-2.0` |
+
+Why not GPL: the blueprint (Part III) chooses Apache-2.0 for kernel-adjacent
+code to keep enterprise adoption and explicit patent grants. Protocols are
+CC0 so any implementation can interoperate.
+
+Each layer directory also contains a `LICENSE` pointer file.
