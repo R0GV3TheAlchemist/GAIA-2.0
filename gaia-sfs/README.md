@@ -1,10 +1,7 @@
 # gaia-sfs
 
-- **Layer:** L2
-- **License:** Apache-2.0
-- **Implementation phase:** 1
-- **Language (planned):** Rust (core)
+Semantic File System v0.1. Directory-backed store + hashed provenance +
+hashed-token embeddings. POSIX tools operate on `Sfs::posix_root()`.
 
-Semantic File System (FUSE + vector index + provenance). Not implemented in Phase 0.
-
-Contracts: [`../gaia-spec/`](../gaia-spec/). Tracker: parent #1, phase epic listed there.
+A FUSE mount is the same store exported through `fusermount` and is not
+required for the v0.1 library tests (unprivileged CI has no /dev/fuse).
