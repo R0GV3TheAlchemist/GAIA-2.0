@@ -1,0 +1,16 @@
+{
+  "manifest_version": "1.0",
+  "agent_id": "33333333-3333-4333-8333-333333333333",
+  "name": "mcp-bridge",
+  "version": "0.1.0",
+  "license": "MIT",
+  "kind": "bridge",
+  "capabilities": [
+    {"intent": "tool.call", "description": "Forward an MCP tool call"}
+  ],
+  "memory_access": ["none"],
+  "tool_permissions": ["network.connect", "mcp.call"],
+  "trust_level": "experimental",
+  "privacy_level": "cloud",
+  "resource_requirements": {"cpu": "1 core", "memory": "256MB"}
+}

@@ -1,0 +1,23 @@
+name: Bug
+description: Something in spec, SDK, or scaffolding is wrong
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: tree
+    attributes:
+      label: Tree
+      options: [gaia-spec, gaia-sdk, gaia-kernel, gaia-sfs, gaia-memos, gaia-orchestrator, gaia-agents, gaia-interface, gaia-docs, ci, other]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+    validations:
+      required: true

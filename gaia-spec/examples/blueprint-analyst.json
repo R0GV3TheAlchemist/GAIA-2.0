@@ -1,0 +1,25 @@
+{
+  "manifest_version": "1.0",
+  "agent_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "name": "data-analyst",
+  "version": "2.1.0",
+  "license": "MIT",
+  "kind": "cognitive",
+  "description": "Blueprint L5 example adapted to AIP Manifest v1.0.",
+  "runtime": "sdk",
+  "capabilities": [
+    {
+      "intent": "analyze_dataset",
+      "description": "Statistical analysis of tabular data",
+      "inputs": {"data": "DataFrame", "query": "string"},
+      "outputs": {"report": "AnalysisReport", "charts": "Visualization[]"},
+      "resource_requirements": {"cpu": "2 cores", "memory": "4GB"},
+      "privacy_level": "local_only"
+    }
+  ],
+  "memory_access": ["episodic", "semantic"],
+  "tool_permissions": ["filesystem.read", "network.search"],
+  "trust_level": "community",
+  "privacy_level": "local_only",
+  "resource_requirements": {"cpu": "2 cores", "memory": "4GB"}
+}
