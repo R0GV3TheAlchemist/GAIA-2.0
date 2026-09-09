@@ -1,0 +1,23 @@
+name: RFC request
+description: Propose a protocol or architecture change
+labels: ["spec"]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Proposed RFC title
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options: [L0, L1, L2, L3, L4, L5, L6, spec, governance]
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
