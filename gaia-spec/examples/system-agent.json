@@ -1,0 +1,18 @@
+{
+  "manifest_version": "1.0",
+  "agent_id": "11111111-1111-4111-8111-111111111111",
+  "name": "memory-manager",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "kind": "system",
+  "description": "System agent: MemCube lifecycle and tier migration (stub).",
+  "runtime": "sdk",
+  "capabilities": [
+    {"intent": "memcube.consolidate", "description": "Compress episodic cubes into semantic form"}
+  ],
+  "memory_access": ["activation", "working", "episodic", "semantic", "parametric"],
+  "tool_permissions": ["memos.write", "audit.append"],
+  "trust_level": "verified",
+  "privacy_level": "local_only",
+  "resource_requirements": {"cpu": "1 core", "memory": "512MB"}
+}

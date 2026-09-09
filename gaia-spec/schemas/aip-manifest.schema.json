@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.os/spec/v0.1/aip-manifest.schema.json",
+  "title": "AIP Manifest v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifest_version", "agent_id", "name", "version", "license", "kind",
+    "capabilities", "memory_access", "tool_permissions", "trust_level",
+    "privacy_level", "resource_requirements"
+  ],
+  "properties": {
+    "manifest_version": { "const": "1.0" },
+    "agent_id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+    "version": { "type": "string", "minLength": 1 },
+    "license": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["system", "cognitive", "bridge", "interface", "domain"] },
+    "description": { "type": "string" },
+    "runtime": { "enum": ["sdk", "process", "wasm"] },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["intent"],
+        "additionalProperties": false,
+        "properties": {
+          "intent": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "inputs": { "type": "object" },
+          "outputs": { "type": "object" },
+          "resource_requirements": { "type": "object" },
+          "privacy_level": { "enum": ["local_only", "federated", "cloud"] }
+        }
+      }
+    },
+    "memory_access": {
+      "type": "array",
+      "items": { "enum": ["none", "activation", "working", "episodic", "semantic", "parametric"] }
+    },
+    "tool_permissions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "trust_level": { "enum": ["verified", "community", "experimental"] },
+    "privacy_level": { "enum": ["local_only", "federated", "cloud"] },
+    "resource_requirements": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "properties": {
+        "cpu": { "type": "string" },
+        "memory": { "type": "string" },
+        "gpu": { "type": "string" },
+        "npu": { "type": "string" }
+      }
+    }
+  }
+}

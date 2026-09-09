@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.os/spec/v0.1/intent-graph.schema.json",
+  "title": "Intent Graph v0.1",
+  "type": "object",
+  "required": ["intent_id", "goal", "created_by", "state"],
+  "additionalProperties": false,
+  "properties": {
+    "intent_id": { "type": "string", "format": "uuid" },
+    "goal": { "type": "string", "minLength": 1 },
+    "created_by": { "type": "string", "minLength": 1 },
+    "parent_id": { "type": "string", "format": "uuid" },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "time": { "type": "string" },
+        "cost": { "type": "string" },
+        "privacy": { "enum": ["local_only", "federated", "cloud"] },
+        "compute": { "type": "string" }
+      }
+    },
+    "state": { "enum": ["draft", "admitted", "running", "blocked", "done", "failed", "cancelled"] },
+    "sub_intents": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+    "context_cubes": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+    "assigned_agents": { "type": "array", "items": { "type": "string" } }
+  }
+}

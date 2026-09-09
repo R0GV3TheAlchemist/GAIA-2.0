@@ -1,0 +1,16 @@
+{
+  "manifest_version": "1.0",
+  "agent_id": "22222222-2222-4222-8222-222222222222",
+  "name": "researcher",
+  "version": "0.1.0",
+  "license": "MIT",
+  "kind": "cognitive",
+  "capabilities": [
+    {"intent": "research.question", "description": "Retrieve and synthesize cited notes"}
+  ],
+  "memory_access": ["episodic", "semantic"],
+  "tool_permissions": ["network.search", "sfs.read"],
+  "trust_level": "community",
+  "privacy_level": "federated",
+  "resource_requirements": {"cpu": "2 cores", "memory": "2GB"}
+}

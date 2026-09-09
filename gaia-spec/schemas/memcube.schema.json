@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.os/spec/v0.1/memcube.schema.json",
+  "title": "MemCube v0.1",
+  "type": "object",
+  "required": ["id", "type", "lifecycle", "content_encoding", "metadata"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "type": { "enum": ["parametric", "activation", "plaintext", "episodic", "procedural", "semantic"] },
+    "content": { "type": "string" },
+    "content_encoding": { "enum": ["utf-8", "base64", "external"] },
+    "lifecycle": { "enum": ["active", "archived", "compressed", "migrated"] },
+    "metadata": {
+      "type": "object",
+      "required": ["provenance", "importance"],
+      "properties": {
+        "provenance": {
+          "type": "object",
+          "required": ["source"],
+          "properties": {
+            "source": { "type": "string" },
+            "author": { "type": "string" },
+            "timestamp": { "type": "string" }
+          }
+        },
+        "versioning": { "type": "array", "items": { "type": "string" } },
+        "importance": { "type": "number", "minimum": 0, "maximum": 1 },
+        "associations": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
