@@ -124,6 +124,19 @@ impl MemOs {
         Ok(cube.clone())
     }
 
+    /// Invariant 0.8: archive every active cube whose content matches `text`.
+    pub fn archive_by_content(&mut self, text: &str) -> usize {
+        let ids: Vec<Uuid> = self.cubes.iter()
+            .filter(|(_, c)| c.content == text && c.lifecycle == Lifecycle::Active)
+            .map(|(id, _)| *id)
+            .collect();
+        let n = ids.len();
+        for id in ids {
+            let _ = self.archive(id);
+        }
+        n
+    }
+
     pub fn recall(&mut self, query: &str, k: usize) -> Vec<(f32, MemCube)> {
         let q = embed(query);
         let q_terms = terms(query);
@@ -241,5 +254,13 @@ mod tests {
         c.importance = 0.9;
         mem.put(c);
         assert_eq!(mem.migrate(), 1);
+    }
+
+    #[test]
+    fn archive_by_content_hides_from_recall() {
+        let mut mem = MemOs::new();
+        mem.put(MemCube::new(CubeType::Plaintext, "I like jazz", "type"));
+        assert_eq!(mem.archive_by_content("I like jazz"), 1);
+        assert!(mem.recall("jazz", 3).is_empty());
     }
 }
