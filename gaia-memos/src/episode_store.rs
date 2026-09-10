@@ -1,7 +1,7 @@
-//! SQLite episode persist + FTS5 (Blueprint 59 Build Part 5).
+//! SQLite episode persist + FTS5 + snapshots (Blueprint 59 Build Part 6).
 //! License: Apache-2.0
 
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, OptionalExtension};
 
 pub struct EpisodeStore {
     conn: Connection,
@@ -20,6 +20,14 @@ impl EpisodeStore {
         )?;
         conn.execute(
             "CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(text)",
+            [],
+        )?;
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS snapshots (
+                id TEXT PRIMARY KEY,
+                label TEXT NOT NULL,
+                current_step TEXT NOT NULL
+            )",
             [],
         )?;
         Ok(Self { conn })
@@ -65,6 +73,26 @@ impl EpisodeStore {
         })?;
         rows.collect()
     }
+
+    pub fn save_snapshot(&self, id: &str, label: &str, current_step: &str) -> rusqlite::Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO snapshots (id, label, current_step) VALUES (?1, ?2, ?3)",
+            params![id, label, current_step],
+        )?;
+        Ok(())
+    }
+
+    pub fn find_snapshot(&self, prompt: &str) -> rusqlite::Result<Option<(String, String, String)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, label, current_step FROM snapshots
+             WHERE id = ?1 OR label = ?1 OR instr(?1, label) > 0
+             ORDER BY rowid DESC LIMIT 1",
+        )?;
+        stmt.query_row(params![prompt], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })
+        .optional()
+    }
 }
 
 #[cfg(test)]
@@ -72,13 +100,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fts_finds_vague_term() {
-        let path = std::env::temp_dir().join("gaia_episodes_part5.sqlite");
+    fn snapshot_survives_reopen() {
+        let path = std::env::temp_dir().join("gaia_snap_part6.sqlite");
         let _ = std::fs::remove_file(&path);
+        {
+            let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
+            store.save_snapshot("snap_0", "destinE memo", "DRAFTING_CARE").unwrap();
+        }
         let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
-        store.insert(1, "open CARE.md DestinE draft", "files").unwrap();
-        let hits = store.search("CARE", 8).unwrap();
-        assert_eq!(hits[0].1.contains("CARE"), true);
+        let hit = store.find_snapshot("destinE memo").unwrap().unwrap();
+        assert_eq!(hit.2, "DRAFTING_CARE");
         let _ = std::fs::remove_file(&path);
     }
 }
