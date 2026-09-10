@@ -1,8 +1,8 @@
 # GAIA 2.0 + GAIAN 2.0: Perpetual Infinite Context
-## Blueprint 59: The Continuity Substrate — Part 2 (Architecture)
-### September 9, 2026 — Version 0.2-part2
+## Blueprint 59: The Continuity Substrate — Part 3 (Academic map)
+### September 9, 2026 — Version 0.3-part3
 
-**Status:** Part 2 of 6. Parts 3–6: academic map, GitHub map, daemon/MVP, issue wiring.
+**Status:** Part 3 of 6. Parts 4–6: GitHub map, daemon/MVP, issue wiring.
 **Write target:** [R0GV3TheAlchemist/GAIA-2.0](https://github.com/R0GV3TheAlchemist/GAIA-2.0)
 **License:** Apache-2.0
 
@@ -92,13 +92,28 @@ Do not replay idle-time chat. Scale agents to zero while paused.
 
 ---
 
-## Paper anchors (expanded in Part 3)
+## Part 3 — Academic map
 
-- EM-LLM — arXiv:2407.09450
-- MemGPT — arXiv:2310.08560
-- MemOS — arXiv:2507.03724
-- Versioned workspace — arXiv:2608.18050
+Paper-first. No blogs. Each row is a Continuity contract, not a bigger context window.
+
+| Contract | Paper | ID | Use |
+|----------|-------|----|-----|
+| Capture / bounded compute | Infini-attention | arXiv:2404.07143 | Infinite input, bounded memory |
+| Capture / bounded compute | StreamingLLM | ICLR 2024 | Attention sinks; streaming |
+| Capture / OS metaphor | MemGPT | arXiv:2310.08560 | Virtual context; paging |
+| Capture / memory OS | MemOS | arXiv:2507.03724 | Memory as OS resource |
+| Episodes | EM-LLM (Fountas et al.) | arXiv:2407.09450 | Event segmentation; 10M-token retrieval |
+| Episodes | LMEB | arXiv:2603.12572 | Long-horizon episodic embedding eval |
+| Episodes | Mem-α | arXiv:2509.25911 | Timestamped episodic store + RL |
+| Episodes | Memento 2 | arXiv:2512.22716 | Stateful reflective episodic memory |
+| Working set | MEM1 | arXiv:2506.15841 | Constant-memory long-horizon agents |
+| Hydration | Versioned workspace | arXiv:2608.18050 | Hydrate W_t at turn start |
+| Hydration / trust | MemTrust | arXiv:2601.07004 | Episodic stream + semantic profile |
+| Governance | Mi-Memory | arXiv:2607.18975 | Lifecycle, audit, forget |
+| Governance | SuperLocalMemory 4.0 | arXiv:2608.08253 | Verified erasure |
+
+EM-LLM is the episodic spine: Bayesian-surprise event boundaries plus contiguous retrieval. MemGPT/MemOS are the OS paging layer. Versioned workspace is hydration of files, not chat replay.
 
 ---
 
-*Part 2 of 6 — stop here. Next: Part 3 Academic map.*
+*Part 3 of 6 — stop here. Next: Part 4 GitHub map.*
