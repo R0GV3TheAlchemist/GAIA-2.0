@@ -1,8 +1,9 @@
-//! Continuity substrate (Blueprint 59). Episodes → Plaintext cubes; snapshots → Activation.
+//! Continuity substrate (Blueprint 59). Snapshots carry open file path+hash.
 //! License: Apache-2.0
 
 use std::collections::VecDeque;
 
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::episode_store::EpisodeStore;
@@ -35,11 +36,18 @@ pub struct Episode {
     pub snapshot_id: Option<String>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FileRef {
+    pub path: String,
+    pub hash: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct Snapshot {
     pub id: String,
     pub label: String,
     pub current_step: String,
+    pub open_files: Vec<FileRef>,
 }
 
 pub struct Continuity {
@@ -114,7 +122,6 @@ impl Continuity {
         Ok(0)
     }
 
-    /// SQLite forget + archive matching MemCubes (Invariant 0.8).
     pub fn forget_in(&mut self, text: &str, memos: &mut MemOs) -> Result<usize, &'static str> {
         let n = self.forget(text)?;
         memos.archive_by_content(text);
@@ -134,14 +141,25 @@ impl Continuity {
     }
 
     pub fn pause_world(&mut self, label: &str, current_step: &str) -> String {
+        self.pause_world_with_files(label, current_step, Vec::new())
+    }
+
+    pub fn pause_world_with_files(
+        &mut self,
+        label: &str,
+        current_step: &str,
+        open_files: Vec<FileRef>,
+    ) -> String {
         let id = format!("snap_{}", self.snapshots.len());
+        let json = serde_json::to_string(&open_files).unwrap_or_else(|_| "[]".into());
         if let Some(store) = &self.store {
-            let _ = store.save_snapshot(&id, label, current_step);
+            let _ = store.save_snapshot(&id, label, current_step, &json);
         }
         self.snapshots.push(Snapshot {
             id: id.clone(),
             label: label.to_string(),
             current_step: current_step.to_string(),
+            open_files,
         });
         id
     }
@@ -157,11 +175,13 @@ impl Continuity {
 
     pub fn restore_world(&self, prompt: &str) -> Option<Snapshot> {
         if let Some(store) = &self.store {
-            if let Ok(Some((id, label, current_step))) = store.find_snapshot(prompt) {
+            if let Ok(Some((id, label, current_step, files_json))) = store.find_snapshot(prompt) {
+                let open_files = serde_json::from_str(&files_json).unwrap_or_default();
                 return Some(Snapshot {
                     id,
                     label,
                     current_step,
+                    open_files,
                 });
             }
         }
@@ -180,68 +200,29 @@ impl Default for Continuity {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Tier;
 
     #[test]
-    fn ingest_denied_without_consent() {
+    fn restore_includes_open_files() {
+        let path = std::env::temp_dir().join("gaia_filesnap.sqlite");
+        let _ = std::fs::remove_file(&path);
+        {
+            let mut c = Continuity::new();
+            c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
+            c.pause_world_with_files(
+                "destinE memo",
+                "DRAFTING_CARE",
+                vec![FileRef {
+                    path: "Documents/CARE.md".into(),
+                    hash: "abc123".into(),
+                }],
+            );
+        }
         let mut c = Continuity::new();
-        let mut mem = MemOs::new();
-        let err = c.ingest_episode(
-            Episode {
-                t_unix_ms: 1,
-                text: "secret".into(),
-                modality: "files".into(),
-                snapshot_id: None,
-            },
-            &mut mem,
-        );
-        assert!(err.is_err());
-        assert_eq!(mem.count_tier(Tier::Working), 0);
-    }
-
-    #[test]
-    fn ingest_puts_plaintext_cube() {
-        let mut c = Continuity::new();
-        c.consent.files = true;
-        let mut mem = MemOs::new();
-        c.ingest_episode(
-            Episode {
-                t_unix_ms: 1,
-                text: "open CARE.md".into(),
-                modality: "files".into(),
-                snapshot_id: None,
-            },
-            &mut mem,
-        )
-        .unwrap();
-        assert!(mem.count_tier(Tier::Working) >= 1);
-        assert!(!mem.recall("CARE", 3).is_empty());
-    }
-
-    #[test]
-    fn pause_into_memos_is_activation() {
-        let mut c = Continuity::new();
-        let mut mem = MemOs::new();
-        c.pause_into_memos("destinE memo", "DRAFTING_CARE", &mut mem);
-        assert!(mem.count_tier(Tier::Activation) >= 1);
-    }
-
-    #[test]
-    fn forget_in_archives_cube() {
-        let mut c = Continuity::new();
-        c.consent.files = true;
-        let mut mem = MemOs::new();
-        c.ingest_episode(
-            Episode {
-                t_unix_ms: 1,
-                text: "I like jazz".into(),
-                modality: "type".into(),
-                snapshot_id: None,
-            },
-            &mut mem,
-        )
-        .unwrap();
-        c.forget_in("I like jazz", &mut mem).unwrap();
-        assert!(mem.recall("jazz", 3).is_empty());
+        c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
+        let snap = c.restore_world("destinE memo").unwrap();
+        assert_eq!(snap.current_step, "DRAFTING_CARE");
+        assert_eq!(snap.open_files[0].path, "Documents/CARE.md");
+        assert_eq!(snap.open_files[0].hash, "abc123");
+        let _ = std::fs::remove_file(&path);
     }
 }

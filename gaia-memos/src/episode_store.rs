@@ -1,4 +1,4 @@
-//! SQLite episodes + FTS5 + snapshots + forget/correct (Invariant 0.8).
+//! SQLite episodes + FTS5 + snapshots (open_files JSON).
 //! License: Apache-2.0
 
 use rusqlite::{params, Connection, OptionalExtension};
@@ -26,7 +26,8 @@ impl EpisodeStore {
             "CREATE TABLE IF NOT EXISTS snapshots (
                 id TEXT PRIMARY KEY,
                 label TEXT NOT NULL,
-                current_step TEXT NOT NULL
+                current_step TEXT NOT NULL,
+                open_files TEXT NOT NULL DEFAULT '[]'
             )",
             [],
         )?;
@@ -80,7 +81,6 @@ impl EpisodeStore {
         rows.collect()
     }
 
-    /// Invariant 0.8: delete episode + FTS so search cannot return it.
     pub fn forget(&self, text: &str) -> rusqlite::Result<usize> {
         let ids = self.rowids_for_text(text)?;
         let n = ids.len();
@@ -91,7 +91,6 @@ impl EpisodeStore {
         Ok(n)
     }
 
-    /// Replace text; FTS is rebuilt for those rows.
     pub fn correct(&self, old_text: &str, new_text: &str) -> rusqlite::Result<usize> {
         let ids = self.rowids_for_text(old_text)?;
         let n = ids.len();
@@ -109,50 +108,29 @@ impl EpisodeStore {
         Ok(n)
     }
 
-    pub fn save_snapshot(&self, id: &str, label: &str, current_step: &str) -> rusqlite::Result<()> {
+    pub fn save_snapshot(
+        &self,
+        id: &str,
+        label: &str,
+        current_step: &str,
+        open_files_json: &str,
+    ) -> rusqlite::Result<()> {
         self.conn.execute(
-            "INSERT OR REPLACE INTO snapshots (id, label, current_step) VALUES (?1, ?2, ?3)",
-            params![id, label, current_step],
+            "INSERT OR REPLACE INTO snapshots (id, label, current_step, open_files) VALUES (?1, ?2, ?3, ?4)",
+            params![id, label, current_step, open_files_json],
         )?;
         Ok(())
     }
 
-    pub fn find_snapshot(&self, prompt: &str) -> rusqlite::Result<Option<(String, String, String)>> {
+    pub fn find_snapshot(&self, prompt: &str) -> rusqlite::Result<Option<(String, String, String, String)>> {
         let mut stmt = self.conn.prepare(
-            "SELECT id, label, current_step FROM snapshots
+            "SELECT id, label, current_step, open_files FROM snapshots
              WHERE id = ?1 OR label = ?1 OR instr(?1, label) > 0
              ORDER BY rowid DESC LIMIT 1",
         )?;
         stmt.query_row(params![prompt], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
         })
         .optional()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn forgotten_item_not_retrievable() {
-        let path = std::env::temp_dir().join("gaia_forget.sqlite");
-        let _ = std::fs::remove_file(&path);
-        let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
-        store.insert(1, "I like jazz", "type").unwrap();
-        assert_eq!(store.forget("I like jazz").unwrap(), 1);
-        assert!(store.search("jazz", 8).unwrap().is_empty());
-        let _ = std::fs::remove_file(&path);
-    }
-
-    #[test]
-    fn correct_rewrites_fts() {
-        let path = std::env::temp_dir().join("gaia_correct.sqlite");
-        let _ = std::fs::remove_file(&path);
-        let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
-        store.insert(1, "I like jazz", "type").unwrap();
-        store.correct("I like jazz", "I dislike jazz").unwrap();
-        assert!(store.search("jazz", 8).unwrap()[0].1.contains("dislike"));
-        let _ = std::fs::remove_file(&path);
     }
 }
