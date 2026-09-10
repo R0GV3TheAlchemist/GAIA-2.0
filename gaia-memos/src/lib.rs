@@ -124,7 +124,6 @@ impl MemOs {
         Ok(cube.clone())
     }
 
-    /// Invariant 0.8: archive every active cube whose content matches `text`.
     pub fn archive_by_content(&mut self, text: &str) -> usize {
         let ids: Vec<Uuid> = self.cubes.iter()
             .filter(|(_, c)| c.content == text && c.lifecycle == Lifecycle::Active)
@@ -133,6 +132,19 @@ impl MemOs {
         let n = ids.len();
         for id in ids {
             let _ = self.archive(id);
+        }
+        n
+    }
+
+    /// Harness dump for A→B migration. IDs are preserved on import.
+    pub fn export_all(&self) -> Vec<MemCube> {
+        self.cubes.values().cloned().collect()
+    }
+
+    pub fn import(&mut self, cubes: Vec<MemCube>) -> usize {
+        let n = cubes.len();
+        for c in cubes {
+            self.put(c);
         }
         n
     }
@@ -262,5 +274,17 @@ mod tests {
         mem.put(MemCube::new(CubeType::Plaintext, "I like jazz", "type"));
         assert_eq!(mem.archive_by_content("I like jazz"), 1);
         assert!(mem.recall("jazz", 3).is_empty());
+    }
+
+    #[test]
+    fn harness_a_to_b_keeps_cube_uuid() {
+        let mut a = MemOs::new();
+        let id = a.put(MemCube::new(CubeType::Plaintext, "alice identity", "fixture"));
+        let dump = a.export_all();
+        let mut b = MemOs::new();
+        assert_eq!(b.import(dump), 1);
+        let restored = b.get(id).unwrap();
+        assert_eq!(restored.id, id);
+        assert_eq!(restored.content, "alice identity");
     }
 }
