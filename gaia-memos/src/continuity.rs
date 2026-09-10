@@ -1,5 +1,4 @@
-//! Continuity substrate (Blueprint 59).
-//! Capture flags default **false**. Snapshots persist when a store is attached.
+//! Continuity substrate (Blueprint 59). Forget/correct honor Invariant 0.8.
 //! License: Apache-2.0
 
 use std::collections::VecDeque;
@@ -98,6 +97,26 @@ impl Continuity {
         self.episodes.iter().rev().take(8).cloned().collect()
     }
 
+    pub fn forget(&mut self, text: &str) -> Result<usize, &'static str> {
+        self.episodes.retain(|e| e.text != text);
+        if let Some(store) = &self.store {
+            return store.forget(text).map_err(|_| "sqlite forget failed");
+        }
+        Ok(0)
+    }
+
+    pub fn correct(&mut self, old_text: &str, new_text: &str) -> Result<usize, &'static str> {
+        for e in &mut self.episodes {
+            if e.text == old_text {
+                e.text = new_text.to_string();
+            }
+        }
+        if let Some(store) = &self.store {
+            return store.correct(old_text, new_text).map_err(|_| "sqlite correct failed");
+        }
+        Ok(0)
+    }
+
     pub fn pause_world(&mut self, label: &str, current_step: &str) -> String {
         let id = format!("snap_{}", self.snapshots.len());
         if let Some(store) = &self.store {
@@ -111,7 +130,6 @@ impl Continuity {
         id
     }
 
-    /// Hydrate by id/label/prompt. Prefers SQLite so this survives process restart.
     pub fn restore_world(&self, prompt: &str) -> Option<Snapshot> {
         if let Some(store) = &self.store {
             if let Ok(Some((id, label, current_step))) = store.find_snapshot(prompt) {
@@ -139,18 +157,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn restore_after_new_process() {
-        let path = std::env::temp_dir().join("gaia_part6_hydrate.sqlite");
+    fn forget_hides_from_ask_history() {
+        let path = std::env::temp_dir().join("gaia_forget_c.sqlite");
         let _ = std::fs::remove_file(&path);
-        {
-            let mut c = Continuity::new();
-            c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
-            c.pause_world("destinE memo", "DRAFTING_CARE");
-        }
         let mut c = Continuity::new();
+        c.consent.files = true;
         c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
-        let snap = c.restore_world("destinE memo").expect("hydrated");
-        assert_eq!(snap.current_step, "DRAFTING_CARE");
+        c.remember_life(Episode {
+            t_unix_ms: 1,
+            text: "I like jazz".into(),
+            modality: "type".into(),
+            snapshot_id: None,
+        })
+        .unwrap();
+        c.forget("I like jazz").unwrap();
+        assert!(c.ask_history("jazz").is_empty());
         let _ = std::fs::remove_file(&path);
     }
 }

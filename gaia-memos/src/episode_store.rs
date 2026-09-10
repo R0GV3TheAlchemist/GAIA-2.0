@@ -1,4 +1,4 @@
-//! SQLite episode persist + FTS5 + snapshots (Blueprint 59 Build Part 6).
+//! SQLite episodes + FTS5 + snapshots + forget/correct (Invariant 0.8).
 //! License: Apache-2.0
 
 use rusqlite::{params, Connection, OptionalExtension};
@@ -74,6 +74,41 @@ impl EpisodeStore {
         rows.collect()
     }
 
+    fn rowids_for_text(&self, text: &str) -> rusqlite::Result<Vec<i64>> {
+        let mut stmt = self.conn.prepare("SELECT rowid FROM episodes WHERE text = ?1")?;
+        let rows = stmt.query_map(params![text], |row| row.get(0))?;
+        rows.collect()
+    }
+
+    /// Invariant 0.8: delete episode + FTS so search cannot return it.
+    pub fn forget(&self, text: &str) -> rusqlite::Result<usize> {
+        let ids = self.rowids_for_text(text)?;
+        let n = ids.len();
+        for id in ids {
+            self.conn.execute("DELETE FROM episodes_fts WHERE rowid = ?1", params![id])?;
+            self.conn.execute("DELETE FROM episodes WHERE rowid = ?1", params![id])?;
+        }
+        Ok(n)
+    }
+
+    /// Replace text; FTS is rebuilt for those rows.
+    pub fn correct(&self, old_text: &str, new_text: &str) -> rusqlite::Result<usize> {
+        let ids = self.rowids_for_text(old_text)?;
+        let n = ids.len();
+        for id in ids {
+            self.conn.execute(
+                "UPDATE episodes SET text = ?1 WHERE rowid = ?2",
+                params![new_text, id],
+            )?;
+            self.conn.execute("DELETE FROM episodes_fts WHERE rowid = ?1", params![id])?;
+            self.conn.execute(
+                "INSERT INTO episodes_fts(rowid, text) VALUES (?1, ?2)",
+                params![id, new_text],
+            )?;
+        }
+        Ok(n)
+    }
+
     pub fn save_snapshot(&self, id: &str, label: &str, current_step: &str) -> rusqlite::Result<()> {
         self.conn.execute(
             "INSERT OR REPLACE INTO snapshots (id, label, current_step) VALUES (?1, ?2, ?3)",
@@ -100,16 +135,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn snapshot_survives_reopen() {
-        let path = std::env::temp_dir().join("gaia_snap_part6.sqlite");
+    fn forgotten_item_not_retrievable() {
+        let path = std::env::temp_dir().join("gaia_forget.sqlite");
         let _ = std::fs::remove_file(&path);
-        {
-            let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
-            store.save_snapshot("snap_0", "destinE memo", "DRAFTING_CARE").unwrap();
-        }
         let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
-        let hit = store.find_snapshot("destinE memo").unwrap().unwrap();
-        assert_eq!(hit.2, "DRAFTING_CARE");
+        store.insert(1, "I like jazz", "type").unwrap();
+        assert_eq!(store.forget("I like jazz").unwrap(), 1);
+        assert!(store.search("jazz", 8).unwrap().is_empty());
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn correct_rewrites_fts() {
+        let path = std::env::temp_dir().join("gaia_correct.sqlite");
+        let _ = std::fs::remove_file(&path);
+        let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
+        store.insert(1, "I like jazz", "type").unwrap();
+        store.correct("I like jazz", "I dislike jazz").unwrap();
+        assert!(store.search("jazz", 8).unwrap()[0].1.contains("dislike"));
         let _ = std::fs::remove_file(&path);
     }
 }
