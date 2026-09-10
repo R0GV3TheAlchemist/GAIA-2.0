@@ -7,3 +7,4 @@ description = "L5 agent policy runtime harness — pre-WASM/WASI"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+wasmtime = "25"
