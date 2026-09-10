@@ -10,9 +10,11 @@ use gaia_sfs::{cosine, embed};
 
 pub mod continuity;
 pub mod episode_store;
+pub mod screenpipe;
 
-pub use continuity::{CaptureConsent, Continuity, Episode, Snapshot};
+pub use continuity::{CaptureConsent, Continuity, Episode, FileRef, Snapshot};
 pub use episode_store::EpisodeStore;
+pub use screenpipe::ScreenpipeStub;
 
 #[derive(Debug, Error)]
 pub enum MemosError {
@@ -136,7 +138,6 @@ impl MemOs {
         n
     }
 
-    /// Harness dump for A→B migration. IDs are preserved on import.
     pub fn export_all(&self) -> Vec<MemCube> {
         self.cubes.values().cloned().collect()
     }
