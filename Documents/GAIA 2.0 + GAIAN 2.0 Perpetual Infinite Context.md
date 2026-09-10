@@ -1,8 +1,8 @@
 # GAIA 2.0 + GAIAN 2.0: Perpetual Infinite Context
-## Blueprint 59: The Continuity Substrate — Part 4 (GitHub map)
-### September 9, 2026 — Version 0.4-part4
+## Blueprint 59: The Continuity Substrate — Part 5 (Daemon / MVP)
+### September 9, 2026 — Version 0.5-part5
 
-**Status:** Part 4 of 6. Parts 5–6: daemon/MVP, issue wiring.
+**Status:** Part 5 of 6. Part 6: issue wiring only.
 **Write target:** [R0GV3TheAlchemist/GAIA-2.0](https://github.com/R0GV3TheAlchemist/GAIA-2.0)
 **License:** Apache-2.0
 
@@ -10,131 +10,64 @@
 
 ## The three contracts
 
-**Perpetual Infinite Context**
-The system continuously captures, processes, and indexes everything the user sees, hears, reads, and types across all sessions without lagging the system.
+**Perpetual Infinite Context** — Capture, process, and index what the user sees, hears, reads, and types, without lagging the system.
 
-**Vectorized Episodic Memory**
-A semantic memory layer that allows the user to query their entire digital history using vague, natural language.
+**Vectorized Episodic Memory** — Query the entire digital history in vague natural language.
 
-**Dynamic State Hydration**
-The ability to pause any complex workflow, close all windows, and instantly recreate the exact mental state, open files, and AI context weeks later in a single prompt.
+**Dynamic State Hydration** — Pause a workflow, close windows, restore mental state, files, and AI context weeks later in one prompt.
 
----
-
-## What these are not
-
-- Not an unbounded transformer context window
-- Not dumping chat logs or raw JSON into a vector database
-- Not replaying weeks of transcript into the next LLM call
-
-Infinite means unbounded **history** and a bounded working set. Capture never blocks the Super OS. Retrieval returns ranked episodes with evidence. Hydration restores machine and agent **state**, not a chat dump.
+Not: unbounded transformer windows, JSON dumps into a vector DB, or replaying weeks of chat.
 
 ---
 
 ## Placement
 
-Continuity is Super OS layer **L2.5**: Capture Bus, Episode Index, Snapshot Store — between the Semantic File System (L2) and MemOS (L3).
+L2.5 Continuity: Capture Bus, Episode Index, Snapshot Store — between SFS (L2) and MemOS (L3).
 
-Complements Blueprint 49 (Mi-Memory) and Blueprint 58 (MemOS). Does not replace them.
+---
+
+## Part 2 — Architecture (summary)
+
+- **Capture Bus:** ring buffer; drop-oldest; accessibility-first; redact before embed; CPU &lt; 3% idle.
+- **Episode Index:** time + dense + BM25 + contiguity + graph; bounded prompt assemble.
+- **Snapshot Store:** freeze W_t + agent + current_step; hydrate; apply state_delta before inference; scale to zero while paused.
+
+---
+
+## Part 3–4 — Maps (summary)
+
+Spine papers: EM-LLM arXiv:2407.09450; MemGPT arXiv:2310.08560; MemOS arXiv:2507.03724; versioned workspace arXiv:2608.18050.
+
+Home: this repo. Code path: `gaia-memos/`. Adapters: Screenpipe, Mem0, Graphiti, Letta `.af`, MemOS, MIRIX. Kernel Apache-2.0.
+
+---
+
+## Part 5 — Daemon sketch
+
+Path: `gaia-memos/continuity/` (not implemented this commit).
+
+Three calls, one process:
 
 ```
-L6  Sovereign Interface
-L5  Agent Ecosystem
-L4  Cognitive Orchestration
-L3  MemOS
-L2.5 CONTINUITY
-     Capture Bus | Episode Index | Snapshot Store
-L2  Semantic File System
-L1  GAIA Kernel
-L0  Hardware Continuum
+remember_life()     # Capture Bus loop; never blocks UI
+ask_history(vague)  # Episode Index; returns top-k episodes
+pause_world(label)  # freeze snapshot; scale agents to zero
+restore_world(prompt)  # resolve snapshot; hydrate; state_delta
 ```
 
----
+Invariants: drop frames rather than stall; redact before embed; never dump the archive into the LLM; never infer current_step from chat.
 
-## Part 2 — Architecture
+### 30-day MVP
 
-### Capture Bus (Perpetual Infinite Context)
+| Week | Ship |
+|------|------|
+| 1 | Accessibility logger + ring + SQLite episodes (text + time) |
+| 2 | Local embeddings + FTS5; `ask_history(vague)` |
+| 3 | Snapshot: open files, hashes, git HEAD, current_step; `restore_world` |
+| 4 | Sleep/wake; export + cryptographic delete of one day |
 
-Background ring. Drops oldest events if full. Never stalls the UI.
-
-- Accessibility tree first; OCR only if the tree is empty
-- Audio, keys, clipboard, file-focus, agent traces: opt-in per modality
-- Pipeline: capture → redact secrets/CARE → segment events → embed async → commit
-- Budget: idle CPU under 3%; text-first index, not video-first
-
-Constitutional gates before capture: Invariant 0.3 (consent), lock-screen halt, Invariant 0.8 (erasable intervals).
-
-### Episode Index (Vectorized Episodic Memory)
-
-Each interval is an Episode: time, device, modality, redacted text, embedding, importance, optional snapshot_id.
-
-Vague query path:
-1. Temporal anchor
-2. Dense + BM25 fusion
-3. Neighboring events (contiguity)
-4. Graph hop (people, files, Earth)
-5. Bounded assemble into the prompt — never dump the week
-
-Vector store is the **index**, not the memory architecture. State needs transactions. Facts need graphs. Life needs time.
-
-### Snapshot Store (Dynamic State Hydration)
-
-A snapshot is immutable: mental_state, workspace W_t (files, cursors, hashes, layout), ai_context (agent file, activation cubes, DAG cursor), resume_contract (current_step, state_delta).
-
-Hydrate:
-1. Resolve snapshot from the episode query
-2. Freeze the current world (undo)
-3. Restore files and layout
-4. Load agent + MemCubes
-5. Apply state_delta **before** the next inference
-
-Do not replay idle-time chat. Scale agents to zero while paused.
+Success: 4 hours capture under 3% CPU; “what was I reading before lunch?” hits the right file; reboot next day, one prompt restores files + step.
 
 ---
 
-## Part 3 — Academic map
-
-Paper-first. No blogs. Each row is a Continuity contract, not a bigger context window.
-
-| Contract | Paper | ID | Use |
-|----------|-------|----|-----|
-| Capture / bounded compute | Infini-attention | arXiv:2404.07143 | Infinite input, bounded memory |
-| Capture / bounded compute | StreamingLLM | ICLR 2024 | Attention sinks; streaming |
-| Capture / OS metaphor | MemGPT | arXiv:2310.08560 | Virtual context; paging |
-| Capture / memory OS | MemOS | arXiv:2507.03724 | Memory as OS resource |
-| Episodes | EM-LLM (Fountas et al.) | arXiv:2407.09450 | Event segmentation; 10M-token retrieval |
-| Episodes | LMEB | arXiv:2603.12572 | Long-horizon episodic embedding eval |
-| Episodes | Mem-α | arXiv:2509.25911 | Timestamped episodic store + RL |
-| Episodes | Memento 2 | arXiv:2512.22716 | Stateful reflective episodic memory |
-| Working set | MEM1 | arXiv:2506.15841 | Constant-memory long-horizon agents |
-| Hydration | Versioned workspace | arXiv:2608.18050 | Hydrate W_t at turn start |
-| Hydration / trust | MemTrust | arXiv:2601.07004 | Episodic stream + semantic profile |
-| Governance | Mi-Memory | arXiv:2607.18975 | Lifecycle, audit, forget |
-| Governance | SuperLocalMemory 4.0 | arXiv:2608.08253 | Verified erasure |
-
-EM-LLM is the episodic spine: Bayesian-surprise event boundaries plus contiguous retrieval. MemGPT/MemOS are the OS paging layer. Versioned workspace is hydration of files, not chat replay.
-
----
-
-## Part 4 — GitHub map
-
-Home repo: [R0GV3TheAlchemist/GAIA-2.0](https://github.com/R0GV3TheAlchemist/GAIA-2.0). Continuity code will live under `gaia-memos/` (adapter), not a vendor fork. Stars as of 2026-09-09.
-
-| Layer | Repo | Stars | Role |
-|-------|------|------:|------|
-| Capture | [screenpipe/screenpipe](https://github.com/screenpipe/screenpipe) | 21,506 | Local computer history; accessibility-first |
-| Capture | [screenpipe/uniOCR](https://github.com/screenpipe/uniOCR) | 228 | OCR fallback only |
-| Memory API | [mem0ai/mem0](https://github.com/mem0ai/mem0) | 65,009 | Fact/preference layer |
-| Graph | [getzep/graphiti](https://github.com/getzep/graphiti) | 30,736 | Temporal entity graph |
-| Agent OS | [letta-ai/letta](https://github.com/letta-ai/letta) | 24,676 | Virtual context (MemGPT) |
-| Hydration format | [letta-ai/agent-file](https://github.com/letta-ai/agent-file) | 1,197 | `.af` snapshot serialize |
-| Memory OS | [MemTensor/MemOS](https://github.com/MemTensor/MemOS) | 11,249 | MemCubes; token savings |
-| Screen→memory | [Mirix-AI/MIRIX](https://github.com/Mirix-AI/MIRIX) | 3,440 | On-screen → six memory types |
-
-Rule: wrap as adapters. Kernel stays Apache-2.0. Screenpipe is capture I/O, not the Super OS license.
-
-Do not mint new epics. Continuity maps to existing [#215](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/215) and [#219](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/219).
-
----
-
-*Part 4 of 6 — stop here. Next: Part 5 Daemon / MVP.*
+*Part 5 of 6 — stop here. Next: Part 6 comment on #215 / #219 only.*
