@@ -1,8 +1,10 @@
-//! Continuity substrate (Blueprint 59) — Build Part 1.
-//! Capture flags default **false**. No logger until consent is explicit.
+//! Continuity substrate (Blueprint 59).
+//! Capture flags default **false**. SQLite insert only after consent.
 //! License: Apache-2.0
 
 use std::collections::VecDeque;
+
+use crate::episode_store::EpisodeStore;
 
 /// Per-modality consent. All fields start false (Invariant 0.3).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -40,12 +42,12 @@ pub struct Snapshot {
 }
 
 /// L2.5 Continuity daemon surface.
-#[derive(Debug)]
 pub struct Continuity {
     pub consent: CaptureConsent,
     episodes: VecDeque<Episode>,
     snapshots: Vec<Snapshot>,
     max_ring: usize,
+    store: Option<EpisodeStore>,
 }
 
 impl Continuity {
@@ -55,13 +57,23 @@ impl Continuity {
             episodes: VecDeque::new(),
             snapshots: Vec::new(),
             max_ring: 256,
+            store: None,
         }
     }
 
-    /// Capture loop. No-ops while every flag is false. Drops oldest if full.
+    pub fn attach_store(&mut self, store: EpisodeStore) {
+        self.store = Some(store);
+    }
+
+    /// Capture loop. Denied while every flag is false. Drops oldest if full.
     pub fn remember_life(&mut self, episode: Episode) -> Result<(), &'static str> {
         if !self.consent.any_on() {
             return Err("capture denied: all consent flags false");
+        }
+        if let Some(store) = &self.store {
+            store
+                .insert(episode.t_unix_ms as i64, &episode.text, episode.modality)
+                .map_err(|_| "sqlite insert failed")?;
         }
         if self.episodes.len() >= self.max_ring {
             self.episodes.pop_front();
@@ -70,7 +82,6 @@ impl Continuity {
         Ok(())
     }
 
-    /// Vague query over episodes. Empty until something was consented and stored.
     pub fn ask_history(&self, _vague: &str) -> Vec<&Episode> {
         self.episodes.iter().rev().take(8).collect()
     }
@@ -85,7 +96,6 @@ impl Continuity {
         id
     }
 
-    /// Hydrate by label/id. Does not replay chat. Returns stored current_step.
     pub fn restore_world(&self, prompt: &str) -> Option<&Snapshot> {
         self.snapshots.iter().rev().find(|s| {
             s.id == prompt || s.label == prompt || prompt.contains(&s.label)
@@ -104,9 +114,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn capture_defaults_off() {
+    fn capture_defaults_off_skips_sqlite() {
         let mut c = Continuity::new();
-        assert!(!c.consent.any_on());
+        let path = std::env::temp_dir().join("gaia_part4_denied.sqlite");
+        let _ = std::fs::remove_file(&path);
+        c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
         let err = c.remember_life(Episode {
             t_unix_ms: 0,
             text: "secret".into(),
@@ -115,6 +127,25 @@ mod tests {
         });
         assert!(err.is_err());
         assert!(c.ask_history("anything").is_empty());
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn consented_remember_writes_sqlite() {
+        let mut c = Continuity::new();
+        c.consent.files = true;
+        let path = std::env::temp_dir().join("gaia_part4_ok.sqlite");
+        let _ = std::fs::remove_file(&path);
+        c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
+        c.remember_life(Episode {
+            t_unix_ms: 42,
+            text: "open CARE.md".into(),
+            modality: "files",
+            snapshot_id: None,
+        })
+        .unwrap();
+        assert_eq!(c.ask_history("CARE")[0].text, "open CARE.md");
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]
