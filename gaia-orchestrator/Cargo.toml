@@ -1,0 +1,11 @@
+[package]
+name = "gaia-orchestrator"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "L4 Cognitive orchestration — Intent Engine v0.1 (local-first stub)"
+
+[dependencies]
+gaia-memos = { path = "../gaia-memos" }
+serde = { version = "1", features = ["derive"] }
+uuid = { version = "1", features = ["v4", "serde"] }
