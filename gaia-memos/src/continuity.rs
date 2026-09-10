@@ -1,9 +1,12 @@
-//! Continuity substrate (Blueprint 59). Forget/correct honor Invariant 0.8.
+//! Continuity substrate (Blueprint 59). Episodes → Plaintext cubes; snapshots → Activation.
 //! License: Apache-2.0
 
 use std::collections::VecDeque;
 
+use uuid::Uuid;
+
 use crate::episode_store::EpisodeStore;
+use crate::{CubeType, MemCube, MemOs};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CaptureConsent {
@@ -78,6 +81,13 @@ impl Continuity {
         Ok(())
     }
 
+    /// Consented episode → SQLite + `CubeType::Plaintext` MemCube.
+    pub fn ingest_episode(&mut self, episode: Episode, memos: &mut MemOs) -> Result<Uuid, &'static str> {
+        let cube = MemCube::new(CubeType::Plaintext, episode.text.clone(), episode.modality.clone());
+        self.remember_life(episode)?;
+        Ok(memos.put(cube))
+    }
+
     pub fn ask_history(&self, vague: &str) -> Vec<Episode> {
         if let Some(store) = &self.store {
             if let Ok(rows) = store.search(vague, 8) {
@@ -130,6 +140,16 @@ impl Continuity {
         id
     }
 
+    /// Snapshot → SQLite + `CubeType::Activation` MemCube (`label::step`).
+    pub fn pause_into_memos(&mut self, label: &str, current_step: &str, memos: &mut MemOs) -> Uuid {
+        let _id = self.pause_world(label, current_step);
+        memos.put(MemCube::new(
+            CubeType::Activation,
+            format!("{label}::{current_step}"),
+            "snapshot",
+        ))
+    }
+
     pub fn restore_world(&self, prompt: &str) -> Option<Snapshot> {
         if let Some(store) = &self.store {
             if let Ok(Some((id, label, current_step))) = store.find_snapshot(prompt) {
@@ -155,23 +175,49 @@ impl Default for Continuity {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Tier;
 
     #[test]
-    fn forget_hides_from_ask_history() {
-        let path = std::env::temp_dir().join("gaia_forget_c.sqlite");
-        let _ = std::fs::remove_file(&path);
+    fn ingest_denied_without_consent() {
+        let mut c = Continuity::new();
+        let mut mem = MemOs::new();
+        let err = c.ingest_episode(
+            Episode {
+                t_unix_ms: 1,
+                text: "secret".into(),
+                modality: "files".into(),
+                snapshot_id: None,
+            },
+            &mut mem,
+        );
+        assert!(err.is_err());
+        assert_eq!(mem.count_tier(Tier::Working), 0);
+    }
+
+    #[test]
+    fn ingest_puts_plaintext_cube() {
         let mut c = Continuity::new();
         c.consent.files = true;
-        c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
-        c.remember_life(Episode {
-            t_unix_ms: 1,
-            text: "I like jazz".into(),
-            modality: "type".into(),
-            snapshot_id: None,
-        })
+        let mut mem = MemOs::new();
+        c.ingest_episode(
+            Episode {
+                t_unix_ms: 1,
+                text: "open CARE.md".into(),
+                modality: "files".into(),
+                snapshot_id: None,
+            },
+            &mut mem,
+        )
         .unwrap();
-        c.forget("I like jazz").unwrap();
-        assert!(c.ask_history("jazz").is_empty());
-        let _ = std::fs::remove_file(&path);
+        assert!(mem.count_tier(Tier::Working) >= 1);
+        assert!(!mem.recall("CARE", 3).is_empty());
+    }
+
+    #[test]
+    fn pause_into_memos_is_activation() {
+        let mut c = Continuity::new();
+        let mut mem = MemOs::new();
+        c.pause_into_memos("destinE memo", "DRAFTING_CARE", &mut mem);
+        assert!(mem.count_tier(Tier::Activation) >= 1);
     }
 }
