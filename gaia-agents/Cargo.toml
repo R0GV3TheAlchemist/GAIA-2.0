@@ -1,0 +1,9 @@
+[package]
+name = "gaia-agents"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "L5 agent policy runtime harness — pre-WASM/WASI"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
