@@ -1,24 +1,27 @@
-# gaia-spec — GAIA Specification v0.1
+# GAIA Specification v0.1
 
-**Status:** Draft v0.1  
-**License:** CC0 1.0  
-**Normative language:** RFC 2119 MUST / SHOULD / MAY
+This directory contains the in-repo interoperability contract for GAIA 2.0.
 
-This tree is the interoperability contract. The research blueprint in
-`Documents/GAIA 2.0 — Super Operating System.md` is **informative**.
+## Status
 
-| Document | Kind |
-| --- | --- |
-| [architecture.md](architecture.md) | Normative overview L0–L6 |
-| [syscalls.md](syscalls.md) | Normative primitive list |
-| [identity.md](identity.md) | Normative zero-trust model |
-| [intent-graph.md](intent-graph.md) | Normative schema + JSON Schema |
-| [memcube.md](memcube.md) | Normative schema + JSON Schema |
-| [aip-manifest.md](aip-manifest.md) | Normative AIP Manifest **v1.0** |
-| [rfcs.md](rfcs.md) | Open questions (MUST NOT be silently assumed) |
+- **Version:** `0.1.0`
+- **License:** CC0; see [LICENSE](LICENSE).
+- **Normative language:** documents use **MUST**, **MUST NOT**, **SHOULD**, and **MAY** where requirements are intended. Material without those terms is informative unless explicitly marked otherwise.
+- **Implementation status:** a specification is not evidence that an implementation exists. Each implementation must identify the requirements it enforces.
 
-Validate examples:
+## Documents
 
-```bash
-python gaia-spec/tools/validate_aip.py
-```
+- [Architecture](architecture.md) — L0–L6 layer responsibilities.
+- [Identity and zero trust](identity.md) — identity and access principles.
+- [Identity, capabilities, and components](sos/identity-capabilities.md) — entity taxonomy, signed bounded grants, non-escalating delegation, strongly consistent revocation semantics, audit events, component roles, and honest HAL-tier targets.
+- [Intent graph](intent-graph.md) — intent representation.
+- [MemCube](memcube.md) — governed memory unit.
+- [AIP Manifest](aip-manifest.md) — agent package declaration.
+- [GAIA primitives](syscalls.md) — host primitive vocabulary.
+- [Schemas](schemas/) — machine-readable validation schemas.
+- [Examples](examples/) — example documents.
+- [Open RFCs](rfcs.md) — unresolved design questions.
+
+## Contributing
+
+Specification changes should describe whether they are normative, add examples or schemas where appropriate, and leave unresolved choices as RFCs rather than silently assuming them.
