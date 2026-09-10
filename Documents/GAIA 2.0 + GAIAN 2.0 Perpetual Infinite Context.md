@@ -1,8 +1,8 @@
 # GAIA 2.0 + GAIAN 2.0: Perpetual Infinite Context
-## Blueprint 59: The Continuity Substrate — Part 1 (Contracts)
-### September 9, 2026 — Version 0.1-part1
+## Blueprint 59: The Continuity Substrate — Part 2 (Architecture)
+### September 9, 2026 — Version 0.2-part2
 
-**Status:** Part 1 of 6. Later parts add architecture, academic map, GitHub map, daemon/MVP, and issue wiring.
+**Status:** Part 2 of 6. Parts 3–6: academic map, GitHub map, daemon/MVP, issue wiring.
 **Write target:** [R0GV3TheAlchemist/GAIA-2.0](https://github.com/R0GV3TheAlchemist/GAIA-2.0)
 **License:** Apache-2.0
 
@@ -37,6 +37,59 @@ Continuity is Super OS layer **L2.5**: Capture Bus, Episode Index, Snapshot Stor
 
 Complements Blueprint 49 (Mi-Memory) and Blueprint 58 (MemOS). Does not replace them.
 
+```
+L6  Sovereign Interface
+L5  Agent Ecosystem
+L4  Cognitive Orchestration
+L3  MemOS
+L2.5 CONTINUITY
+     Capture Bus | Episode Index | Snapshot Store
+L2  Semantic File System
+L1  GAIA Kernel
+L0  Hardware Continuum
+```
+
+---
+
+## Part 2 — Architecture
+
+### Capture Bus (Perpetual Infinite Context)
+
+Background ring. Drops oldest events if full. Never stalls the UI.
+
+- Accessibility tree first; OCR only if the tree is empty
+- Audio, keys, clipboard, file-focus, agent traces: opt-in per modality
+- Pipeline: capture → redact secrets/CARE → segment events → embed async → commit
+- Budget: idle CPU under 3%; text-first index, not video-first
+
+Constitutional gates before capture: Invariant 0.3 (consent), lock-screen halt, Invariant 0.8 (erasable intervals).
+
+### Episode Index (Vectorized Episodic Memory)
+
+Each interval is an Episode: time, device, modality, redacted text, embedding, importance, optional snapshot_id.
+
+Vague query path:
+1. Temporal anchor
+2. Dense + BM25 fusion
+3. Neighboring events (contiguity)
+4. Graph hop (people, files, Earth)
+5. Bounded assemble into the prompt — never dump the week
+
+Vector store is the **index**, not the memory architecture. State needs transactions. Facts need graphs. Life needs time.
+
+### Snapshot Store (Dynamic State Hydration)
+
+A snapshot is immutable: mental_state, workspace W_t (files, cursors, hashes, layout), ai_context (agent file, activation cubes, DAG cursor), resume_contract (current_step, state_delta).
+
+Hydrate:
+1. Resolve snapshot from the episode query
+2. Freeze the current world (undo)
+3. Restore files and layout
+4. Load agent + MemCubes
+5. Apply state_delta **before** the next inference
+
+Do not replay idle-time chat. Scale agents to zero while paused.
+
 ---
 
 ## Paper anchors (expanded in Part 3)
@@ -48,4 +101,4 @@ Complements Blueprint 49 (Mi-Memory) and Blueprint 58 (MemOS). Does not replace 
 
 ---
 
-*Part 1 of 6 — stop here. Next: Part 2 Architecture.*
+*Part 2 of 6 — stop here. Next: Part 3 Academic map.*
