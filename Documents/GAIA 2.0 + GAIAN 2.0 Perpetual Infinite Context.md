@@ -1,8 +1,8 @@
 # GAIA 2.0 + GAIAN 2.0: Perpetual Infinite Context
-## Blueprint 59: The Continuity Substrate — Part 3 (Academic map)
-### September 9, 2026 — Version 0.3-part3
+## Blueprint 59: The Continuity Substrate — Part 4 (GitHub map)
+### September 9, 2026 — Version 0.4-part4
 
-**Status:** Part 3 of 6. Parts 4–6: GitHub map, daemon/MVP, issue wiring.
+**Status:** Part 4 of 6. Parts 5–6: daemon/MVP, issue wiring.
 **Write target:** [R0GV3TheAlchemist/GAIA-2.0](https://github.com/R0GV3TheAlchemist/GAIA-2.0)
 **License:** Apache-2.0
 
@@ -116,4 +116,25 @@ EM-LLM is the episodic spine: Bayesian-surprise event boundaries plus contiguous
 
 ---
 
-*Part 3 of 6 — stop here. Next: Part 4 GitHub map.*
+## Part 4 — GitHub map
+
+Home repo: [R0GV3TheAlchemist/GAIA-2.0](https://github.com/R0GV3TheAlchemist/GAIA-2.0). Continuity code will live under `gaia-memos/` (adapter), not a vendor fork. Stars as of 2026-09-09.
+
+| Layer | Repo | Stars | Role |
+|-------|------|------:|------|
+| Capture | [screenpipe/screenpipe](https://github.com/screenpipe/screenpipe) | 21,506 | Local computer history; accessibility-first |
+| Capture | [screenpipe/uniOCR](https://github.com/screenpipe/uniOCR) | 228 | OCR fallback only |
+| Memory API | [mem0ai/mem0](https://github.com/mem0ai/mem0) | 65,009 | Fact/preference layer |
+| Graph | [getzep/graphiti](https://github.com/getzep/graphiti) | 30,736 | Temporal entity graph |
+| Agent OS | [letta-ai/letta](https://github.com/letta-ai/letta) | 24,676 | Virtual context (MemGPT) |
+| Hydration format | [letta-ai/agent-file](https://github.com/letta-ai/agent-file) | 1,197 | `.af` snapshot serialize |
+| Memory OS | [MemTensor/MemOS](https://github.com/MemTensor/MemOS) | 11,249 | MemCubes; token savings |
+| Screen→memory | [Mirix-AI/MIRIX](https://github.com/Mirix-AI/MIRIX) | 3,440 | On-screen → six memory types |
+
+Rule: wrap as adapters. Kernel stays Apache-2.0. Screenpipe is capture I/O, not the Super OS license.
+
+Do not mint new epics. Continuity maps to existing [#215](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/215) and [#219](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/219).
+
+---
+
+*Part 4 of 6 — stop here. Next: Part 5 Daemon / MVP.*
