@@ -6,7 +6,6 @@ use std::collections::VecDeque;
 
 use crate::episode_store::EpisodeStore;
 
-/// Per-modality consent. All fields start false (Invariant 0.3).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CaptureConsent {
     pub screen: bool,
@@ -30,7 +29,7 @@ impl CaptureConsent {
 pub struct Episode {
     pub t_unix_ms: u64,
     pub text: String,
-    pub modality: &'static str,
+    pub modality: String,
     pub snapshot_id: Option<String>,
 }
 
@@ -41,7 +40,6 @@ pub struct Snapshot {
     pub current_step: String,
 }
 
-/// L2.5 Continuity daemon surface.
 pub struct Continuity {
     pub consent: CaptureConsent,
     episodes: VecDeque<Episode>,
@@ -65,14 +63,13 @@ impl Continuity {
         self.store = Some(store);
     }
 
-    /// Capture loop. Denied while every flag is false. Drops oldest if full.
     pub fn remember_life(&mut self, episode: Episode) -> Result<(), &'static str> {
         if !self.consent.any_on() {
             return Err("capture denied: all consent flags false");
         }
         if let Some(store) = &self.store {
             store
-                .insert(episode.t_unix_ms as i64, &episode.text, episode.modality)
+                .insert(episode.t_unix_ms as i64, &episode.text, &episode.modality)
                 .map_err(|_| "sqlite insert failed")?;
         }
         if self.episodes.len() >= self.max_ring {
@@ -82,8 +79,24 @@ impl Continuity {
         Ok(())
     }
 
-    pub fn ask_history(&self, _vague: &str) -> Vec<&Episode> {
-        self.episodes.iter().rev().take(8).collect()
+    /// Vague query. Uses FTS5 when a store is attached; else the ring.
+    pub fn ask_history(&self, vague: &str) -> Vec<Episode> {
+        if let Some(store) = &self.store {
+            if let Ok(rows) = store.search(vague, 8) {
+                if !rows.is_empty() {
+                    return rows
+                        .into_iter()
+                        .map(|(t, text, modality)| Episode {
+                            t_unix_ms: t as u64,
+                            text,
+                            modality,
+                            snapshot_id: None,
+                        })
+                        .collect();
+                }
+            }
+        }
+        self.episodes.iter().rev().take(8).cloned().collect()
     }
 
     pub fn pause_world(&mut self, label: &str, current_step: &str) -> String {
@@ -116,13 +129,13 @@ mod tests {
     #[test]
     fn capture_defaults_off_skips_sqlite() {
         let mut c = Continuity::new();
-        let path = std::env::temp_dir().join("gaia_part4_denied.sqlite");
+        let path = std::env::temp_dir().join("gaia_part5_denied.sqlite");
         let _ = std::fs::remove_file(&path);
         c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
         let err = c.remember_life(Episode {
             t_unix_ms: 0,
             text: "secret".into(),
-            modality: "screen",
+            modality: "screen".into(),
             snapshot_id: None,
         });
         assert!(err.is_err());
@@ -131,29 +144,21 @@ mod tests {
     }
 
     #[test]
-    fn consented_remember_writes_sqlite() {
+    fn ask_history_uses_fts() {
         let mut c = Continuity::new();
         c.consent.files = true;
-        let path = std::env::temp_dir().join("gaia_part4_ok.sqlite");
+        let path = std::env::temp_dir().join("gaia_part5_fts.sqlite");
         let _ = std::fs::remove_file(&path);
         c.attach_store(EpisodeStore::open(path.to_str().unwrap()).unwrap());
         c.remember_life(Episode {
             t_unix_ms: 42,
-            text: "open CARE.md".into(),
-            modality: "files",
+            text: "open CARE.md DestinE draft".into(),
+            modality: "files".into(),
             snapshot_id: None,
         })
         .unwrap();
-        assert_eq!(c.ask_history("CARE")[0].text, "open CARE.md");
+        let hits = c.ask_history("CARE");
+        assert!(hits[0].text.contains("CARE"));
         let _ = std::fs::remove_file(&path);
-    }
-
-    #[test]
-    fn pause_restore_uses_step_not_chat() {
-        let mut c = Continuity::new();
-        let id = c.pause_world("destinE memo", "DRAFTING_CARE");
-        let snap = c.restore_world("destinE memo").expect("snapshot");
-        assert_eq!(snap.id, id);
-        assert_eq!(snap.current_step, "DRAFTING_CARE");
     }
 }

@@ -1,5 +1,5 @@
-//! SQLite episode persist — text + time only (Blueprint 59 Build Part 3).
-//! No screen/audio capture. License: Apache-2.0
+//! SQLite episode persist + FTS5 (Blueprint 59 Build Part 5).
+//! License: Apache-2.0
 
 use rusqlite::{params, Connection};
 
@@ -18,6 +18,10 @@ impl EpisodeStore {
             )",
             [],
         )?;
+        conn.execute(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(text)",
+            [],
+        )?;
         Ok(Self { conn })
     }
 
@@ -25,6 +29,11 @@ impl EpisodeStore {
         self.conn.execute(
             "INSERT INTO episodes (t_unix_ms, text, modality) VALUES (?1, ?2, ?3)",
             params![t_unix_ms, text, modality],
+        )?;
+        let rowid = self.conn.last_insert_rowid();
+        self.conn.execute(
+            "INSERT INTO episodes_fts(rowid, text) VALUES (?1, ?2)",
+            params![rowid, text],
         )?;
         Ok(())
     }
@@ -38,6 +47,24 @@ impl EpisodeStore {
         })?;
         rows.collect()
     }
+
+    pub fn search(&self, vague: &str, k: usize) -> rusqlite::Result<Vec<(i64, String, String)>> {
+        let q = vague.trim().replace('"', "");
+        if q.is_empty() {
+            return self.recent(k);
+        }
+        let mut stmt = self.conn.prepare(
+            "SELECT e.t_unix_ms, e.text, e.modality
+             FROM episodes_fts f
+             JOIN episodes e ON e.rowid = f.rowid
+             WHERE episodes_fts MATCH ?1
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![q, k as i64], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?))
+        })?;
+        rows.collect()
+    }
 }
 
 #[cfg(test)]
@@ -45,13 +72,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn insert_and_recent() {
-        let path = std::env::temp_dir().join("gaia_episodes_part3.sqlite");
+    fn fts_finds_vague_term() {
+        let path = std::env::temp_dir().join("gaia_episodes_part5.sqlite");
         let _ = std::fs::remove_file(&path);
         let store = EpisodeStore::open(path.to_str().unwrap()).unwrap();
-        store.insert(1, "hello", "type").unwrap();
-        let rows = store.recent(8).unwrap();
-        assert_eq!(rows[0].1, "hello");
+        store.insert(1, "open CARE.md DestinE draft", "files").unwrap();
+        let hits = store.search("CARE", 8).unwrap();
+        assert_eq!(hits[0].1.contains("CARE"), true);
         let _ = std::fs::remove_file(&path);
     }
 }
