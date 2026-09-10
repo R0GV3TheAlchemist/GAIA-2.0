@@ -81,7 +81,6 @@ impl Continuity {
         Ok(())
     }
 
-    /// Consented episode → SQLite + `CubeType::Plaintext` MemCube.
     pub fn ingest_episode(&mut self, episode: Episode, memos: &mut MemOs) -> Result<Uuid, &'static str> {
         let cube = MemCube::new(CubeType::Plaintext, episode.text.clone(), episode.modality.clone());
         self.remember_life(episode)?;
@@ -115,6 +114,13 @@ impl Continuity {
         Ok(0)
     }
 
+    /// SQLite forget + archive matching MemCubes (Invariant 0.8).
+    pub fn forget_in(&mut self, text: &str, memos: &mut MemOs) -> Result<usize, &'static str> {
+        let n = self.forget(text)?;
+        memos.archive_by_content(text);
+        Ok(n)
+    }
+
     pub fn correct(&mut self, old_text: &str, new_text: &str) -> Result<usize, &'static str> {
         for e in &mut self.episodes {
             if e.text == old_text {
@@ -140,7 +146,6 @@ impl Continuity {
         id
     }
 
-    /// Snapshot → SQLite + `CubeType::Activation` MemCube (`label::step`).
     pub fn pause_into_memos(&mut self, label: &str, current_step: &str, memos: &mut MemOs) -> Uuid {
         let _id = self.pause_world(label, current_step);
         memos.put(MemCube::new(
@@ -219,5 +224,24 @@ mod tests {
         let mut mem = MemOs::new();
         c.pause_into_memos("destinE memo", "DRAFTING_CARE", &mut mem);
         assert!(mem.count_tier(Tier::Activation) >= 1);
+    }
+
+    #[test]
+    fn forget_in_archives_cube() {
+        let mut c = Continuity::new();
+        c.consent.files = true;
+        let mut mem = MemOs::new();
+        c.ingest_episode(
+            Episode {
+                t_unix_ms: 1,
+                text: "I like jazz".into(),
+                modality: "type".into(),
+                snapshot_id: None,
+            },
+            &mut mem,
+        )
+        .unwrap();
+        c.forget_in("I like jazz", &mut mem).unwrap();
+        assert!(mem.recall("jazz", 3).is_empty());
     }
 }
