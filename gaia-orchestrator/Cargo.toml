@@ -5,6 +5,10 @@ edition = "2021"
 license = "MIT"
 description = "L4 Cognitive orchestration — Intent Engine v0.1 (local-first stub)"
 
+[[bin]]
+name = "gaia"
+path = "src/main.rs"
+
 [dependencies]
 gaia-memos = { path = "../gaia-memos" }
 serde = { version = "1", features = ["derive"] }
