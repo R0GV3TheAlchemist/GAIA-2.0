@@ -1,0 +1,67 @@
+{
+  "case_id": "capability-revoked-agent-denied-v0.1",
+  "purpose": "Conformance vector for the post-revocation authorization boundary. This fixture defines expected behavior; it is not a cryptographic test vector.",
+  "token": {
+    "token_id": "cap:01J0REVOKEDREAD",
+    "issuer": "did:gaia:human/alex",
+    "subject": "did:gaia:agent/researcher",
+    "audience": "did:gaia:service/local-orchestrator",
+    "resource": "memcube:project/gaia-2/*",
+    "operations": ["memory.read"],
+    "constraints": {
+      "local_only": true,
+      "memory_scope": ["memcube:project/gaia-2/*"],
+      "max_delegation_depth": 0
+    },
+    "issued_at": "2026-09-09T21:30:00Z",
+    "expires_at": "2026-09-09T22:30:00Z",
+    "policy_version": "gaia-capabilities/v0.1",
+    "signature": {
+      "algorithm": "EXAMPLE-NOT-CRYPTOGRAPHIC",
+      "key_id": "did:gaia:human/alex#key-1",
+      "value": "fixture-signature-not-valid-for-production"
+    }
+  },
+  "timeline": [
+    {
+      "at": "2026-09-09T21:31:00Z",
+      "event": "capability.authorized",
+      "request": {
+        "subject": "did:gaia:agent/researcher",
+        "resource": "memcube:project/gaia-2/architecture",
+        "operation": "memory.read"
+      },
+      "expected_decision": "allow"
+    },
+    {
+      "at": "2026-09-09T21:32:00Z",
+      "event": "capability.revoked",
+      "actor": "did:gaia:human/alex",
+      "reason": "user-requested",
+      "revocation_epoch": 42,
+      "expected_result": "success"
+    },
+    {
+      "at": "2026-09-09T21:32:01Z",
+      "event": "authorization.request",
+      "request": {
+        "subject": "did:gaia:agent/researcher",
+        "resource": "memcube:project/gaia-2/architecture",
+        "operation": "memory.read"
+      },
+      "expected_decision": "deny",
+      "expected_reason_code": "capability_revoked",
+      "expected_audit_events": [
+        "capability.revocation_observed",
+        "capability.denied",
+        "capability.execution_cancelled"
+      ]
+    }
+  ],
+  "conformance_requirements": [
+    "A successful revoke at epoch 42 is visible to the authorization point before the later authorization request is evaluated.",
+    "The later protected operation is denied even though the token remains within its expiry window.",
+    "No new protected operation is started with the revoked token.",
+    "The implementation records the required audit events without exposing plaintext memory in the event payload by default."
+  ]
+}

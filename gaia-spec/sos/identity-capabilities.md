@@ -33,6 +33,8 @@ Identity proof, key rotation, recovery, and DID-method selection remain governed
 
 A capability token is a signed, bounded authorization grant. It MAY be represented as a signed JSON, CBOR, or other canonical envelope, but an implementation MUST define canonical bytes before signing and verification.
 
+Machine-readable shape validation is provided in [`../schemas/capability-token.schema.json`](../schemas/capability-token.schema.json). Fixtures in [`../examples/`](../examples/) use explicitly non-cryptographic signatures and define conformance inputs only; they MUST NOT be accepted as production credentials.
+
 ### 3.1 Required claims
 
 | Claim | Meaning |
@@ -93,6 +95,8 @@ After a successful revoke response:
 
 "Strongly consistent" applies to authorization decisions after successful revocation. It does not imply that already completed side effects can be undone. Implementations MUST audit the known side effects and final run state.
 
+The fixture [`../examples/capability-revoked-agent.case.json`](../examples/capability-revoked-agent.case.json) is the minimum post-revocation behavior vector: a later `memory.read` is denied after a successful revocation, despite a still-unexpired token.
+
 ## 6. Audit events
 
 Implementations MUST produce tamper-evident or append-only audit records for capability lifecycle and enforcement events. The record SHOULD include event ID, timestamp, policy version, actor, subject, token ID, parent token ID when relevant, resource selector, operation, decision, reason code, and correlation/intent ID.
@@ -139,18 +143,24 @@ Footprint, latency, and memory numbers require measured implementation evidence.
 
 ## 9. Conformance examples
 
-### 9.1 Revoked agent use is denied
+### 9.1 Valid bounded grant
 
-1. A human grants agent `did:gaia:agent/researcher` read access to `memcube:project/*` until a stated expiry.
-2. The agent receives a valid token and reads an authorized cube.
-3. The human successfully revokes the token.
-4. The agent attempts another `memory.read` under the same token.
-5. A conforming authorization point denies the request, emits `capability.denied`, and the running job receives revocation cancellation at its next checkpoint.
+[`../examples/capability-token-valid.json`](../examples/capability-token-valid.json) is a schema-valid bounded grant fixture. Its signature is intentionally non-cryptographic and MUST be rejected by a production verifier; the fixture exercises document shape only.
 
-### 9.2 Delegation cannot expand
+### 9.2 Revoked agent use is denied
+
+[`../examples/capability-revoked-agent.case.json`](../examples/capability-revoked-agent.case.json) defines this sequence:
+
+1. A human grants an agent read access to a project MemCube namespace.
+2. A conforming authorization point allows a read before revocation.
+3. The human successfully revokes the token at a monotonic epoch.
+4. The agent attempts another `memory.read` while the token is still unexpired.
+5. The authorization point denies the request with `capability_revoked`, records revocation-observed/denial/cancellation events, and starts no new protected operation under that grant.
+
+### 9.3 Delegation cannot expand
 
 An agent token allowing `knowledge.read` for `memcube:public/*` until 12:00 with delegation depth one may delegate only a subset such as a single public cube, `knowledge.read`, with an expiry no later than 12:00 and no greater delegation depth. It cannot delegate `memory.write`, `network.connect`, private memory access, or an expiry after 12:00.
 
 ## 10. Open implementation work
 
-This specification does not itself implement token issuance, key management, storage, distributed revocation, WASI host bindings, package signing, or scheduler cancellation. Those work items must state the subset of these requirements they enforce and add adversarial tests before claiming conformance.
+This specification and its fixtures do not implement token issuance, cryptographic verification, key management, storage, distributed revocation, WASI host bindings, package signing, schema-test automation, or scheduler cancellation. Those work items must state the subset of these requirements they enforce and add adversarial tests before claiming conformance.

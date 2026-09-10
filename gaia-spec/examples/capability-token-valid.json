@@ -1,0 +1,24 @@
+{
+  "$schema": "../schemas/capability-token.schema.json",
+  "token_id": "cap:01J0RESEARCHREAD",
+  "issuer": "did:gaia:human/alex",
+  "subject": "did:gaia:agent/researcher",
+  "audience": "did:gaia:service/local-orchestrator",
+  "resource": "memcube:project/gaia-2/*",
+  "operations": ["memory.read"],
+  "constraints": {
+    "local_only": true,
+    "memory_scope": ["memcube:project/gaia-2/*"],
+    "max_delegation_depth": 0,
+    "max_cpu_ms": 30000,
+    "max_memory_bytes": 134217728
+  },
+  "issued_at": "2026-09-09T21:30:00Z",
+  "expires_at": "2026-09-09T22:30:00Z",
+  "policy_version": "gaia-capabilities/v0.1",
+  "signature": {
+    "algorithm": "EXAMPLE-NOT-CRYPTOGRAPHIC",
+    "key_id": "did:gaia:human/alex#key-1",
+    "value": "fixture-signature-not-valid-for-production"
+  }
+}
