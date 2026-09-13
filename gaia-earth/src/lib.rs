@@ -1,18 +1,53 @@
-//! Artificial Twin of Earth plus system-twin profiles (#56).
+//! Artificial Twin of Earth first cuts (#33–#55 replay).
+//! Not Iceberg, Cesium, GraphCast weights, or Twin v1.0.
 
+mod audiences;
 mod commons;
+mod correlate;
+mod drill;
+mod ensemble;
+mod ews;
+mod feeds;
+mod guardian;
 mod iface;
+mod lake;
+mod library;
+mod living;
 mod memory;
+mod missions;
 mod nervous;
+mod policy;
+mod portal;
 mod profiles;
+mod qc;
+mod runtime;
 mod simulate;
+mod stream;
+mod tiers;
 
+pub use audiences::{surveillance_endpoints, AgentAnswer, LocalAgent, PolicyUi, ScientistApi};
 pub use commons::{Collection, Commons, Domain, QualityTier};
+pub use correlate::{BoundaryIndicator, CaseStudy};
+pub use drill::{release_checklist, DrillStep, HistoricalDrill};
+pub use ensemble::{ModelProduct, RegisteredModel};
+pub use ews::{BoundaryMonitor, WatchItem, WatchState};
+pub use feeds::{Connector, FeedBus, FeedRecord, RateLimit};
+pub use guardian::{Boundary, BoundaryState, BoundaryStatus, Correction, CorrectionStep, Guardian};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
+pub use lake::{Lake, LakeRow, LakeZone};
+pub use library::{CascadeEdge, Dist, ScenarioLibrary, ScenarioSpec};
+pub use living::{LivingKind, LivingRecord};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
+pub use missions::{CoverageGap, Mission, MissionCatalog, MissionDomain};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
+pub use policy::{IngestTicket, LicenseClass};
+pub use portal::{demo_globe, GlobeLayer, PortalPin, TimeCursor};
 pub use profiles::{ProfileGap, SystemProfile};
+pub use qc::{assimilate, CuratedRecord, QualityClass};
+pub use runtime::{GridScale, SimJob, SimRun};
 pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
+pub use stream::{DeadLetter, StreamBus, StreamEvent, StreamMetrics};
+pub use tiers::{MemoryTier, TierCube, TierStore};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
@@ -65,6 +100,8 @@ pub enum TwinError {
     WeaponizedUse,
     UnknownCollection,
     SparseRegion,
+    ImmutableRaw,
+    FeedUnavailable,
 }
 
 impl std::fmt::Display for TwinError {
@@ -75,6 +112,8 @@ impl std::fmt::Display for TwinError {
             Self::WeaponizedUse => write!(f, "weaponization is refused"),
             Self::UnknownCollection => write!(f, "unknown collection"),
             Self::SparseRegion => write!(f, "sparse region flagged; value not invented"),
+            Self::ImmutableRaw => write!(f, "raw zone is append-only"),
+            Self::FeedUnavailable => write!(f, "feed unavailable; value not invented"),
         }
     }
 }
