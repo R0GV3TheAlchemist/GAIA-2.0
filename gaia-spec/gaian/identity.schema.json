@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["gaian_id", "telos"],
+  "properties": {
+    "gaian_id": { "type": "string" },
+    "telos": { "type": "string" },
+    "anchors": { "type": "array" }
+  }
+}

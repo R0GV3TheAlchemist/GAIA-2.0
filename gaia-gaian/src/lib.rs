@@ -1,4 +1,4 @@
-//! GAIAN first cuts (#57–#75). Consent and local stubs.
+//! GAIAN first cuts (#57–#75, #213–#221). Consent and local stubs.
 //! Not Ollama, rembg, Flutter, WebGPU, or GAIAN v1.0.
 
 mod agency;
@@ -6,6 +6,8 @@ mod agent;
 mod capture;
 mod channel;
 mod cognition;
+mod constitution;
+mod design;
 mod digital;
 mod future;
 mod health;
@@ -21,6 +23,8 @@ pub use agent::{gaian_release_checklist, Agent, AgentAct, Grant};
 pub use capture::{equity_eval_labels, server_face_store, CaptureSession};
 pub use channel::{Channel, ChannelCap, Envelope};
 pub use cognition::{g2g_send, DigitalMe, MemoryTier, Persona, PersonalMemory};
+pub use constitution::{ambient_listen, articles, be_dead_parent, child_level, crisis, empathy_copy, engagement_max, wipe_without_instrument, CharterError};
+pub use design::{default_level, dump_vault, forget, infer_from_photo, migrate, model_swap, pay_at_level, Identity};
 pub use digital::{DigitalVault, KnowKind};
 pub use future::{age_other_person, compare, Sketch};
 pub use health::{age_progress_own, future_self, HealthMetric, HealthTwin};
@@ -87,6 +91,9 @@ pub enum GaianError {
     Unsigned,
     GrantRequired,
     Revoked,
+    PhotoInference,
+    VaultDump,
+    ConfirmRequired,
 }
 
 impl std::fmt::Display for GaianError {
@@ -105,6 +112,9 @@ impl std::fmt::Display for GaianError {
             Self::Unsigned => write!(f, "unsigned GAIAN action rejected"),
             Self::GrantRequired => write!(f, "scoped grant required"),
             Self::Revoked => write!(f, "agent revoked"),
+            Self::PhotoInference => write!(f, "photo must not auto-fill identity"),
+            Self::VaultDump => write!(f, "peer cannot dump vault"),
+            Self::ConfirmRequired => write!(f, "money/legal/medical needs confirmation"),
         }
     }
 }
