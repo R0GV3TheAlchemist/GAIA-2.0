@@ -65,9 +65,12 @@ impl IntentGraph {
     pub fn is_signed(&self) -> bool {
         false
     }
+
+    pub fn inspect_json(&self) -> String {
+        serde_json::to_string_pretty(self).unwrap_or_else(|_| "{}".into())
+    }
 }
 
-/// Persisted #20 record: graph plus a kernel-verifiable signature.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct StoredIntent {
     pub graph: IntentGraph,
@@ -89,6 +92,11 @@ impl IntentEngine {
 
     /// No cloud. Non-stub backends are refused until wired.
     pub fn parse(&self, text: &str, mem: &mut MemOs) -> Result<IntentGraph, String> {
+        let text = text.trim();
+        if text.is_empty() {
+            return Err("intent text is required".into());
+        }
+        refuse_purpose(text)?;
         match self.backend {
             IntentBackend::Stub => Ok(self.parse_stub(text, mem)),
             IntentBackend::Ollama | IntentBackend::LlamaCpp => Err(
@@ -97,7 +105,6 @@ impl IntentEngine {
         }
     }
 
-    /// Sign then persist. Unsigned or mismatched envelopes are refused.
     pub fn store(&mut self, graph: IntentGraph, signer: &IntentSigner) -> Result<Uuid, String> {
         let signed = signer.sign(&graph);
         IntentSigner::verify_detached(&signed)?;
@@ -133,8 +140,8 @@ impl IntentEngine {
         let summarize = Uuid::new_v4();
         IntentGraph {
             id: Uuid::new_v4(),
-            goal: text.trim().to_string(),
-            constraints: Constraints::default(),
+            goal: text.to_string(),
+            constraints: constraints_from(text),
             sub_intents: vec![
                 SubIntent {
                     id: retrieve,
@@ -155,5 +162,38 @@ impl IntentEngine {
             context_cube_ids: cubes.into_iter().map(|(_, cube)| cube.id).collect(),
             backend: IntentBackend::Stub,
         }
+    }
+}
+
+fn refuse_purpose(text: &str) -> Result<(), String> {
+    let lower = text.to_ascii_lowercase();
+    if lower.contains("weapon")
+        || lower.contains("target individual")
+        || lower.contains("surveillance of person")
+    {
+        return Err("weaponized or individual-surveillance intent refused".into());
+    }
+    Ok(())
+}
+
+/// Keyword constraints. Saying "cloud" does not flip privacy off local-only.
+fn constraints_from(text: &str) -> Constraints {
+    let lower = text.to_ascii_lowercase();
+    let time = ["today", "tomorrow", "this week", "urgent"]
+        .iter()
+        .find(|w| lower.contains(*w))
+        .map(|w| (*w).to_string());
+    let cost = if lower.contains("cheap") || lower.contains("low cost") {
+        Some("low".into())
+    } else if lower.contains("budget") {
+        Some("budget".into())
+    } else {
+        None
+    };
+    Constraints {
+        time,
+        cost,
+        privacy: Privacy::LocalOnly,
+        compute: Compute::Local,
     }
 }
