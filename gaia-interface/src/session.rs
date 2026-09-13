@@ -10,6 +10,7 @@ pub struct Profile {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AgentState {
     Running,
+    Paused,
     Revoked,
 }
 
@@ -17,6 +18,13 @@ pub enum AgentState {
 pub struct Agent {
     pub id: String,
     pub state: AgentState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Permission {
+    pub agent_id: String,
+    pub capability: String,
+    pub granted: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -42,6 +50,7 @@ pub enum SessionError {
     CloudDenied,
     UnknownAgent(String),
     AlreadyRevoked(String),
+    AlreadyPaused(String),
     Usage(String),
 }
 
@@ -54,6 +63,7 @@ impl std::fmt::Display for SessionError {
             Self::CloudDenied => write!(f, "cloud is opt-in only"),
             Self::UnknownAgent(id) => write!(f, "unknown agent: {id}"),
             Self::AlreadyRevoked(id) => write!(f, "agent already revoked: {id}"),
+            Self::AlreadyPaused(id) => write!(f, "agent already paused: {id}"),
             Self::Usage(msg) => write!(f, "{msg}"),
         }
     }
@@ -64,6 +74,7 @@ pub struct Session {
     profile: Option<Profile>,
     started: bool,
     agents: Vec<Agent>,
+    permissions: Vec<Permission>,
     intents: Vec<IntentRecord>,
     next_intent: u64,
 }
@@ -85,6 +96,10 @@ impl Session {
         &self.agents
     }
 
+    pub fn permissions(&self) -> &[Permission] {
+        &self.permissions
+    }
+
     pub fn intents(&self) -> &[IntentRecord] {
         &self.intents
     }
@@ -104,6 +119,18 @@ impl Session {
             id: "local-researcher".into(),
             state: AgentState::Running,
         }];
+        self.permissions = vec![
+            Permission {
+                agent_id: "local-researcher".into(),
+                capability: "MemoryRead".into(),
+                granted: true,
+            },
+            Permission {
+                agent_id: "local-researcher".into(),
+                capability: "Network".into(),
+                granted: false,
+            },
+        ];
         Ok(profile)
     }
 
@@ -162,6 +189,38 @@ impl Session {
         Ok(record)
     }
 
+    pub fn pause(&mut self, agent_id: &str) -> Result<Agent, SessionError> {
+        self.require_started()?;
+        let agent = self
+            .agents
+            .iter_mut()
+            .find(|a| a.id == agent_id)
+            .ok_or_else(|| SessionError::UnknownAgent(agent_id.into()))?;
+        match agent.state {
+            AgentState::Revoked => return Err(SessionError::AlreadyRevoked(agent_id.into())),
+            AgentState::Paused => return Err(SessionError::AlreadyPaused(agent_id.into())),
+            AgentState::Running => agent.state = AgentState::Paused,
+        }
+        Ok(agent.clone())
+    }
+
+    pub fn resume(&mut self, agent_id: &str) -> Result<Agent, SessionError> {
+        self.require_started()?;
+        let agent = self
+            .agents
+            .iter_mut()
+            .find(|a| a.id == agent_id)
+            .ok_or_else(|| SessionError::UnknownAgent(agent_id.into()))?;
+        match agent.state {
+            AgentState::Revoked => return Err(SessionError::AlreadyRevoked(agent_id.into())),
+            AgentState::Running => {
+                return Err(SessionError::Usage(format!("{agent_id} is already running")))
+            }
+            AgentState::Paused => agent.state = AgentState::Running,
+        }
+        Ok(agent.clone())
+    }
+
     pub fn revoke(&mut self, agent_id: &str) -> Result<Agent, SessionError> {
         self.require_started()?;
         let agent = self
@@ -210,6 +269,20 @@ impl Session {
                     record.events.len()
                 ))
             }
+            Some("pause") => {
+                let id = args.get(1).copied().ok_or_else(|| {
+                    SessionError::Usage("usage: pause <agent>".into())
+                })?;
+                let agent = self.pause(id)?;
+                Ok(format!("paused {}", agent.id))
+            }
+            Some("resume") => {
+                let id = args.get(1).copied().ok_or_else(|| {
+                    SessionError::Usage("usage: resume <agent>".into())
+                })?;
+                let agent = self.resume(id)?;
+                Ok(format!("resumed {}", agent.id))
+            }
             Some("revoke") => {
                 let id = args.get(1).copied().ok_or_else(|| {
                     SessionError::Usage("usage: revoke <agent>".into())
@@ -224,7 +297,7 @@ impl Session {
                 self.intents.len()
             )),
             _ => Err(SessionError::Usage(
-                "usage: gaia <init|start|intent|revoke|status>".into(),
+                "usage: gaia <init|start|intent|pause|resume|revoke|status>".into(),
             )),
         }
     }
