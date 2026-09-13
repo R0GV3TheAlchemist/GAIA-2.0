@@ -1,4 +1,4 @@
-//! Honest status for Super OS #1–#20.
+//! Honest status for Super OS #1–#30.
 
 pub fn phase_closed(n: u32) -> bool {
     matches!(n, 2 | 3)
@@ -33,5 +33,21 @@ pub fn live_ollama() -> bool {
 }
 
 pub fn inbound_ports_required() -> bool {
+    false
+}
+
+pub fn live_mcp() -> bool {
+    false
+}
+
+pub fn live_containerd() -> bool {
+    false
+}
+
+pub fn live_whisper() -> bool {
+    false
+}
+
+pub fn live_slurm() -> bool {
     false
 }
