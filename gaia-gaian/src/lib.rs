@@ -1,11 +1,46 @@
-//! GAIAN (#57–#60). Consent and age-gate only.
-//! No rembg, MediaPipe, FastAvatar, Kokoro, Flutter, or WebGPU.
+//! GAIAN (#57–#65). Consent, age-gate, local stubs.
+//! Not Ollama, wearables, C2PA, libsodium, or GAIAN v1.0.
+
+mod agent;
+mod cognition;
+mod health;
+mod vault;
+
+pub use agent::{gaian_release_checklist, Agent, AgentAct, Grant};
+pub use cognition::{g2g_send, DigitalMe, MemoryTier, Persona, PersonalMemory};
+pub use health::{age_progress_own, future_self, HealthMetric, HealthTwin};
+pub use vault::{AuditEntry, Vault};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SampleKind {
     Photo,
     Voice,
     Health,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConsentScope {
+    Face,
+    Body,
+    Voice,
+    Health,
+    Memory,
+    Agent,
+    EarthTwinShare,
+}
+
+impl ConsentScope {
+    pub fn all() -> [ConsentScope; 7] {
+        [
+            Self::Face,
+            Self::Body,
+            Self::Voice,
+            Self::Health,
+            Self::Memory,
+            Self::Agent,
+            Self::EarthTwinShare,
+        ]
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +60,13 @@ pub enum GaianError {
     NotSelf,
     HealthNotOptIn,
     ThirdPartyLikeness,
+    BehavioralLearningBlocked,
+    HealthDefaultOff,
+    ExportForbidden,
+    NotMedicalAdvice,
+    Unsigned,
+    GrantRequired,
+    Revoked,
 }
 
 impl std::fmt::Display for GaianError {
@@ -36,6 +78,13 @@ impl std::fmt::Display for GaianError {
             Self::NotSelf => write!(f, "reconstruction is self-only"),
             Self::HealthNotOptIn => write!(f, "health is opt-in only"),
             Self::ThirdPartyLikeness => write!(f, "no third-party likeness"),
+            Self::BehavioralLearningBlocked => write!(f, "child path cannot enable behavioral learning"),
+            Self::HealthDefaultOff => write!(f, "health twin defaults off"),
+            Self::ExportForbidden => write!(f, "insurer/employer export is forbidden"),
+            Self::NotMedicalAdvice => write!(f, "future self is advisory, not medical advice"),
+            Self::Unsigned => write!(f, "unsigned GAIAN action rejected"),
+            Self::GrantRequired => write!(f, "scoped grant required"),
+            Self::Revoked => write!(f, "agent revoked"),
         }
     }
 }
@@ -52,6 +101,21 @@ pub fn principles() -> [&'static str; 10] {
         "age-gate",
         "self-only reconstruction",
         "Earth Twin I/O needs consent",
+    ]
+}
+
+pub fn constitution_principles() -> [&'static str; 10] {
+    [
+        "consent",
+        "local-default",
+        "biometric sovereignty",
+        "user-held keys",
+        "deletion",
+        "transparency",
+        "purpose limitation",
+        "non-weaponization",
+        "equity",
+        "child protection",
     ]
 }
 
@@ -74,13 +138,11 @@ fn allow_ingest(consent: &Consent, kind: SampleKind) -> Result<(), GaianError> {
     Ok(())
 }
 
-/// #59 create path. Does not build a mesh.
 pub fn create_self(consent: &Consent, kind: SampleKind) -> Result<&'static str, GaianError> {
     allow_ingest(consent, kind)?;
     Ok("local-stub-vrm")
 }
 
-/// #60 animate path. Owner session only.
 pub fn animate_owner(consent: &Consent, third_party_face: bool) -> Result<(), GaianError> {
     allow_ingest(consent, SampleKind::Photo)?;
     if third_party_face {
