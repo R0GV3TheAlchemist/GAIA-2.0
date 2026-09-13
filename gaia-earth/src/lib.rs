@@ -7,6 +7,7 @@ mod correlate;
 mod drill;
 mod ensemble;
 mod ews;
+pub mod honesty;
 mod feeds;
 mod guardian;
 mod iface;
