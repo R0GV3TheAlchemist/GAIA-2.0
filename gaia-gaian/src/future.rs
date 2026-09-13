@@ -32,11 +32,11 @@ impl Sketch {
     }
 }
 
-pub fn compare(a: &Sketch, b: &Sketch) -> Result<[&str; 2], GaianError> {
+pub fn compare(a: &Sketch, b: &Sketch) -> Result<[String; 2], GaianError> {
     if !a.simulated || !b.simulated {
         return Err(GaianError::NoConsent);
     }
-    Ok([&a.label, &b.label])
+    Ok([a.label.clone(), b.label.clone()])
 }
 
 pub fn age_other_person() -> Result<(), GaianError> {
