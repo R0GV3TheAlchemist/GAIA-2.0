@@ -7,7 +7,9 @@
 //! Part 6 (#4): Approved local DAG run, failover, lifecycle audit.
 //! Part 7 (#4): Local Ollama generate; fail closed; llama.cpp still refused.
 //! Part 8 (#4): AIP registry agent selection.
+//! Part 9 (#4): On-disk audit persist.
 
+mod audit_disk;
 mod broker;
 mod dag;
 mod intent;
@@ -17,6 +19,7 @@ mod run;
 mod select;
 mod trust;
 
+pub use audit_disk::persist_audit;
 pub use broker::{Broker, CarbonTimetable, Metrics, ReconcileReport, Worker};
 pub use dag::{
     DagNode, Executor, NodeAttempt, Plan, ResourceEstimate, RunReport, TaskPlanner,
