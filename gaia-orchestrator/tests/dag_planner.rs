@@ -4,9 +4,9 @@ use gaia_memos::MemOs;
 use gaia_orchestrator::{Executor, IntentEngine, TaskPlanner};
 
 fn research_plan() -> (gaia_orchestrator::Plan, MemOs) {
-    let mem = MemOs::new();
+    let mut mem = MemOs::new();
     let engine = IntentEngine::local_stub();
-    let g = engine.parse("research and summarize", &mem).unwrap();
+    let g = engine.parse("research and summarize", &mut mem).unwrap();
     (TaskPlanner::from_intent(&g), mem)
 }
 

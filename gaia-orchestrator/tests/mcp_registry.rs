@@ -19,9 +19,9 @@ fn unsigned_mcp_is_rejected() {
 
 #[test]
 fn signed_tool_invokes_from_intent() {
-    let mem = MemOs::new();
+    let mut mem = MemOs::new();
     let g = IntentEngine::local_stub()
-        .parse("research and summarize CARE", &mem)
+        .parse("research and summarize CARE", &mut mem)
         .unwrap();
     let reg = McpRegistry::local();
     let signer = IntentSigner::generate();

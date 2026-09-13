@@ -4,9 +4,9 @@ use gaia_memos::MemOs;
 use gaia_orchestrator::{Broker, IntentEngine, IntentSigner, LocalRunner, TaskPlanner, TrustAudit};
 
 fn graph_and_plan() -> (gaia_orchestrator::IntentGraph, gaia_orchestrator::Plan) {
-    let mem = MemOs::new();
+    let mut mem = MemOs::new();
     let graph = IntentEngine::local_stub()
-        .parse("research and summarize CARE", &mem)
+        .parse("research and summarize CARE", &mut mem)
         .unwrap();
     let plan = TaskPlanner::from_intent(&graph);
     (graph, plan)
