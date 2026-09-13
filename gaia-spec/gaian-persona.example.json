@@ -1,0 +1,10 @@
+{
+  "manifest_version": "0.1",
+  "owner_is_self": true,
+  "format": "vrm-1.0",
+  "license": "CC0-1.0",
+  "privacy": "local-default",
+  "health_opt_in": false,
+  "voice": "owner-local",
+  "personality": "user-editable"
+}
