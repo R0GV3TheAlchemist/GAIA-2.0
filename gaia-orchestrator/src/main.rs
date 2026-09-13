@@ -1,5 +1,5 @@
 use gaia_memos::MemOs;
-use gaia_orchestrator::{Broker, IntentEngine, LocalRunner, PlaceholderSigner, TaskPlanner, TrustAudit};
+use gaia_orchestrator::{Broker, IntentEngine, IntentSigner, LocalRunner, TaskPlanner, TrustAudit};
 
 fn usage() -> &'static str {
     "usage: gaia intent <text> [--accept] [--kill-specialist-a]\n\nWithout --accept, prints an inspectable local-only plan and does not execute.\n--accept runs the accepted plan in local in-process stubs only."
@@ -20,20 +20,21 @@ fn main() {
     }
 
     let text = args.join(" ");
-    let mem = MemOs::new();
-    let graph = match IntentEngine::local_stub().parse(&text, &mem) {
+    let mut mem = MemOs::new();
+    let graph = match IntentEngine::local_stub().parse(&text, &mut mem) {
         Ok(graph) => graph,
         Err(error) => {
             eprintln!("intent error: {error}");
             std::process::exit(1);
         }
     };
-    let signer = PlaceholderSigner::new("gaia-cli-placeholder-key");
+    let signer = IntentSigner::generate();
     let signed = signer.sign(&graph);
     let mut plan = TaskPlanner::from_intent(&graph);
 
     println!("intent_id={}", graph.id);
     println!("trust={}", signed.algorithm);
+    println!("issuer={}", signed.issuer_did);
     println!("privacy=local-only");
     println!("{}", plan.inspect());
 
@@ -46,13 +47,17 @@ fn main() {
         eprintln!("intent verification failed: {error}");
         std::process::exit(1);
     }
-    plan.accept();
+    if let Err(error) = plan.accept_verified(&signed) {
+        eprintln!("plan acceptance failed: {error}");
+        std::process::exit(1);
+    }
     let mut broker = Broker::new();
     let mut audit = TrustAudit::default();
     match LocalRunner::run(
         &plan,
         &mut broker,
         &mut audit,
+        &signed,
         kill_specialist_a.then_some("specialist-a"),
     ) {
         Ok(run) => {
@@ -60,7 +65,7 @@ fn main() {
             println!("completed_nodes={}", run.completed_jobs.len());
             println!("failed_over_nodes={}", run.failed_over_jobs.len());
             println!("audit_events={}", audit.events().len());
-            println!("warning=PLACEHOLDER-NOT-CRYPTOGRAPHY; audit is in-memory");
+            println!("audit_chain_ok={}", audit.chain_ok());
         }
         Err(error) => {
             eprintln!("execution failed: {error}");

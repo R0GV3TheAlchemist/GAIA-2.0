@@ -1,10 +1,10 @@
 # gaia-orchestrator
 
-- **Layer:** L4
-- **License:** MIT
-- **Implementation phase:** 2
-- **Language (planned):** Rust (core), plus Python/TS where noted in the blueprint
+L4 cognitive orchestration. Local-first intent parse, inspectable DAG, pull broker, MCP registry, Ed25519 intent signatures from `gaia-kernel`.
 
-Intent engine, task planner, coordinator, resource broker. Not implemented in Phase 0.
+```bash
+cargo run -p gaia-orchestrator --bin gaia -- intent "research and summarize CARE"
+cargo run -p gaia-orchestrator --bin gaia -- intent "research and summarize CARE" --accept
+```
 
-Contracts: [`../gaia-spec/`](../gaia-spec/). Tracker: parent #1, phase epic listed there.
+This crate does not yet provide a real local model backend, production scheduler, or OpenTelemetry.

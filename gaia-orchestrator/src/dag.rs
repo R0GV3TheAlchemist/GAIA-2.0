@@ -46,6 +46,16 @@ impl Plan {
     pub fn accept(&mut self) {
         self.accepted = true;
     }
+
+    /// Accept only after a kernel-verifiable Ed25519 signature matches this plan's intent.
+    pub fn accept_verified(&mut self, signed: &crate::trust::SignedIntent) -> Result<(), String> {
+        crate::trust::IntentSigner::verify_detached(signed)?;
+        if signed.intent_id != self.intent_id {
+            return Err("signed intent does not match plan".into());
+        }
+        self.accepted = true;
+        Ok(())
+    }
 }
 
 pub struct TaskPlanner;

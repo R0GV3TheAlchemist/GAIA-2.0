@@ -3,7 +3,7 @@
 //! Part 2 (#21): Task Planner DAG, inspect-before-run, fallback.
 //! Part 3 (#22): Pull-based broker, failover, local metrics.
 //! Part 4 (#23): MCP stub, AIP registry, unsigned reject.
-//! Part 5 (#4): Non-cryptographic placeholder trust bridge; replace with #19 API.
+//! Part 5 (#4): Kernel Ed25519 intent signatures and hash-chained audit.
 //! Part 6 (#4): Approved local DAG run, failover, lifecycle audit.
 
 mod broker;
@@ -20,4 +20,6 @@ pub use intent::{
 };
 pub use mcp::{AipManifest, DiscoveryStub, McpMessage, McpRegistry, McpTool};
 pub use run::{LocalRun, LocalRunner};
-pub use trust::{AuditEvent, PlaceholderSigner, SignedIntent, TrustAudit};
+pub use trust::{
+    verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent, TrustAudit,
+};

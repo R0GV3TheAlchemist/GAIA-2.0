@@ -4,9 +4,9 @@ use gaia_memos::MemOs;
 use gaia_orchestrator::{Broker, IntentEngine, TaskPlanner};
 
 fn accepted_plan() -> gaia_orchestrator::Plan {
-    let mem = MemOs::new();
+    let mut mem = MemOs::new();
     let g = IntentEngine::local_stub()
-        .parse("research and summarize", &mem)
+        .parse("research and summarize", &mut mem)
         .unwrap();
     let mut plan = TaskPlanner::from_intent(&g);
     plan.accept();

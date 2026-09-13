@@ -59,7 +59,7 @@ pub struct IntentGraph {
 }
 
 impl IntentGraph {
-    /// Signing is #19 / #20 later. v0.1 does not pretend.
+    /// The graph document is unsigned. Signatures live on SignedIntent (#4).
     pub fn is_signed(&self) -> bool {
         false
     }
@@ -79,7 +79,7 @@ impl IntentEngine {
     }
 
     /// No cloud. Non-stub backends are refused until wired.
-    pub fn parse(&self, text: &str, mem: &MemOs) -> Result<IntentGraph, String> {
+    pub fn parse(&self, text: &str, mem: &mut MemOs) -> Result<IntentGraph, String> {
         match self.backend {
             IntentBackend::Stub => Ok(self.parse_stub(text, mem)),
             IntentBackend::Ollama | IntentBackend::LlamaCpp => Err(
@@ -98,7 +98,7 @@ impl IntentEngine {
         self.stored.iter().find(|g| g.id == id)
     }
 
-    fn parse_stub(&self, text: &str, mem: &MemOs) -> IntentGraph {
+    fn parse_stub(&self, text: &str, mem: &mut MemOs) -> IntentGraph {
         let cubes = mem.recall(text, 5);
         let retrieve = Uuid::new_v4();
         let research = Uuid::new_v4();
@@ -124,7 +124,7 @@ impl IntentEngine {
                     depends_on: vec![research],
                 },
             ],
-            context_cube_ids: cubes.into_iter().map(|c| c.id).collect(),
+            context_cube_ids: cubes.into_iter().map(|(_, cube)| cube.id).collect(),
             backend: IntentBackend::Stub,
         }
     }
