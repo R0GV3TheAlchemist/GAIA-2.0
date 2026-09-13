@@ -23,7 +23,6 @@ pub struct AipManifest {
     pub resources: Vec<McpResource>,
 }
 
-/// JSON-RPC 2.0 envelope. Admit requires an Ed25519 tagged signature over method plus params.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct McpMessage {
     pub jsonrpc: String,
@@ -114,7 +113,6 @@ impl JsonRpcRequest {
 #[derive(Debug, Clone, Default)]
 pub struct McpRegistry {
     pub agents: Vec<AipManifest>,
-    /// Default policy: unsigned traffic rejected.
     pub reject_unsigned: bool,
 }
 
@@ -136,6 +134,14 @@ impl McpRegistry {
                 }],
             }],
         }
+    }
+
+    pub fn live_wire(&self) -> bool {
+        false
+    }
+
+    pub fn listen_tcp(&self, _bind: &str) -> Result<(), String> {
+        Err("MCP is in-process only; no TCP listen".into())
     }
 
     pub fn list(&self) -> &[AipManifest] {
@@ -176,7 +182,6 @@ impl McpRegistry {
         self.dispatch_tool(&msg.method)
     }
 
-    /// Map an intent onto a registered MCP tool and invoke it.
     pub fn invoke_from_intent(&self, graph: &IntentGraph, signer: &IntentSigner) -> Result<String, String> {
         let method = if graph.goal.to_ascii_lowercase().contains("research") {
             "research.summarize"
@@ -187,7 +192,6 @@ impl McpRegistry {
         self.invoke(&msg)
     }
 
-    /// In-process JSON-RPC 2.0 session. No socket, no bidirectional wire stream.
     pub fn handle(&self, req: JsonRpcRequest) -> JsonRpcResponse {
         let fail = |error: String| JsonRpcResponse {
             jsonrpc: "2.0".into(),
@@ -217,7 +221,6 @@ impl McpRegistry {
     }
 }
 
-/// mDNS/DHT discovery is not on the wire in v0.
 #[derive(Debug, Clone, Default)]
 pub struct DiscoveryStub;
 
@@ -228,5 +231,9 @@ impl DiscoveryStub {
 
     pub fn browse_local<'a>(&self, registry: &'a McpRegistry) -> &'a [AipManifest] {
         registry.list()
+    }
+
+    pub fn browse_mdns(&self) -> Result<(), String> {
+        Err("mDNS/DHT not on the wire in v0".into())
     }
 }
