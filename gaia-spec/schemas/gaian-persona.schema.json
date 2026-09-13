@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.local/schemas/gaian-persona.schema.json",
+  "title": "GAIANPersona",
+  "type": "object",
+  "required": ["manifest_version", "owner_is_self", "format", "license", "privacy", "health_opt_in"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": { "type": "string", "const": "0.1" },
+    "owner_is_self": { "type": "boolean" },
+    "format": { "type": "string", "enum": ["vrm-1.0", "glb"] },
+    "license": { "type": "string", "minLength": 1 },
+    "privacy": { "type": "string", "enum": ["local-default", "export-consented"] },
+    "health_opt_in": { "type": "boolean" },
+    "voice": { "type": "string" },
+    "personality": { "type": "string" }
+  }
+}
