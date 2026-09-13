@@ -1,4 +1,4 @@
-use crate::{Broker, Plan, TrustAudit};
+use crate::{Broker, IntentSigner, Plan, SignedIntent, TrustAudit};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -8,17 +8,22 @@ pub struct LocalRun {
     pub failed_over_jobs: Vec<String>,
 }
 
-/// Local in-process runner. It has no network, model, or cryptographic capability.
+/// Local in-process runner. Verifies a kernel Ed25519 intent before dispatch.
 pub struct LocalRunner;
 
 impl LocalRunner {
-    /// Runs only an explicitly accepted plan. `kill_after_first_pull` simulates executor death.
+    /// Runs only an accepted plan whose intent signature verifies.
     pub fn run(
         plan: &Plan,
         broker: &mut Broker,
         audit: &mut TrustAudit,
+        signed: &SignedIntent,
         kill_after_first_pull: Option<&str>,
     ) -> Result<LocalRun, String> {
+        IntentSigner::verify_detached(signed)?;
+        if signed.intent_id != plan.intent_id {
+            return Err("signed intent does not match plan".into());
+        }
         if !plan.accepted {
             return Err("plan must be inspected and accepted before local run".into());
         }
