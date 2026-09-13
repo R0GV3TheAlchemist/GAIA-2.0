@@ -1,4 +1,4 @@
-//! Super OS design contracts (#190–#200). No second kernel. Not v1.0.
+//! Super OS design contracts. No second kernel. Not v1.0.
 
 mod abi;
 mod eacn;
@@ -11,7 +11,7 @@ pub use abi::{learn, submit_intent, HOST_CALLS};
 pub use eacn::{discover, god_coordinator};
 pub use gate::{formal_verify_done, sos_v1_tagged, threats};
 pub use identity::{revoke_mode, t0_kernel_kloc, Capability};
-pub use phases::{phase_closed, profiles, live_llm, live_marketplace, flutter_ui};
+pub use phases::{flutter_ui, inbound_ports_required, live_fuse, live_llm, live_marketplace, live_ollama, live_qdrant, phase_closed, profiles};
 pub use sched::{kernel_inference, sfs_v1};
 
 pub fn second_kernel() -> bool {
