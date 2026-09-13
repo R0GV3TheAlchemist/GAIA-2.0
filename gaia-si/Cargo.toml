@@ -1,0 +1,6 @@
+[package]
+name = "gaia-si"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Sentient infrastructure first cuts. Not conscious buildings. No covert biometrics."

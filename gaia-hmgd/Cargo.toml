@@ -1,0 +1,6 @@
+[package]
+name = "gaia-hmgd"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Human magic catalog first cuts. Not a spellcaster. TEK sealed."
