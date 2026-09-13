@@ -38,7 +38,20 @@ impl GitHubSourcePolicy {
         self.allowed_repositories.iter().any(|item| item == repository)
     }
 
-    pub fn allows_operation(&self, _operation: SourceOperation) -> bool { true }
+    pub fn allows_operation(&self, operation: SourceOperation) -> bool {
+        matches!(
+            operation,
+            SourceOperation::RepositoryGet
+                | SourceOperation::TreeList
+                | SourceOperation::FileRead
+                | SourceOperation::CommitGet
+                | SourceOperation::PullRequestRead
+                | SourceOperation::IssueRead
+                | SourceOperation::SearchCode
+                | SourceOperation::SearchDocs
+                | SourceOperation::SnapshotCreate
+        )
+    }
 
     pub fn allows_path(&self, path: &str) -> bool {
         !is_sensitive_path(path) && self.allowed_paths.iter().any(|rule| path_matches(rule, path))
