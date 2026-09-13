@@ -28,6 +28,7 @@ This repository is the implementation monorepo. Research stays in `Documents/` a
 | [`gaia-orchestrator/`](gaia-orchestrator/) | L4 intent / planner / broker | MIT | 2 |
 | [`gaia-agents/`](gaia-agents/) | L5 runtime + registry | MIT | 3 |
 | [`gaia-interface/`](gaia-interface/) | L6 CLI / API / UI | MIT | 4 |
+| [`gaia-earth/`](gaia-earth/) | Artificial Twin of Earth | Apache-2.0 | Twin 0 |
 | [`gaia-spec/`](gaia-spec/) | Protocols (normative) | CC0 | 0 |
 | [`gaia-sdk/`](gaia-sdk/) | Rust + Python + TypeScript clients | MIT | 0 |
 | [`gaia-docs/`](gaia-docs/) | Contributor + developer docs | CC-BY-4.0 | 0 |
@@ -81,6 +82,7 @@ Do not treat those commands as a published installer. There is no `curl | sh` UR
 - [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md)
 - [SECURITY](SECURITY.md)
 - [GOVERNANCE](GOVERNANCE.md) — Foundation / TSC / SIG model (entity later)
+- [Data Commons charter v0](gaia-docs/data-commons-charter.md) — licenses, uncertainty, non-weaponization (#40)
 
 ## License
 

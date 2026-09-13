@@ -2,6 +2,8 @@
 
 In-process catalog in `gaia-earth`. Not a lake.
 
+Policy for ingest tickets: [data-commons-charter.md](data-commons-charter.md).
+
 ## What exists
 
 `Commons::seed()` exposes four fixture collections:
@@ -26,5 +28,6 @@ Every query is labeled `Synthetic` and must carry uncertainty.
 ## Adding a connector later (#41 / #42)
 
 1. Add a `Collection` with license, quality tier, and provenance.
-2. Keep live network I/O behind an explicit feature. Default stays fixture.
-3. Writes belong in Raw first. Curated is a derived table, not an overwrite.
+2. Cite a license class and uncertainty rule from the charter.
+3. Keep live network I/O behind an explicit feature. Default stays fixture.
+4. Writes belong in Raw first. Curated is a derived table, not an overwrite.
