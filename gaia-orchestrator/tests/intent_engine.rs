@@ -1,7 +1,7 @@
-//! #20 Intent Engine v0.1: text → graph, local-only, MemCubes, no cloud.
+//! #20 Intent Engine v0.1: text → graph, local-only, MemCubes, signed store.
 
 use gaia_memos::{CubeType, MemCube, MemOs};
-use gaia_orchestrator::{IntentBackend, IntentEngine, Privacy};
+use gaia_orchestrator::{IntentBackend, IntentEngine, IntentSigner, Privacy};
 
 #[test]
 fn text_intent_produces_valid_graph() {
@@ -14,7 +14,7 @@ fn text_intent_produces_valid_graph() {
     assert!(g.sub_intents[2].depends_on.contains(&g.sub_intents[1].id));
     assert_eq!(g.constraints.privacy, Privacy::LocalOnly);
     assert_eq!(g.backend, IntentBackend::Stub);
-    assert!(!g.is_signed(), "do not fake signatures");
+    assert!(!g.is_signed(), "signature lives on the stored envelope, not the graph document");
 }
 
 #[test]
@@ -37,12 +37,29 @@ fn non_stub_backend_is_refused() {
 }
 
 #[test]
-fn store_is_unsigned() {
+fn store_signs_and_verifies() {
     let mut mem = MemOs::new();
     let mut engine = IntentEngine::local_stub();
     let g = engine.parse("open CARE.md", &mut mem).unwrap();
-    let id = engine.store(g);
+    let signer = IntentSigner::generate();
+    let id = engine.store(g.clone(), &signer).unwrap();
     let stored = engine.get(id).unwrap();
-    assert!(!stored.is_signed());
-    assert_eq!(stored.goal, "open CARE.md");
+    assert_eq!(stored.graph.goal, "open CARE.md");
+    assert_eq!(stored.signed.algorithm, "ed25519");
+    assert!(stored.signed.issuer_did.starts_with("did:key:gaia:ed25519:"));
+    engine.verify_stored(id).unwrap();
+}
+
+#[test]
+fn stored_tamper_is_rejected() {
+    let mut mem = MemOs::new();
+    let mut engine = IntentEngine::local_stub();
+    let g = engine.parse("open CARE.md", &mut mem).unwrap();
+    let signer = IntentSigner::generate();
+    let id = engine.store(g, &signer).unwrap();
+    engine.get(id).unwrap();
+    // mutate through a local copy of the envelope semantics
+    let mut signed = engine.get(id).unwrap().signed.clone();
+    signed.canonical_payload.push_str("tampered");
+    assert!(IntentSigner::verify_detached(&signed).is_err());
 }
