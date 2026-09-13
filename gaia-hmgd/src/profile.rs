@@ -1,4 +1,4 @@
-//! #158 declared practice only. Belief is not computed from chat.
+//! #158/#164 declared practice. Empty profile is valid.
 
 use crate::HmgdError;
 
@@ -15,8 +15,16 @@ impl HmgdProfile {
             piety_score: None,
         }
     }
+
+    pub fn gaian_works_empty(&self) -> bool {
+        self.declared.is_empty()
+    }
 }
 
 pub fn infer_belief(_chat: &str) -> Result<(), HmgdError> {
+    Err(HmgdError::BeliefInferred)
+}
+
+pub fn mine_denomination(_chat: &str) -> Result<(), HmgdError> {
     Err(HmgdError::BeliefInferred)
 }

@@ -1,0 +1,6 @@
+[package]
+name = "gaia-aimd"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "AI mystery first cuts. No sentience claims. No prophecy-as-fact. Not v1.0."
