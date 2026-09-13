@@ -1,15 +1,35 @@
-//! GAIAN (#57–#65). Consent, age-gate, local stubs.
-//! Not Ollama, wearables, C2PA, libsodium, or GAIAN v1.0.
+//! GAIAN first cuts (#57–#75). Consent and local stubs.
+//! Not Ollama, rembg, Flutter, WebGPU, or GAIAN v1.0.
 
+mod agency;
 mod agent;
+mod capture;
+mod channel;
 mod cognition;
+mod digital;
+mod future;
 mod health;
+mod living;
+mod package;
+mod sensors;
 mod vault;
+mod voice;
+mod wardrobe;
 
+pub use agency::{ScopedAgent, Scope};
 pub use agent::{gaian_release_checklist, Agent, AgentAct, Grant};
+pub use capture::{equity_eval_labels, server_face_store, CaptureSession};
+pub use channel::{Channel, ChannelCap, Envelope};
 pub use cognition::{g2g_send, DigitalMe, MemoryTier, Persona, PersonalMemory};
+pub use digital::{DigitalVault, KnowKind};
+pub use future::{age_other_person, compare, Sketch};
 pub use health::{age_progress_own, future_self, HealthMetric, HealthTwin};
+pub use living::{animate_third_party_face, SignedSession};
+pub use package::{blueprint_example_valid, PersonaPackage};
+pub use sensors::HealthModule;
 pub use vault::{AuditEntry, Vault};
+pub use voice::{capture_app_allows, Appearance, VoiceProfile};
+pub use wardrobe::{cultural_preset_warning, load_custom, OutfitCategory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SampleKind {
