@@ -1,5 +1,10 @@
-//! Artificial Twin of Earth (#33).
-//! Observation contract only. No Iceberg, STAC, Kafka, or live feeds.
+//! Artificial Twin of Earth (#33 / #34).
+//! Observation contract plus an in-process Data Commons catalog.
+//! Not Iceberg, MinIO, Kafka, STAC-on-the-wire, or live feeds.
+
+mod commons;
+
+pub use commons::{Collection, Commons, Domain, QualityTier};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
@@ -50,6 +55,7 @@ pub enum TwinError {
     MissingUncertainty,
     UnlabeledPoint,
     WeaponizedUse,
+    UnknownCollection,
 }
 
 impl std::fmt::Display for TwinError {
@@ -58,6 +64,7 @@ impl std::fmt::Display for TwinError {
             Self::MissingUncertainty => write!(f, "uncertainty is mandatory"),
             Self::UnlabeledPoint => write!(f, "point must be measured or labeled synthetic"),
             Self::WeaponizedUse => write!(f, "weaponization is refused"),
+            Self::UnknownCollection => write!(f, "unknown collection"),
         }
     }
 }
@@ -87,10 +94,12 @@ impl Observation {
     }
 }
 
-/// Purpose gate. Not a classifier. Explicit targeting language is refused.
 pub fn allow_purpose(purpose: &str) -> Result<(), TwinError> {
     let lower = purpose.to_ascii_lowercase();
-    if lower.contains("weapon") || lower.contains("target individual") || lower.contains("surveillance of person") {
+    if lower.contains("weapon")
+        || lower.contains("target individual")
+        || lower.contains("surveillance of person")
+    {
         return Err(TwinError::WeaponizedUse);
     }
     Ok(())
