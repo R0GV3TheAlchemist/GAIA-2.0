@@ -1,12 +1,11 @@
 # gaia-interface
 
-L6 local-first session for #6 / #27.
+L6 local-first session for #6 / #27 / #28.
 
-- `Session::exec` is the CLI adapter (`init`, `start`, `intent`, `revoke`, `status`).
-- `HttpGateway` is the same session over in-process request objects. No socket is bound.
-- Cloud is denied unless the profile opts in.
-
-Not included: Ratatui, Axum/WebSocket/gRPC, Web UI, Studio, voice, vision, mobile.
+- `Session` CLI/HTTP adapters: `init`, `start`, `intent`, `revoke`.
+- `PermissionConsole` renders an HTML trace and agent matrix a user can open
+  without a terminal. That is not React, Vite, or a WebSocket.
+- `ACCESSIBILITY.md` records basic WCAG considerations.
 
 ```bash
 cargo test -p gaia-interface
