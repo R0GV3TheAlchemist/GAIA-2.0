@@ -78,36 +78,22 @@ impl PlanetaryMemory {
         }
         Ok(CubeSet {
             cubes,
-            models: ensemble_stub(place),
+            models: ensemble_stub(),
         })
     }
 }
 
-fn ensemble_stub(place: &str) -> Vec<ModelOutput> {
-    let _ = place;
-    vec![
-        ModelOutput {
-            name: "GraphCast".into(),
-            version: "fixture-0",
+fn ensemble_stub() -> Vec<ModelOutput> {
+    ["GraphCast", "AIFS", "TerraMind"]
+        .into_iter()
+        .map(|name| ModelOutput {
+            name: name.into(),
+            version: "fixture-0".into(),
             value: 0.0,
             uncertainty: 1.0,
             source: SourceKind::Synthetic,
-        },
-        ModelOutput {
-            name: "AIFS".into(),
-            version: "fixture-0",
-            value: 0.0,
-            uncertainty: 1.0,
-            source: SourceKind::Synthetic,
-        },
-        ModelOutput {
-            name: "TerraMind".into(),
-            version: "fixture-0",
-            value: 0.0,
-            uncertainty: 1.0,
-            source: SourceKind::Synthetic,
-        },
-    ]
+        })
+        .collect()
 }
 
 fn fingerprint(place: &str, time: u64, value: f64, uncertainty: f64) -> String {
