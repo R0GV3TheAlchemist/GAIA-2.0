@@ -2,7 +2,6 @@
 
 use gaia_memos::MemOs;
 use gaia_orchestrator::{Executor, IntentEngine, TaskPlanner};
-use uuid::Uuid;
 
 fn research_plan() -> (gaia_orchestrator::Plan, MemOs) {
     let mut mem = MemOs::new();
