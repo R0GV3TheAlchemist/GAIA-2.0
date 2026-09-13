@@ -8,12 +8,14 @@
 //! Part 7 (#4): Local Ollama generate; fail closed; llama.cpp still refused.
 //! Part 8 (#4): AIP registry agent selection.
 //! Part 9 (#4): On-disk audit persist.
+//! Part 10 (#4): MCP stdio framing; no TCP.
 
 mod audit_disk;
 mod broker;
 mod dag;
 mod intent;
 mod mcp;
+mod mcp_stdio;
 mod ollama;
 mod run;
 mod select;
@@ -31,6 +33,7 @@ pub use mcp::{
     AipManifest, DiscoveryStub, JsonRpcRequest, JsonRpcResponse, McpMessage, McpRegistry,
     McpResource, McpTool,
 };
+pub use mcp_stdio::{decode_line, encode_line, persist_session};
 pub use run::{LocalRun, LocalRunner};
 pub use select::{bind_plan_to_registry, pick_agent};
 pub use trust::{
