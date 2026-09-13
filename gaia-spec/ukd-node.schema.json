@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UKDKnowledgeNode",
+  "type": "object",
+  "required": ["id", "realm", "citation"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "realm": { "type": "string", "minLength": 1 },
+    "citation": { "type": "string", "minLength": 1 }
+  }
+}

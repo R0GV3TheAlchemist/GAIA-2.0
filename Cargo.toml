@@ -10,6 +10,8 @@ members = [
   "gaia-interface",
   "gaia-earth",
   "gaia-gaian",
+  "gaia-ukd",
+  "gaia-aikd",
 ]
 
 [workspace.package]

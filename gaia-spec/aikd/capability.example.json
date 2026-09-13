@@ -1,0 +1,8 @@
+{
+  "id": "aikd:science:quantum-mechanics",
+  "ukd_subject": "ukd:phys:quantum-mechanics",
+  "type": "declarative",
+  "layer": "parametric",
+  "status": "can-learn",
+  "cannot_know": ["post-cutoff-without-tools"]
+}
