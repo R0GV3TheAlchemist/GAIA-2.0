@@ -1,7 +1,7 @@
-//! #24 Wasmtime proof: fixture runs, policy denies, trap isolated, limits bind.
+//! #24 Wasmtime proof: fixture runs, WASI imports gated, trap isolated, limits bind.
 //! No assertion here implies WASI/containerd/production sandbox equivalence.
 
-use gaia_agents::{AgentManifest, Capability, RuntimeError, WasmOutcome, WasmRuntime};
+use gaia_agents::{AgentManifest, Capability, RuntimeError, WasiGrant, WasmOutcome, WasmRuntime};
 
 fn manifest() -> AgentManifest {
     AgentManifest {
@@ -27,6 +27,27 @@ fn embedded_hello_guest_runs_without_wasi_resources() {
 }
 
 #[test]
+fn caller_supplied_wat_is_loaded() {
+    let wat = r#"
+        (module
+          (import "gaia" "log" (func $log (param i32 i32)))
+          (memory (export "memory") 1)
+          (data (i32.const 0) "loaded")
+          (func (export "run")
+            i32.const 0
+            i32.const 6
+            call $log))
+    "#;
+    let output = WasmRuntime::new()
+        .invoke_wat(&manifest(), wat, None)
+        .unwrap();
+    match output {
+        WasmOutcome::Output { text, .. } => assert_eq!(text, "loaded"),
+        other => panic!("unexpected {other:?}"),
+    }
+}
+
+#[test]
 fn ungranted_capability_never_reaches_guest() {
     let err = WasmRuntime::new()
         .invoke_fixture(&manifest(), "hello", Some(Capability::Network))
@@ -38,6 +59,57 @@ fn ungranted_capability_never_reaches_guest() {
             capability: Capability::Network,
         }
     );
+}
+
+#[test]
+fn wasi_fs_import_is_denied_without_grant() {
+    let err = WasmRuntime::new()
+        .invoke_fixture(&manifest(), "wasi-fs", None)
+        .unwrap_err();
+    assert_eq!(
+        err,
+        RuntimeError::UndeclaredCapability {
+            agent: "wasm-hello".into(),
+            capability: Capability::FilesystemRead,
+        }
+    );
+}
+
+#[test]
+fn wasi_net_import_is_denied_without_grant() {
+    let err = WasmRuntime::new()
+        .invoke_fixture(&manifest(), "wasi-net", None)
+        .unwrap_err();
+    assert_eq!(
+        err,
+        RuntimeError::UndeclaredCapability {
+            agent: "wasm-hello".into(),
+            capability: Capability::Network,
+        }
+    );
+}
+
+#[test]
+fn wasi_grant_does_not_install_a_host() {
+    let mut granted = manifest();
+    granted.declared_capabilities.push(Capability::FilesystemRead);
+    granted.limits.filesystem_allowed = true;
+    assert_eq!(
+        WasmRuntime::grants(&granted),
+        WasiGrant {
+            filesystem: true,
+            network: false,
+        }
+    );
+    let err = WasmRuntime::new()
+        .invoke_fixture(&granted, "wasi-fs", None)
+        .unwrap_err();
+    match err {
+        RuntimeError::LimitRejected { reason, .. } => {
+            assert!(reason.contains("WASI host is not installed"));
+        }
+        other => panic!("expected host-missing reject, got {other:?}"),
+    }
 }
 
 #[test]
