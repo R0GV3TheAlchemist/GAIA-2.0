@@ -1,0 +1,6 @@
+[package]
+name = "gaia-gaian"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "GAIAN consent, age-gate, and self-only rules. Not an avatar pipeline."
