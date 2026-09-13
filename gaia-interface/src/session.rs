@@ -56,7 +56,6 @@ pub enum SessionError {
     UnknownAgent(String),
     AlreadyRevoked(String),
     AlreadyExists(String),
-    NotDeployed(String),
     Usage(String),
 }
 
@@ -70,7 +69,6 @@ impl std::fmt::Display for SessionError {
             Self::UnknownAgent(id) => write!(f, "unknown agent: {id}"),
             Self::AlreadyRevoked(id) => write!(f, "agent already revoked: {id}"),
             Self::AlreadyExists(id) => write!(f, "agent already exists: {id}"),
-            Self::NotDeployed(id) => write!(f, "agent not deployed: {id}"),
             Self::Usage(msg) => write!(f, "{msg}"),
         }
     }
@@ -165,18 +163,21 @@ impl Session {
 
     pub fn deploy_agent(&mut self, id: &str) -> Result<Agent, SessionError> {
         self.require_started()?;
-        let agent = self
-            .agents
-            .iter_mut()
-            .find(|a| a.id == id)
-            .ok_or_else(|| SessionError::UnknownAgent(id.into()))?;
-        match agent.state {
-            AgentState::Revoked => return Err(SessionError::AlreadyRevoked(id.into())),
-            AgentState::Running => return Err(SessionError::AlreadyExists(id.into())),
-            AgentState::Created => agent.state = AgentState::Running,
-        }
+        let agent = {
+            let agent = self
+                .agents
+                .iter_mut()
+                .find(|a| a.id == id)
+                .ok_or_else(|| SessionError::UnknownAgent(id.into()))?;
+            match agent.state {
+                AgentState::Revoked => return Err(SessionError::AlreadyRevoked(id.into())),
+                AgentState::Running => return Err(SessionError::AlreadyExists(id.into())),
+                AgentState::Created => agent.state = AgentState::Running,
+            }
+            agent.clone()
+        };
         self.record(format!("agent-deploy {id}"));
-        Ok(agent.clone())
+        Ok(agent)
     }
 
     pub fn remember(&mut self, text: &str) -> Result<MemoryNote, SessionError> {
@@ -204,16 +205,18 @@ impl Session {
         if wants_cloud(text) && !self.profile.as_ref().unwrap().cloud_opt_in {
             return Err(SessionError::CloudDenied);
         }
-        let agent = self
+        let agent_id = self
             .agents
             .iter()
             .find(|a| a.state == AgentState::Running)
-            .ok_or_else(|| SessionError::Usage("no running agent".into()))?;
+            .ok_or_else(|| SessionError::Usage("no running agent".into()))?
+            .id
+            .clone();
         self.next_intent += 1;
         let mut record = IntentRecord {
             id: self.next_intent,
             text: text.into(),
-            agent_id: agent.id.clone(),
+            agent_id: agent_id.clone(),
             events: vec![
                 IntentEvent {
                     kind: "admitted".into(),
@@ -245,15 +248,18 @@ impl Session {
 
     pub fn revoke(&mut self, agent_id: &str) -> Result<Agent, SessionError> {
         self.require_started()?;
-        let agent = self
-            .agents
-            .iter_mut()
-            .find(|a| a.id == agent_id)
-            .ok_or_else(|| SessionError::UnknownAgent(agent_id.into()))?;
-        if agent.state == AgentState::Revoked {
-            return Err(SessionError::AlreadyRevoked(agent_id.into()));
-        }
-        agent.state = AgentState::Revoked;
+        let agent = {
+            let agent = self
+                .agents
+                .iter_mut()
+                .find(|a| a.id == agent_id)
+                .ok_or_else(|| SessionError::UnknownAgent(agent_id.into()))?;
+            if agent.state == AgentState::Revoked {
+                return Err(SessionError::AlreadyRevoked(agent_id.into()));
+            }
+            agent.state = AgentState::Revoked;
+            agent.clone()
+        };
         for intent in &mut self.intents {
             if intent.agent_id == agent_id && !intent.cancelled {
                 intent.cancelled = true;
@@ -264,7 +270,7 @@ impl Session {
             }
         }
         self.record(format!("revoke {agent_id}"));
-        Ok(agent.clone())
+        Ok(agent)
     }
 
     pub fn exec(&mut self, args: &[&str]) -> Result<String, SessionError> {
