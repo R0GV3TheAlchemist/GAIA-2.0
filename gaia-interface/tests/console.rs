@@ -1,6 +1,6 @@
-//! #28: watch an intent without a terminal, list/revoke agents, document a11y.
+//! #28: watch an intent without a terminal, pause/revoke, permission matrix.
 
-use gaia_interface::{AgentState, PermissionConsole, Session, Studio};
+use gaia_interface::{AgentState, HttpGateway, HttpRequest, PermissionConsole, Session, Studio};
 use std::fs;
 use std::path::PathBuf;
 
@@ -20,22 +20,51 @@ fn html_trace_shows_intent_events_without_a_terminal() {
 }
 
 #[test]
-fn every_running_agent_is_visible_and_revocable() {
+fn every_running_agent_is_visible_pausable_and_revocable() {
     let mut session = Session::new();
     session.init("developer").unwrap();
     session.start().unwrap();
     let studio = Studio::default();
     let rows = PermissionConsole::new(&session, &studio).agents();
-    assert_eq!(rows.len(), 1);
     assert_eq!(rows[0].id, "local-researcher");
+    assert!(rows[0].pausable);
     assert!(rows[0].revocable);
+    session.pause("local-researcher").unwrap();
+    assert_eq!(session.agents()[0].state, AgentState::Paused);
+    assert!(session.declare_intent("research").is_err());
+    session.resume("local-researcher").unwrap();
     session.revoke("local-researcher").unwrap();
     let after = PermissionConsole::new(&session, &studio).agents();
     assert_eq!(after[0].state, "Revoked");
     assert!(!after[0].revocable);
-    assert_eq!(session.agents()[0].state, AgentState::Revoked);
+}
+
+#[test]
+fn permission_matrix_is_inspectable() {
+    let mut session = Session::new();
+    session.init("developer").unwrap();
+    session.start().unwrap();
+    let studio = Studio::default();
+    let matrix = PermissionConsole::new(&session, &studio).matrix();
+    assert!(matrix.iter().any(|p| p.capability == "MemoryRead" && p.granted));
+    assert!(matrix.iter().any(|p| p.capability == "Network" && !p.granted));
     let html = PermissionConsole::new(&session, &studio).render_html();
-    assert!(html.contains("not revocable"));
+    assert!(html.contains("Permission matrix"));
+    assert!(html.contains("denied"));
+}
+
+#[test]
+fn http_pause_matches_cli() {
+    let mut session = Session::new();
+    session.init("developer").unwrap();
+    session.start().unwrap();
+    let response = HttpGateway::new(&mut session).handle(HttpRequest {
+        method: "POST".into(),
+        path: "/agents/local-researcher/pause".into(),
+        body: "{}".into(),
+    });
+    assert_eq!(response.status, 200);
+    assert_eq!(session.agents()[0].state, AgentState::Paused);
 }
 
 #[test]

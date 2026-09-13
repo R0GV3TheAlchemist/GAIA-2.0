@@ -1,7 +1,7 @@
 //! #28 permission console, intent trace, and Studio recipe list.
 //! Renders HTML for a browser view. This is not React, Vite, or a WebSocket.
 
-use crate::session::{AgentState, Session};
+use crate::session::{AgentState, Permission, Session};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -9,6 +9,7 @@ pub struct AgentRow {
     pub id: String,
     pub state: String,
     pub revocable: bool,
+    pub pausable: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -71,11 +72,17 @@ impl<'a> PermissionConsole<'a> {
                 id: agent.id.clone(),
                 state: match agent.state {
                     AgentState::Running => "Running".into(),
+                    AgentState::Paused => "Paused".into(),
                     AgentState::Revoked => "Revoked".into(),
                 },
-                revocable: agent.state == AgentState::Running,
+                revocable: agent.state != AgentState::Revoked,
+                pausable: agent.state == AgentState::Running,
             })
             .collect()
+    }
+
+    pub fn matrix(&self) -> &[Permission] {
+        self.session.permissions()
     }
 
     pub fn traces(&self) -> Vec<TraceEvent> {
@@ -92,13 +99,20 @@ impl<'a> PermissionConsole<'a> {
             .collect()
     }
 
-    /// HTML page a user can open without a terminal. No live WebSocket.
     pub fn render_html(&self) -> String {
         let agents = self
             .agents()
             .into_iter()
             .map(|row| {
-                let action = if row.revocable {
+                let pause = if row.pausable {
+                    format!(
+                        "<button type=\"button\" aria-label=\"Pause {}">Pause</button>",
+                        escape(&row.id)
+                    )
+                } else {
+                    String::new()
+                };
+                let revoke = if row.revocable {
                     format!(
                         "<button type=\"button\" aria-label=\"Revoke {}">Revoke</button>",
                         escape(&row.id)
@@ -107,10 +121,24 @@ impl<'a> PermissionConsole<'a> {
                     "<span>not revocable</span>".into()
                 };
                 format!(
-                    "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
+                    "<tr><td>{}</td><td>{}</td><td>{} {}</td></tr>",
                     escape(&row.id),
                     escape(&row.state),
-                    action
+                    pause,
+                    revoke
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("");
+        let matrix = self
+            .matrix()
+            .iter()
+            .map(|cell| {
+                format!(
+                    "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
+                    escape(&cell.agent_id),
+                    escape(&cell.capability),
+                    if cell.granted { "granted" } else { "denied" }
                 )
             })
             .collect::<Vec<_>>()
@@ -164,6 +192,13 @@ td, th {{ border:1px solid #666; padding:0.4rem 0.6rem; }}
 <table>
 <thead><tr><th>Agent</th><th>State</th><th>Control</th></tr></thead>
 <tbody>{agents}</tbody>
+</table>
+</section>
+<section aria-labelledby="matrix-h">
+<h2 id="matrix-h">Permission matrix</h2>
+<table>
+<thead><tr><th>Agent</th><th>Capability</th><th>Grant</th></tr></thead>
+<tbody>{matrix}</tbody>
 </table>
 </section>
 <section aria-labelledby="trace-h" aria-live="polite">

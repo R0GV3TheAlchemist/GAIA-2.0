@@ -54,15 +54,29 @@ impl<'a> HttpGateway<'a> {
                 let record = self.session.declare_intent(&text)?;
                 Ok(json!(record))
             }
+            ("POST", path) if path.starts_with("/agents/") && path.ends_with("/pause") => {
+                let id = path
+                    .trim_start_matches("/agents/")
+                    .trim_end_matches("/pause")
+                    .trim_matches('/');
+                Ok(json!(self.session.pause(id)?))
+            }
+            ("POST", path) if path.starts_with("/agents/") && path.ends_with("/resume") => {
+                let id = path
+                    .trim_start_matches("/agents/")
+                    .trim_end_matches("/resume")
+                    .trim_matches('/');
+                Ok(json!(self.session.resume(id)?))
+            }
             ("POST", path) if path.starts_with("/agents/") && path.ends_with("/revoke") => {
                 let id = path
                     .trim_start_matches("/agents/")
                     .trim_end_matches("/revoke")
                     .trim_matches('/');
-                let agent = self.session.revoke(id)?;
-                Ok(json!(agent))
+                Ok(json!(self.session.revoke(id)?))
             }
             ("GET", "/agents") => Ok(json!(self.session.agents())),
+            ("GET", "/permissions") => Ok(json!(self.session.permissions())),
             ("GET", "/status") => Ok(json!({
                 "started": self.session.started(),
                 "profile": self.session.profile(),
@@ -83,7 +97,9 @@ fn status_for(error: &SessionError) -> u16 {
     match error {
         SessionError::NotInitialized | SessionError::NotStarted => 409,
         SessionError::UnknownProfile(_) | SessionError::UnknownAgent(_) => 404,
-        SessionError::CloudDenied | SessionError::AlreadyRevoked(_) => 403,
+        SessionError::CloudDenied
+        | SessionError::AlreadyRevoked(_)
+        | SessionError::AlreadyPaused(_) => 403,
         SessionError::Usage(_) => 400,
     }
 }
