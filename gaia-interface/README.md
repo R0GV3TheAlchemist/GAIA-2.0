@@ -2,11 +2,10 @@
 
 L6 local-first session for #6 / #27.
 
-- `Session::exec` is the CLI adapter (`init`, `start`, `intent`, `revoke`, `status`).
-- `HttpGateway` is the same session over in-process request objects. No socket is bound.
-- Cloud is denied unless the profile opts in.
-
-Not included: Ratatui, Axum/WebSocket/gRPC, Web UI, Studio, voice, vision, mobile.
+- `Session::exec`: `init`, `start`, `intent`, `revoke`.
+- `HttpGateway` is the same session over in-process request objects.
+- `OrchestratorGateway` forwards an intent through L4 `IntentEngine` parse+store,
+  then records the session stream. No Axum socket.
 
 ```bash
 cargo test -p gaia-interface
