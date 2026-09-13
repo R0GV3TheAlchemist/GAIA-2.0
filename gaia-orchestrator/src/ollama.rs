@@ -42,3 +42,42 @@ pub fn generate(host: &str, model: &str, prompt: &str) -> Result<String, String>
         .map(|s| s.to_string())
         .ok_or_else(|| "ollama missing response".into())
 }
+
+pub fn extract_json_object(raw: &str) -> Result<&str, String> {
+    let start = raw.find('{').ok_or("ollama plan missing JSON object")?;
+    let end = raw.rfind('}').ok_or("ollama plan missing JSON object")?;
+    if end <= start {
+        return Err("ollama plan missing JSON object".into());
+    }
+    Ok(&raw[start..=end])
+}
+
+pub fn goals_from_plan_json(raw: &str) -> Result<Vec<String>, String> {
+    let obj = extract_json_object(raw)?;
+    let v: serde_json::Value =
+        serde_json::from_str(obj).map_err(|e| format!("ollama plan json: {e}"))?;
+    let items = v
+        .get("sub_intents")
+        .and_then(|s| s.as_array())
+        .ok_or("ollama plan missing sub_intents array")?;
+    let mut goals = Vec::new();
+    for item in items {
+        let goal = if let Some(s) = item.as_str() {
+            s.trim().to_string()
+        } else {
+            item.get("goal")
+                .and_then(|g| g.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        };
+        if goal.is_empty() {
+            return Err("ollama plan has an empty goal".into());
+        }
+        goals.push(goal);
+    }
+    if goals.len() < 3 {
+        return Err("ollama plan must have 3+ sub_intents".into());
+    }
+    Ok(goals)
+}
