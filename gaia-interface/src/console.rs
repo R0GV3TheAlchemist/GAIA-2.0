@@ -153,9 +153,7 @@ impl<'a> PermissionConsole<'a> {
             recipes.push_str("</li>");
         }
 
-        let mut page = String::from(
-            "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">",
-        );
+        let mut page = String::from("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
         page.push_str("<title>GAIA permission console</title>");
         page.push_str("<style>body{background:#111;color:#eee;font-family:sans-serif;line-height:1.5;}");
         page.push_str("a:focus,button:focus{outline:3px solid #ffd166;}");
@@ -187,5 +185,5 @@ fn escape(value: &str) -> String {
         .replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
-        .replace('"', "&quot;")
+        .replace("\"", "&quot;")
 }
