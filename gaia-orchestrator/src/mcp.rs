@@ -1,4 +1,5 @@
 use crate::intent::IntentGraph;
+use crate::trust::{verify_tagged_signature, IntentSigner};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -14,7 +15,7 @@ pub struct AipManifest {
     pub tools: Vec<McpTool>,
 }
 
-/// JSON-RPC 2.0 envelope. Cryptographic verify is #19; presence is the v0 gate.
+/// JSON-RPC 2.0 envelope. Admit requires an Ed25519 tagged signature over method plus params.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct McpMessage {
     pub jsonrpc: String,
@@ -39,6 +40,16 @@ impl McpMessage {
             method: method.into(),
             params: params.into(),
             signature: Some(token.into()),
+        }
+    }
+
+    pub fn signed_by(signer: &IntentSigner, method: &str, params: &str) -> Self {
+        let payload = format!("{method}\n{params}");
+        Self {
+            jsonrpc: "2.0".into(),
+            method: method.into(),
+            params: params.into(),
+            signature: Some(signer.sign_bytes(payload.as_bytes())),
         }
     }
 }
@@ -76,6 +87,10 @@ impl McpRegistry {
         if msg.jsonrpc != "2.0" {
             return Err("jsonrpc 2.0 required".into());
         }
+        if let Some(signature) = &msg.signature {
+            let payload = format!("{}\n{}", msg.method, msg.params);
+            verify_tagged_signature(payload.as_bytes(), signature)?;
+        }
         Ok(())
     }
 
@@ -91,13 +106,13 @@ impl McpRegistry {
     }
 
     /// Map an intent onto a registered MCP tool and invoke it.
-    pub fn invoke_from_intent(&self, graph: &IntentGraph, signed_token: &str) -> Result<String, String> {
+    pub fn invoke_from_intent(&self, graph: &IntentGraph, signer: &IntentSigner) -> Result<String, String> {
         let method = if graph.goal.to_ascii_lowercase().contains("research") {
             "research.summarize"
         } else {
             return Err("no MCP tool mapped for intent".into());
         };
-        let msg = McpMessage::marked_signed(method, &graph.goal, signed_token);
+        let msg = McpMessage::signed_by(signer, method, &graph.goal);
         self.invoke(&msg)
     }
 }
