@@ -42,7 +42,9 @@ fn gaia_intent_accept_can_prove_failover() {
     assert!(stdout.contains("execution=completed"));
     assert!(stdout.contains("failed_over_nodes=1"));
     assert!(stdout.contains("completed_nodes=3"));
-    assert!(stdout.contains("audit_events=7"));
+    // start+failover on the killed pull, then start+complete for each of 3 nodes including retry.
+    assert!(stdout.contains("audit_events=8"), "stdout was:\n{stdout}");
+    assert!(stdout.contains("audit_chain_ok=true"));
 }
 
 #[test]
