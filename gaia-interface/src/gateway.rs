@@ -15,7 +15,6 @@ pub struct HttpResponse {
     pub body: String,
 }
 
-/// In-process HTTP adapter over Session. No socket is bound.
 pub struct HttpGateway<'a> {
     session: &'a mut Session,
 }
@@ -60,26 +59,26 @@ impl<'a> HttpGateway<'a> {
                 Ok(json!(agent))
             }
             ("POST", path) if path.starts_with("/agents/") && path.ends_with("/deploy") => {
-                let id = path
-                    .trim_start_matches("/agents/")
-                    .trim_end_matches("/deploy")
-                    .trim_matches('/');
-                let agent = self.session.deploy_agent(id)?;
-                Ok(json!(agent))
+                let id = agent_action(path, "deploy");
+                Ok(json!(self.session.deploy_agent(id)?))
+            }
+            ("POST", path) if path.starts_with("/agents/") && path.ends_with("/pause") => {
+                let id = agent_action(path, "pause");
+                Ok(json!(self.session.pause(id)?))
+            }
+            ("POST", path) if path.starts_with("/agents/") && path.ends_with("/resume") => {
+                let id = agent_action(path, "resume");
+                Ok(json!(self.session.resume(id)?))
             }
             ("POST", path) if path.starts_with("/agents/") && path.ends_with("/revoke") => {
-                let id = path
-                    .trim_start_matches("/agents/")
-                    .trim_end_matches("/revoke")
-                    .trim_matches('/');
-                let agent = self.session.revoke(id)?;
-                Ok(json!(agent))
+                let id = agent_action(path, "revoke");
+                Ok(json!(self.session.revoke(id)?))
             }
             ("GET", "/agents") => Ok(json!(self.session.agents())),
+            ("GET", "/permissions") => Ok(json!(self.session.permissions())),
             ("POST", "/memory") => {
                 let text = json_string(&req.body, "text").unwrap_or_default();
-                let note = self.session.remember(&text)?;
-                Ok(json!(note))
+                Ok(json!(self.session.remember(&text)?))
             }
             ("GET", "/memory") => Ok(json!(self.session.memory())),
             ("GET", "/audit") => Ok(json!(self.session.audit())),
@@ -96,6 +95,12 @@ impl<'a> HttpGateway<'a> {
     }
 }
 
+fn agent_action<'a>(path: &'a str, action: &str) -> &'a str {
+    path.trim_start_matches("/agents/")
+        .trim_end_matches(action)
+        .trim_matches('/')
+}
+
 fn json_string(body: &str, key: &str) -> Option<String> {
     let value: Value = serde_json::from_str(body).ok()?;
     value.get(key)?.as_str().map(str::to_owned)
@@ -107,6 +112,7 @@ fn status_for(error: &SessionError) -> u16 {
         SessionError::UnknownProfile(_) | SessionError::UnknownAgent(_) => 404,
         SessionError::CloudDenied
         | SessionError::AlreadyRevoked(_)
+        | SessionError::AlreadyPaused(_)
         | SessionError::AlreadyExists(_) => 403,
         SessionError::Usage(_) => 400,
     }
