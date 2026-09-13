@@ -20,8 +20,8 @@ fn main() {
     }
 
     let text = args.join(" ");
-    let mem = MemOs::new();
-    let graph = match IntentEngine::local_stub().parse(&text, &mem) {
+    let mut mem = MemOs::new();
+    let graph = match IntentEngine::local_stub().parse(&text, &mut mem) {
         Ok(graph) => graph,
         Err(error) => {
             eprintln!("intent error: {error}");
