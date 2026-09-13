@@ -17,10 +17,12 @@ fn handoff_preserves_intent_and_memory_scope() {
     );
     assert_eq!(handoff.intent_id, intent);
     assert_eq!(handoff.memory_scope, vec!["semantic".to_string()]);
-    let bundle = handoff.bundle(Some("raw user note"), true);
+    let bundle = handoff.bundle(Some("raw user note"), false);
     assert_eq!(bundle.intent_id, intent);
     assert_eq!(bundle.cube_ids, vec![cube]);
     assert_eq!(bundle.memory_scope, vec!["semantic".to_string()]);
+    assert!(bundle.redacted);
+    assert!(bundle.plaintext.is_none());
 }
 
 #[test]
@@ -49,7 +51,7 @@ fn signed_package_installs_and_forged_tag_fails() {
 }
 
 #[test]
-fn federated_job_redacts_plaintext_without_shipping_memory() {
+fn federated_job_redacts_plaintext_unless_opt_in() {
     let handoff = Handoff::new(
         Uuid::new_v4(),
         "researcher",
@@ -58,10 +60,13 @@ fn federated_job_redacts_plaintext_without_shipping_memory() {
         vec!["episodic".into()],
         vec![Uuid::new_v4()],
     );
-    let bundle = handoff.bundle(Some("I live at 123 Main"), true);
-    assert!(bundle.redacted);
-    assert!(bundle.plaintext.is_none());
-    assert!(!bundle.ships_plaintext());
+    let redacted = handoff.bundle(Some("I live at 123 Main"), false);
+    assert!(redacted.redacted);
+    assert!(redacted.plaintext.is_none());
+    assert!(!redacted.ships_plaintext());
+    let opted = handoff.bundle(Some("I live at 123 Main"), true);
+    assert!(!opted.redacted);
+    assert_eq!(opted.plaintext.as_deref(), Some("I live at 123 Main"));
 }
 
 #[test]

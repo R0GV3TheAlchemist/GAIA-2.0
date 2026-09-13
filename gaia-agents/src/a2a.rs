@@ -40,25 +40,10 @@ impl Handoff {
             cube_ids,
         }
     }
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ContextBundle {
-    pub intent_id: Uuid,
-    pub cube_ids: Vec<Uuid>,
-    pub memory_scope: Vec<String>,
-    pub redacted: bool,
-    pub plaintext: Option<String>,
-}
-
-impl Handoff {
-    /// Relevant MemCube ids only. Plaintext stays off the wire unless opted in.
+    /// Cube ids and scope travel with the handoff. Plaintext does not, unless opted in.
     pub fn bundle(&self, plaintext: Option<&str>, opt_in_plaintext: bool) -> ContextBundle {
-        let allow_plain = opt_in_plaintext && self.privacy != PrivacyMode::Federated;
-        // Federated never ships raw user memory unless the caller opts in explicitly
-        // *and* the mode is not federated. Federated jobs always redact.
-        let federated = self.privacy == PrivacyMode::Federated;
-        let redact = federated || !allow_plain;
+        let redact = !opt_in_plaintext;
         ContextBundle {
             intent_id: self.intent_id,
             cube_ids: self.cube_ids.clone(),
@@ -73,7 +58,15 @@ impl Handoff {
     }
 }
 
-/// Federated jobs redact even if someone passes opt_in. Opt-in only applies to local/cloud.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ContextBundle {
+    pub intent_id: Uuid,
+    pub cube_ids: Vec<Uuid>,
+    pub memory_scope: Vec<String>,
+    pub redacted: bool,
+    pub plaintext: Option<String>,
+}
+
 impl ContextBundle {
     pub fn ships_plaintext(&self) -> bool {
         !self.redacted && self.plaintext.is_some()
@@ -142,13 +135,10 @@ impl PackageMarket {
     }
 
     pub fn install(&mut self, package: &Package) -> Result<(), MarketError> {
-        if self.reject_unsigned && package.signature.is_none() {
-            return Err(MarketError::Unsigned);
-        }
-        if let Some(tag) = &package.signature {
-            verify_package(package, tag)?;
-        } else if self.reject_unsigned {
-            return Err(MarketError::Unsigned);
+        match &package.signature {
+            None if self.reject_unsigned => return Err(MarketError::Unsigned),
+            None => {}
+            Some(tag) => verify_package(package, tag)?,
         }
         if self.installed.iter().any(|n| n == &package.name) {
             return Err(MarketError::AlreadyInstalled(package.name.clone()));
