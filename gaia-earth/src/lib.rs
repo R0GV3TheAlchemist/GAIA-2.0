@@ -1,15 +1,17 @@
-//! Artificial Twin of Earth (#33–#38).
-//! Observation contract, commons catalog, nervous fabric, memory, scenarios, interface.
-//! Not Iceberg, Cesium, GraphCast weights, or a live GCM.
+//! Artificial Twin of Earth (#33–#41).
+//! Observation contract, commons catalog, and in-process lake zones.
+//! Not MinIO, Iceberg, Cesium, or a live STAC portal.
 
 mod commons;
 mod iface;
+mod lake;
 mod memory;
 mod nervous;
 mod simulate;
 
 pub use commons::{Collection, Commons, Domain, QualityTier};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
+pub use lake::{Lake, LakeRow, LakeZone};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
 pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
@@ -65,6 +67,7 @@ pub enum TwinError {
     WeaponizedUse,
     UnknownCollection,
     SparseRegion,
+    ImmutableRaw,
 }
 
 impl std::fmt::Display for TwinError {
@@ -75,6 +78,7 @@ impl std::fmt::Display for TwinError {
             Self::WeaponizedUse => write!(f, "weaponization is refused"),
             Self::UnknownCollection => write!(f, "unknown collection"),
             Self::SparseRegion => write!(f, "sparse region flagged; value not invented"),
+            Self::ImmutableRaw => write!(f, "raw zone is append-only"),
         }
     }
 }

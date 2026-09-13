@@ -1,0 +1,5 @@
+# #41 skeleton only. CI does not start these services.
+# minio:
+#   image: minio/minio
+#   command: server /data
+# iceberg-rest: not wired
