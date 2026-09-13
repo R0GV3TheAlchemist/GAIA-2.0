@@ -1,7 +1,8 @@
 //! Minimal guest-runtime proof for #24.
 //! No WASI linker is installed: guests receive no filesystem preopens or network APIs.
-//! The only host import is `gaia.log`, a coordinator stream. It is not a guest-granted capability.
-//! Fuel and StoreLimits enforce the admitted CPU/memory numbers. That is not a multi-tenant sandbox.
+//! WASI imports are inspected and refused unless the AIP grant is present.
+//! A present grant does not install a WASI host. That is still missing.
+//! The only host import is `gaia.log`. Fuel and StoreLimits bind CPU/memory.
 
 use crate::{AgentManifest, AgentRuntime, Capability, RuntimeError};
 use wasmtime::{Caller, Config, Engine, Linker, Module, Store, StoreLimits, StoreLimitsBuilder};
@@ -10,6 +11,12 @@ use wasmtime::{Caller, Config, Engine, Linker, Module, Store, StoreLimits, Store
 pub enum WasmOutcome {
     Output { text: String, chunks: Vec<String> },
     Trapped { agent: String, reason: String },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WasiGrant {
+    pub filesystem: bool,
+    pub network: bool,
 }
 
 struct HostState {
@@ -39,11 +46,48 @@ impl WasmRuntime {
         }
     }
 
+    pub fn grants(manifest: &AgentManifest) -> WasiGrant {
+        WasiGrant {
+            filesystem: manifest.limits.filesystem_allowed
+                && (manifest
+                    .declared_capabilities
+                    .contains(&Capability::FilesystemRead)
+                    || manifest
+                        .declared_capabilities
+                        .contains(&Capability::FilesystemWrite)),
+            network: manifest.limits.network_allowed
+                && manifest.declared_capabilities.contains(&Capability::Network),
+        }
+    }
+
     /// Runs only embedded fixture WAT. Dynamic marketplace package loading is absent.
     pub fn invoke_fixture(
         &self,
         manifest: &AgentManifest,
         fixture: &str,
+        requested: Option<Capability>,
+    ) -> Result<WasmOutcome, RuntimeError> {
+        let wat = match fixture {
+            "hello" => HELLO_WAT,
+            "trap" => TRAP_WAT,
+            "grow" => GROW_WAT,
+            "wasi-fs" => WASI_FS_WAT,
+            "wasi-net" => WASI_NET_WAT,
+            _ => {
+                return Ok(WasmOutcome::Trapped {
+                    agent: manifest.name.clone(),
+                    reason: "unknown embedded fixture".into(),
+                });
+            }
+        };
+        self.invoke_wat(manifest, wat, requested)
+    }
+
+    /// Load a caller-supplied WAT module. Not a package registry.
+    pub fn invoke_wat(
+        &self,
+        manifest: &AgentManifest,
+        wat: &str,
         requested: Option<Capability>,
     ) -> Result<WasmOutcome, RuntimeError> {
         self.policy.admit(manifest)?;
@@ -55,17 +99,6 @@ impl WasmRuntime {
                 });
             }
         }
-        let wat = match fixture {
-            "hello" => HELLO_WAT,
-            "trap" => TRAP_WAT,
-            "grow" => GROW_WAT,
-            _ => {
-                return Ok(WasmOutcome::Trapped {
-                    agent: manifest.name.clone(),
-                    reason: "unknown embedded fixture".into(),
-                });
-            }
-        };
         self.instantiate_and_run(manifest, wat)
     }
 
@@ -76,8 +109,10 @@ impl WasmRuntime {
     ) -> Result<WasmOutcome, RuntimeError> {
         let module = Module::new(&self.engine, wat).map_err(|error| RuntimeError::LimitRejected {
             agent: manifest.name.clone(),
-            reason: format!("fixture module rejected: {error}"),
+            reason: format!("module rejected: {error}"),
         })?;
+        self.enforce_wasi_grants(manifest, &module)?;
+
         let mut linker = Linker::new(&self.engine);
         linker
             .func_wrap(
@@ -157,6 +192,54 @@ impl WasmRuntime {
             }),
         }
     }
+
+    fn enforce_wasi_grants(
+        &self,
+        manifest: &AgentManifest,
+        module: &Module,
+    ) -> Result<(), RuntimeError> {
+        let grants = Self::grants(manifest);
+        let mut wants_fs = false;
+        let mut wants_net = false;
+        for import in module.imports() {
+            if !is_wasi_module(import.module()) {
+                continue;
+            }
+            if is_wasi_network(import.name()) {
+                wants_net = true;
+            } else {
+                wants_fs = true;
+            }
+        }
+        if wants_net && !grants.network {
+            return Err(RuntimeError::UndeclaredCapability {
+                agent: manifest.name.clone(),
+                capability: Capability::Network,
+            });
+        }
+        if wants_fs && !grants.filesystem {
+            return Err(RuntimeError::UndeclaredCapability {
+                agent: manifest.name.clone(),
+                capability: Capability::FilesystemRead,
+            });
+        }
+        if wants_fs || wants_net {
+            return Err(RuntimeError::LimitRejected {
+                agent: manifest.name.clone(),
+                reason: "WASI host is not installed; grant recorded but no preopens or sockets"
+                    .into(),
+            });
+        }
+        Ok(())
+    }
+}
+
+fn is_wasi_module(module: &str) -> bool {
+    module.starts_with("wasi")
+}
+
+fn is_wasi_network(name: &str) -> bool {
+    name.starts_with("sock_") || name.contains("sock")
 }
 
 const HELLO_WAT: &str = r#"
@@ -190,4 +273,16 @@ const GROW_WAT: &str = r#"
     if
       unreachable
     end))
+"#;
+
+const WASI_FS_WAT: &str = r#"
+(module
+  (import "wasi_snapshot_preview1" "fd_write" (func $fd_write (param i32 i32 i32 i32) (result i32)))
+  (func (export "run") nop))
+"#;
+
+const WASI_NET_WAT: &str = r#"
+(module
+  (import "wasi_snapshot_preview1" "sock_accept" (func $sock_accept (param i32 i32 i32) (result i32)))
+  (func (export "run") nop))
 "#;
