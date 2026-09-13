@@ -1,10 +1,13 @@
 # gaia-interface
 
-- **Layer:** L6
-- **License:** MIT
-- **Implementation phase:** 4
-- **Language (planned):** Rust (core), plus Python/TS where noted in the blueprint
+L6 local-first session for #6 / #27.
 
-CLI, API, Web UI / Studio, voice/vision/mobile. SDK stubs are in gaia-sdk/.
+- `Session::exec` is the CLI adapter (`init`, `start`, `intent`, `revoke`, `status`).
+- `HttpGateway` is the same session over in-process request objects. No socket is bound.
+- Cloud is denied unless the profile opts in.
 
-Contracts: [`../gaia-spec/`](../gaia-spec/). Tracker: parent #1, phase epic listed there.
+Not included: Ratatui, Axum/WebSocket/gRPC, Web UI, Studio, voice, vision, mobile.
+
+```bash
+cargo test -p gaia-interface
+```
