@@ -2,5 +2,5 @@
 
 Example agents and workflows (MIT).
 
-Phase 0 ships one hello-intent that uses the Python SDK stub and the
-blueprint analyst manifest.
+- `hello-intent` — Python SDK stub plus the blueprint analyst manifest.
+- `agent-pack` — #25 local pack notes for system, cognitive, and bridge agents.
