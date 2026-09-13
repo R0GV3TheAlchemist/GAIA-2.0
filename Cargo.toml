@@ -15,6 +15,7 @@ members = [
   "gaia-skills",
   "gaia-aisd",
   "gaia-hspd",
+  "gaia-aispd",
 ]
 
 [workspace.package]
