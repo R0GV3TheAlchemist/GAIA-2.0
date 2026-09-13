@@ -1,16 +1,18 @@
-//! Artificial Twin of Earth (#33–#38).
-//! Observation contract, commons catalog, nervous fabric, memory, scenarios, interface.
-//! Not Iceberg, Cesium, GraphCast weights, or a live GCM.
+//! Artificial Twin of Earth (#33–#44).
+//! Observation contract plus a machine-readable mission catalog.
+//! Not live Sentinel, Argo harvest, or NDBC sockets.
 
 mod commons;
 mod iface;
 mod memory;
+mod missions;
 mod nervous;
 mod simulate;
 
 pub use commons::{Collection, Commons, Domain, QualityTier};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
+pub use missions::{CoverageGap, Mission, MissionCatalog, MissionDomain};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
 pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
 
