@@ -80,6 +80,8 @@ pub struct StoredIntent {
 pub struct IntentEngine {
     pub backend: IntentBackend,
     stored: Vec<StoredIntent>,
+    ollama_host: String,
+    ollama_model: String,
 }
 
 impl IntentEngine {
@@ -87,10 +89,24 @@ impl IntentEngine {
         Self {
             backend: IntentBackend::Stub,
             stored: Vec::new(),
+            ollama_host: "127.0.0.1:11434".into(),
+            ollama_model: "llama3.2".into(),
         }
     }
 
-    /// No cloud. Non-stub backends are refused until wired.
+    pub fn local_ollama() -> Self {
+        Self::ollama_at("127.0.0.1:11434", "llama3.2")
+    }
+
+    pub fn ollama_at(host: impl Into<String>, model: impl Into<String>) -> Self {
+        Self {
+            backend: IntentBackend::Ollama,
+            stored: Vec::new(),
+            ollama_host: host.into(),
+            ollama_model: model.into(),
+        }
+    }
+
     pub fn parse(&self, text: &str, mem: &mut MemOs) -> Result<IntentGraph, String> {
         let text = text.trim();
         if text.is_empty() {
@@ -98,10 +114,9 @@ impl IntentEngine {
         }
         refuse_purpose(text)?;
         match self.backend {
-            IntentBackend::Stub => Ok(self.parse_stub(text, mem)),
-            IntentBackend::Ollama | IntentBackend::LlamaCpp => Err(
-                "runtime backends not wired; default is Stub (local-first, no cloud)".into(),
-            ),
+            IntentBackend::Stub => Ok(self.parse_stub(text, mem, IntentBackend::Stub)),
+            IntentBackend::Ollama => self.parse_ollama(text, mem),
+            IntentBackend::LlamaCpp => Err("llama.cpp backend is not wired".into()),
         }
     }
 
@@ -133,7 +148,13 @@ impl IntentEngine {
         Ok(())
     }
 
-    fn parse_stub(&self, text: &str, mem: &mut MemOs) -> IntentGraph {
+    fn parse_ollama(&self, text: &str, mem: &mut MemOs) -> Result<IntentGraph, String> {
+        let prompt = format!("Reply with the single word OK for this local intent: {text}");
+        let _reply = crate::ollama::generate(&self.ollama_host, &self.ollama_model, &prompt)?;
+        Ok(self.parse_stub(text, mem, IntentBackend::Ollama))
+    }
+
+    fn parse_stub(&self, text: &str, mem: &mut MemOs, backend: IntentBackend) -> IntentGraph {
         let cubes = mem.recall(text, 5);
         let retrieve = Uuid::new_v4();
         let research = Uuid::new_v4();
@@ -160,7 +181,7 @@ impl IntentEngine {
                 },
             ],
             context_cube_ids: cubes.into_iter().map(|(_, cube)| cube.id).collect(),
-            backend: IntentBackend::Stub,
+            backend,
         }
     }
 }

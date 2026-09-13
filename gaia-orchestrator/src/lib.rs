@@ -5,11 +5,13 @@
 //! Part 4 (#23): MCP JSON-RPC session, AIP registry, unsigned reject.
 //! Part 5 (#4): Kernel Ed25519 intent signatures and hash-chained audit.
 //! Part 6 (#4): Approved local DAG run, failover, lifecycle audit.
+//! Part 7 (#4): Local Ollama generate; fail closed; llama.cpp still refused.
 
 mod broker;
 mod dag;
 mod intent;
 mod mcp;
+mod ollama;
 mod run;
 mod trust;
 

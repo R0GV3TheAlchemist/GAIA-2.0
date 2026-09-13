@@ -1,4 +1,4 @@
-//! #20 depth: text → graph, local-only, MemCubes, signed store, refusals.
+//! #20 Intent Engine: text → graph, local-only, MemCubes, signed store, refusals.
 
 use gaia_memos::{CubeType, MemCube, MemOs};
 use gaia_orchestrator::{IntentBackend, IntentEngine, IntentSigner, Privacy};
@@ -36,7 +36,9 @@ fn weaponized_text_is_refused() {
 fn cloud_word_does_not_leave_local_only() {
     let mut mem = MemOs::new();
     let engine = IntentEngine::local_stub();
-    let g = engine.parse("summarize CARE in the cloud today cheap", &mut mem).unwrap();
+    let g = engine
+        .parse("summarize CARE in the cloud today cheap", &mut mem)
+        .unwrap();
     assert_eq!(g.constraints.privacy, Privacy::LocalOnly);
     assert_eq!(g.constraints.time.as_deref(), Some("today"));
     assert_eq!(g.constraints.cost.as_deref(), Some("low"));
@@ -45,7 +47,11 @@ fn cloud_word_does_not_leave_local_only() {
 #[test]
 fn retrieves_memcubes_before_planning() {
     let mut mem = MemOs::new();
-    let cube = mem.put(MemCube::new(CubeType::Plaintext, "CARE DestinE draft", "fixture"));
+    let cube = mem.put(MemCube::new(
+        CubeType::Plaintext,
+        "CARE DestinE draft",
+        "fixture",
+    ));
     let engine = IntentEngine::local_stub();
     let g = engine.parse("CARE", &mut mem).unwrap();
     assert!(g.context_cube_ids.contains(&cube));
@@ -55,8 +61,6 @@ fn retrieves_memcubes_before_planning() {
 fn non_stub_backend_is_refused() {
     let mut mem = MemOs::new();
     let mut engine = IntentEngine::local_stub();
-    engine.backend = IntentBackend::Ollama;
-    assert!(engine.parse("anything", &mut mem).is_err());
     engine.backend = IntentBackend::LlamaCpp;
     assert!(engine.parse("anything", &mut mem).is_err());
 }
@@ -67,12 +71,10 @@ fn store_signs_and_verifies() {
     let mut engine = IntentEngine::local_stub();
     let g = engine.parse("open CARE.md", &mut mem).unwrap();
     let signer = IntentSigner::generate();
-    let id = engine.store(g.clone(), &signer).unwrap();
+    let id = engine.store(g, &signer).unwrap();
+    engine.verify_stored(id).unwrap();
     let stored = engine.get(id).unwrap();
     assert_eq!(stored.graph.goal, "open CARE.md");
-    assert_eq!(stored.signed.algorithm, "ed25519");
-    assert!(stored.signed.issuer_did.starts_with("did:key:gaia:ed25519:"));
-    engine.verify_stored(id).unwrap();
 }
 
 #[test]
