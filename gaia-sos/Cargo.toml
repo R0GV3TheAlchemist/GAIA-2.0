@@ -1,0 +1,6 @@
+[package]
+name = "gaia-sos"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Super OS design contracts first cut. No second kernel. Not v1.0."

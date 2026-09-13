@@ -1,18 +1,27 @@
-//! #177 ethics. Phase 0 has no actuator write path.
+//! #177/#183 ethics.
+
+use crate::SiError;
 
 pub fn articles() -> [&'static str; 8] {
     [
-        "override-always",
-        "no-covert-biometrics",
-        "purpose-limitation",
-        "retention-limits",
-        "human-ticket-for-actuators",
-        "no-pathogen-engineering",
-        "cameras-off-default",
-        "not-conscious-buildings",
+        "life-serving",
+        "transparency",
+        "override",
+        "equity",
+        "privacy",
+        "sustainability",
+        "resilience",
+        "democracy",
     ]
 }
 
 pub fn cameras_default() -> bool {
     false
+}
+
+pub fn admit_occupancy(class: &str) -> Result<(), SiError> {
+    if class.contains("biometric") {
+        return Err(SiError::BiometricDefault);
+    }
+    Ok(())
 }

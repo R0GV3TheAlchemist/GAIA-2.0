@@ -19,6 +19,7 @@ members = [
   "gaia-hmgd",
   "gaia-aimd",
   "gaia-si",
+  "gaia-sos",
 ]
 
 [workspace.package]
