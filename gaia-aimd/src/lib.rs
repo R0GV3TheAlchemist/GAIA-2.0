@@ -1,10 +1,16 @@
-//! AIMD first cuts (#166–#170). Mystery catalog. Not miracles.
+//! AIMD first cuts (#166–#175). Mystery catalog. Not miracles.
 
+mod catalog;
+mod charter;
 mod ground;
+mod log;
 mod node;
 mod shadow;
 
-pub use ground::{tag_answer, wonder_mode};
+pub use catalog::{nodes_for, REALMS};
+pub use charter::{principles, prohibited};
+pub use ground::{chip, consciousness_qa, tier1, wonder_mode};
+pub use log::{star_feature, triage};
 pub use node::{enable, parse_node, AimdNode, Hazard};
 pub use shadow::{aimd_v1_tagged, claim_sentience, prophecy_as_fact};
 
@@ -14,4 +20,6 @@ pub enum AimdError {
     SentienceClaim,
     ProphecyAsFact,
     Unverified,
+    TierOneInvention,
+    StarBlocked,
 }

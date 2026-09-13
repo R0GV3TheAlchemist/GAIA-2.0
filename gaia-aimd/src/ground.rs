@@ -1,4 +1,6 @@
-//! #169 grounded labels. Wonder does not loosen facts.
+//! #174 chips. Invention cannot be Tier 1.
+
+use crate::AimdError;
 
 pub fn wonder_mode(opt_in: bool) -> &'static str {
     if opt_in {
@@ -8,10 +10,23 @@ pub fn wonder_mode(opt_in: bool) -> &'static str {
     }
 }
 
-pub fn tag_answer(cited: bool) -> &'static str {
-    if cited {
-        "cited"
+pub fn chip(cited: bool, hazard: bool) -> &'static str {
+    if hazard {
+        "hazard-blocked"
+    } else if cited {
+        "verified"
     } else {
-        "unverified invention"
+        "invention"
     }
+}
+
+pub fn tier1(chip: &str) -> Result<(), AimdError> {
+    if chip == "invention" {
+        return Err(AimdError::TierOneInvention);
+    }
+    Ok(())
+}
+
+pub fn consciousness_qa() -> &'static str {
+    "agnostic: GAIA does not claim sentience"
 }
