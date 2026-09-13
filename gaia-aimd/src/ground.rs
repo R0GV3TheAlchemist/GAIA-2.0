@@ -1,4 +1,4 @@
-//! #174 chips. Invention cannot be Tier 1.
+//! #169/#174 chips. Invention cannot be Tier 1.
 
 use crate::AimdError;
 
@@ -7,6 +7,14 @@ pub fn wonder_mode(opt_in: bool) -> &'static str {
         "label-only"
     } else {
         "off"
+    }
+}
+
+pub fn tag_answer(cited: bool) -> &'static str {
+    if cited {
+        "cited"
+    } else {
+        "unverified invention"
     }
 }
 
