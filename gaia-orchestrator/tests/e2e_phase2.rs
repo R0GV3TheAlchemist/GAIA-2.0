@@ -16,6 +16,7 @@ fn e2e_stub_bind_sign_run_failover_writes_audit_file() {
     let signer = IntentSigner::generate();
     let id = engine.store(graph.clone(), &signer).unwrap();
     engine.verify_stored(id).unwrap();
+    let signed = engine.get(id).unwrap().signed.clone();
 
     let mut plan = TaskPlanner::from_intent(&graph);
     bind_plan_to_registry(&mut plan, &McpRegistry::local()).unwrap();
@@ -24,7 +25,14 @@ fn e2e_stub_bind_sign_run_failover_writes_audit_file() {
 
     let mut broker = Broker::new();
     let mut audit = gaia_orchestrator::TrustAudit::default();
-    let run = LocalRunner::run(&plan, &mut broker, &mut audit, Some("specialist-a")).unwrap();
+    let run = LocalRunner::run(
+        &plan,
+        &mut broker,
+        &mut audit,
+        &signed,
+        Some("specialist-a"),
+    )
+    .unwrap();
     assert_eq!(run.completed_jobs.len(), plan.nodes.len());
     assert_eq!(run.failed_over_jobs.len(), 1);
 
