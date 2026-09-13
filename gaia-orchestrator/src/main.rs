@@ -1,8 +1,10 @@
 use gaia_memos::MemOs;
-use gaia_orchestrator::{Broker, IntentEngine, IntentSigner, LocalRunner, TaskPlanner, TrustAudit};
+use gaia_orchestrator::{
+    Broker, IntentEngine, IntentSigner, LocalRunner, McpRegistry, TaskPlanner, TrustAudit,
+};
 
 fn usage() -> &'static str {
-    "usage: gaia intent <text> [--accept] [--kill-specialist-a]\n\nWithout --accept, prints an inspectable local-only plan and does not execute.\n--accept runs the accepted plan in local in-process stubs only."
+    "usage: gaia intent [--accept] [--kill-specialist-a] <goal>\n\nWithout --accept, prints an inspectable local-only plan and does not execute.\n--accept verifies and accepts the plan, dispatches its signed intent through local MCP, then runs local in-process stubs only."
 }
 
 fn main() {
@@ -11,6 +13,7 @@ fn main() {
         eprintln!("{}", usage());
         std::process::exit(2);
     }
+
     args.remove(0);
     let accept = take_flag(&mut args, "--accept");
     let kill_specialist_a = take_flag(&mut args, "--kill-specialist-a");
@@ -51,6 +54,16 @@ fn main() {
         eprintln!("plan acceptance failed: {error}");
         std::process::exit(1);
     }
+
+    let mcp = McpRegistry::local();
+    match mcp.invoke_from_intent(&graph, &signer) {
+        Ok(dispatch) => println!("mcp_dispatch={dispatch}"),
+        Err(error) => {
+            eprintln!("mcp dispatch failed: {error}");
+            std::process::exit(1);
+        }
+    }
+
     let mut broker = Broker::new();
     let mut audit = TrustAudit::default();
     match LocalRunner::run(
