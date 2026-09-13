@@ -2,6 +2,8 @@ use gaia_memos::MemOs;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::trust::{IntentSigner, SignedIntent};
+
 /// Local-first by default. Runtimes are named, not invoked.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum IntentBackend {
@@ -59,15 +61,22 @@ pub struct IntentGraph {
 }
 
 impl IntentGraph {
-    /// The graph document is unsigned. Signatures live on SignedIntent (#4).
+    /// The graph document does not carry a signature. Store attaches SignedIntent.
     pub fn is_signed(&self) -> bool {
         false
     }
 }
 
+/// Persisted #20 record: graph plus a kernel-verifiable signature.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct StoredIntent {
+    pub graph: IntentGraph,
+    pub signed: SignedIntent,
+}
+
 pub struct IntentEngine {
     pub backend: IntentBackend,
-    stored: Vec<IntentGraph>,
+    stored: Vec<StoredIntent>,
 }
 
 impl IntentEngine {
@@ -88,14 +97,33 @@ impl IntentEngine {
         }
     }
 
-    pub fn store(&mut self, graph: IntentGraph) -> Uuid {
+    /// Sign then persist. Unsigned or mismatched envelopes are refused.
+    pub fn store(&mut self, graph: IntentGraph, signer: &IntentSigner) -> Result<Uuid, String> {
+        let signed = signer.sign(&graph);
+        IntentSigner::verify_detached(&signed)?;
+        if signed.intent_id != graph.id {
+            return Err("signed intent does not match graph".into());
+        }
         let id = graph.id;
-        self.stored.push(graph);
-        id
+        self.stored.push(StoredIntent { graph, signed });
+        Ok(id)
     }
 
-    pub fn get(&self, id: Uuid) -> Option<&IntentGraph> {
-        self.stored.iter().find(|g| g.id == id)
+    pub fn get(&self, id: Uuid) -> Option<&StoredIntent> {
+        self.stored.iter().find(|s| s.graph.id == id)
+    }
+
+    pub fn verify_stored(&self, id: Uuid) -> Result<(), String> {
+        let stored = self.get(id).ok_or_else(|| "intent not stored".to_string())?;
+        IntentSigner::verify_detached(&stored.signed)?;
+        if stored.signed.intent_id != stored.graph.id {
+            return Err("signed intent does not match graph".into());
+        }
+        let expected = IntentSigner::canonical_payload(&stored.graph);
+        if stored.signed.canonical_payload != expected {
+            return Err("stored payload does not match graph".into());
+        }
+        Ok(())
     }
 
     fn parse_stub(&self, text: &str, mem: &mut MemOs) -> IntentGraph {
