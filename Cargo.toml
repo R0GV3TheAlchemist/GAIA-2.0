@@ -6,6 +6,7 @@ members = [
   "gaia-memos",
   "gaia-sdk/rust",
   "gaia-orchestrator",
+  "gaia-agents",
 ]
 
 [workspace.package]
