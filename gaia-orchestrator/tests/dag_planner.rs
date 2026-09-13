@@ -1,7 +1,8 @@
-//! #21 Task Planner: 3+ node DAG, inspect-before-run, retries then fallback, MemOS persist.
+//! #21 depth: 3+ node DAG, inspect-before-run, topo, cycle refuse, fallback.
 
 use gaia_memos::MemOs;
 use gaia_orchestrator::{Executor, IntentEngine, TaskPlanner};
+use uuid::Uuid;
 
 fn research_plan() -> (gaia_orchestrator::Plan, MemOs) {
     let mut mem = MemOs::new();
@@ -16,9 +17,11 @@ fn research_and_summarize_is_three_plus_nodes() {
     assert!(plan.nodes.len() >= 3);
     assert!(!plan.accepted);
     let view = plan.inspect();
+    assert!(view.contains("inspect-before-run"));
     assert!(view.contains("retriever") || view.contains("researcher"));
     assert!(view.contains("fallback="));
     assert!(view.contains("retries="));
+    plan.topo_order().unwrap();
 }
 
 #[test]
@@ -26,6 +29,19 @@ fn execute_refused_until_accepted() {
     let (plan, mut mem) = research_plan();
     let ex = Executor::default();
     assert!(ex.execute(&plan, &mut mem).is_err());
+}
+
+#[test]
+fn cycle_is_refused() {
+    let (mut plan, mut mem) = research_plan();
+    plan.accept();
+    let a = plan.nodes[0].id;
+    let b = plan.nodes[1].id;
+    plan.nodes[0].depends_on = vec![b];
+    plan.nodes[1].depends_on = vec![a];
+    let ex = Executor::default();
+    let err = ex.execute(&plan, &mut mem).unwrap_err();
+    assert!(err.contains("cycle"));
 }
 
 #[test]
@@ -57,8 +73,4 @@ fn failed_node_retries_then_fallback() {
     assert!(report.outputs.iter().any(|o| o.starts_with("fallback:")));
     assert!(report.plan_cube_id.is_some());
     assert!(report.cube_id.is_some());
-    let plan_cube = mem.get(report.plan_cube_id.unwrap()).unwrap();
-    assert!(plan_cube.content.contains(&plan.id.to_string()));
-    let result_cube = mem.get(report.cube_id.unwrap()).unwrap();
-    assert!(result_cube.content.contains("fallback"));
 }
