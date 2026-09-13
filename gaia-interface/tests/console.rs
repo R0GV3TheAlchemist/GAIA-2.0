@@ -2,6 +2,7 @@
 
 use gaia_interface::{AgentState, PermissionConsole, Session, Studio};
 use std::fs;
+use std::path::PathBuf;
 
 #[test]
 fn html_trace_shows_intent_events_without_a_terminal() {
@@ -34,7 +35,7 @@ fn every_running_agent_is_visible_and_revocable() {
     assert!(!after[0].revocable);
     assert_eq!(session.agents()[0].state, AgentState::Revoked);
     let html = PermissionConsole::new(&session, &studio).render_html();
-    assert!(html.contains("aria-label=\"Revoke") || html.contains("not revocable"));
+    assert!(html.contains("not revocable"));
 }
 
 #[test]
@@ -47,7 +48,8 @@ fn studio_composes_a_manifest_recipe() {
 
 #[test]
 fn wcag_notes_are_documented() {
-    let notes = fs::read_to_string("ACCESSIBILITY.md").unwrap();
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ACCESSIBILITY.md");
+    let notes = fs::read_to_string(path).unwrap();
     assert!(notes.contains("keyboard"));
     assert!(notes.contains("contrast"));
     assert!(notes.contains("screen reader"));
