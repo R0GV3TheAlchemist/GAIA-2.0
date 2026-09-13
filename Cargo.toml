@@ -12,6 +12,7 @@ members = [
   "gaia-gaian",
   "gaia-ukd",
   "gaia-aikd",
+  "gaia-skills",
 ]
 
 [workspace.package]
