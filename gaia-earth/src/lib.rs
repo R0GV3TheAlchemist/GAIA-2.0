@@ -1,18 +1,28 @@
-//! Artificial Twin of Earth (#33–#38).
-//! Observation contract, commons catalog, nervous fabric, memory, scenarios, interface.
-//! Not Iceberg, Cesium, GraphCast weights, or a live GCM.
+//! Artificial Twin of Earth (#33–#50).
+//! First cuts through QC, memory tiers, ensemble, correlation, and three-mode jobs.
+//! Not OpenDA, ERA5, GraphCast weights, or a GCM.
 
 mod commons;
+mod correlate;
+mod ensemble;
 mod iface;
 mod memory;
 mod nervous;
+mod qc;
+mod runtime;
 mod simulate;
+mod tiers;
 
 pub use commons::{Collection, Commons, Domain, QualityTier};
+pub use correlate::{BoundaryIndicator, CaseStudy};
+pub use ensemble::{ModelProduct, RegisteredModel};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
+pub use qc::{assimilate, CuratedRecord, QualityClass};
+pub use runtime::{GridScale, SimJob, SimRun};
 pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
+pub use tiers::{MemoryTier, TierCube, TierStore};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
