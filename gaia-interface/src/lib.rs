@@ -6,4 +6,6 @@ mod gateway;
 mod session;
 
 pub use gateway::{HttpGateway, HttpRequest, HttpResponse};
-pub use session::{AgentState, IntentRecord, Profile, Session, SessionError};
+pub use session::{
+    AgentState, AuditLine, IntentRecord, MemoryNote, Profile, Session, SessionError,
+};

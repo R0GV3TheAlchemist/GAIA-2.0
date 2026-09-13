@@ -70,3 +70,44 @@ fn cloud_intent_is_denied_without_opt_in() {
     let err = session.declare_intent("run this in cloud").unwrap_err();
     assert_eq!(err, SessionError::CloudDenied);
 }
+
+#[test]
+fn agent_create_then_deploy_works_on_cli_and_http() {
+    let mut session = booted();
+    let created = session.exec(&["agent", "create", "writer"]).unwrap();
+    assert_eq!(created, "created agent writer state=Created");
+    let deployed = session.exec(&["agent", "deploy", "writer"]).unwrap();
+    assert_eq!(deployed, "deployed agent writer state=Running");
+    let via_http = HttpGateway::new(&mut session).handle(HttpRequest {
+        method: "POST".into(),
+        path: "/agents".into(),
+        body: r#"{"name":"analyst"}"#.into(),
+    });
+    assert_eq!(via_http.status, 200);
+    assert!(via_http.body.contains("Created"));
+    let deploy_http = HttpGateway::new(&mut session).handle(HttpRequest {
+        method: "POST".into(),
+        path: "/agents/analyst/deploy".into(),
+        body: "{}".into(),
+    });
+    assert_eq!(deploy_http.status, 200);
+    assert!(deploy_http.body.contains("Running"));
+}
+
+#[test]
+fn memory_and_audit_are_session_local() {
+    let mut session = booted();
+    session.exec(&["memory", "CARE note"]).unwrap();
+    assert_eq!(session.memory().len(), 1);
+    assert_eq!(session.memory()[0].text, "CARE note");
+    let listed = session.exec(&["audit"]).unwrap();
+    assert!(listed.starts_with("audit_events="));
+    assert!(session.audit().iter().any(|l| l.event.contains("memory")));
+    let http = HttpGateway::new(&mut session).handle(HttpRequest {
+        method: "GET".into(),
+        path: "/audit".into(),
+        body: String::new(),
+    });
+    assert_eq!(http.status, 200);
+    assert!(http.body.contains("init profile=developer"));
+}
