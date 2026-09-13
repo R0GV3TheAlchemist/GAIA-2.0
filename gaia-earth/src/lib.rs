@@ -1,5 +1,10 @@
-//! Artificial Twin of Earth (#33).
-//! Observation contract only. No Iceberg, STAC, Kafka, or live feeds.
+//! Artificial Twin of Earth (#33 / #36).
+//! Observation contract plus PlanetaryMemCube query.
+//! Not ERA5, CMIP6, GraphCast weights, or a live ensemble.
+
+mod memory;
+
+pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
@@ -87,10 +92,12 @@ impl Observation {
     }
 }
 
-/// Purpose gate. Not a classifier. Explicit targeting language is refused.
 pub fn allow_purpose(purpose: &str) -> Result<(), TwinError> {
     let lower = purpose.to_ascii_lowercase();
-    if lower.contains("weapon") || lower.contains("target individual") || lower.contains("surveillance of person") {
+    if lower.contains("weapon")
+        || lower.contains("target individual")
+        || lower.contains("surveillance of person")
+    {
         return Err(TwinError::WeaponizedUse);
     }
     Ok(())
