@@ -1,17 +1,26 @@
-//! Artificial Twin of Earth (#33–#38).
-//! Observation contract, commons catalog, nervous fabric, memory, scenarios, interface.
-//! Not Iceberg, Cesium, GraphCast weights, or a live GCM.
+//! Artificial Twin of Earth (#33–#55 first cuts).
+//! Not Cesium, AdvanTip, or Twin v1.0.
 
+mod audiences;
 mod commons;
+mod drill;
+mod ews;
 mod iface;
+mod library;
 mod memory;
 mod nervous;
+mod portal;
 mod simulate;
 
+pub use audiences::{surveillance_endpoints, AgentAnswer, LocalAgent, PolicyUi, ScientistApi};
 pub use commons::{Collection, Commons, Domain, QualityTier};
+pub use drill::{release_checklist, DrillStep, HistoricalDrill};
+pub use ews::{BoundaryMonitor, WatchItem, WatchState};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
+pub use library::{CascadeEdge, Dist, ScenarioLibrary, ScenarioSpec};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
+pub use portal::{demo_globe, GlobeLayer, PortalPin, TimeCursor};
 pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
