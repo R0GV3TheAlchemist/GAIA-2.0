@@ -1,5 +1,10 @@
-//! Artificial Twin of Earth (#33).
-//! Observation contract only. No Iceberg, STAC, Kafka, or live feeds.
+//! Artificial Twin of Earth (#33 / #37).
+//! Observation contract plus What-Now / What-Next / What-If stubs.
+//! Not a GCM or tipping-point cascade.
+
+mod simulate;
+
+pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
@@ -87,10 +92,12 @@ impl Observation {
     }
 }
 
-/// Purpose gate. Not a classifier. Explicit targeting language is refused.
 pub fn allow_purpose(purpose: &str) -> Result<(), TwinError> {
     let lower = purpose.to_ascii_lowercase();
-    if lower.contains("weapon") || lower.contains("target individual") || lower.contains("surveillance of person") {
+    if lower.contains("weapon")
+        || lower.contains("target individual")
+        || lower.contains("surveillance of person")
+    {
         return Err(TwinError::WeaponizedUse);
     }
     Ok(())
