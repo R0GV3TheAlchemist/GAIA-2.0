@@ -27,10 +27,11 @@ fn iot_profile_is_executor_and_sensors_with_a_budget() {
 #[test]
 fn hpc_adapter_pulls_a_batch_task() {
     let mut hpc = HpcAdapter::new();
-    hpc.submit("job-1", "batch", "{"nodes":2}");
+    hpc.submit("job-1", "batch", "nodes=2");
     let task = hpc.pull().expect("batch task");
     assert_eq!(task.job_id, "job-1");
     assert_eq!(task.kind, "batch");
+    assert_eq!(task.payload, "nodes=2");
     assert!(hpc.pull().is_none());
     assert_eq!(hpc.pulled().len(), 1);
 }
