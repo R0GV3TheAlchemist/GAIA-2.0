@@ -12,5 +12,6 @@ answer into an implementation.
 | RFC-KERN-001 | Asterinas fork vs Linux module as the default developer profile | #15 |
 | RFC-AUDIT-001 | Audit log format and hash chain | #19 |
 | RFC-MARK-001 | Trademark policy for "GAIA" / "GAIAN" | governance |
+| RFC-REL-001 | When may the tree be tagged `v1.0.0`? | [RFC 0002](../rfcs/0002-defer-v1.0.0.md) (#32) |
 
 Related design overlay: #190–#200.
