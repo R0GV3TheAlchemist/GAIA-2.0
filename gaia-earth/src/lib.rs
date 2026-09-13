@@ -1,14 +1,16 @@
-//! Artificial Twin of Earth (#33–#38).
-//! Observation contract, commons catalog, nervous fabric, memory, scenarios, interface.
-//! Not Iceberg, Cesium, GraphCast weights, or a live GCM.
+//! Artificial Twin of Earth (#33–#42).
+//! Observation contract plus first-wave fixture connectors.
+//! Not live Copernicus, Kafka, GBIF HTTP, or a data lake cluster.
 
 mod commons;
+mod feeds;
 mod iface;
 mod memory;
 mod nervous;
 mod simulate;
 
 pub use commons::{Collection, Commons, Domain, QualityTier};
+pub use feeds::{Connector, FeedBus, FeedRecord, RateLimit};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
@@ -65,6 +67,7 @@ pub enum TwinError {
     WeaponizedUse,
     UnknownCollection,
     SparseRegion,
+    FeedUnavailable,
 }
 
 impl std::fmt::Display for TwinError {
@@ -75,6 +78,7 @@ impl std::fmt::Display for TwinError {
             Self::WeaponizedUse => write!(f, "weaponization is refused"),
             Self::UnknownCollection => write!(f, "unknown collection"),
             Self::SparseRegion => write!(f, "sparse region flagged; value not invented"),
+            Self::FeedUnavailable => write!(f, "feed unavailable; value not invented"),
         }
     }
 }
