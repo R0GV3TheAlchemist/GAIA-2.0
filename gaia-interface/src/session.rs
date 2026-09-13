@@ -9,6 +9,7 @@ pub struct Profile {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AgentState {
+    Created,
     Running,
     Revoked,
 }
@@ -34,6 +35,18 @@ pub struct IntentRecord {
     pub cancelled: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct MemoryNote {
+    pub id: u64,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AuditLine {
+    pub sequence: u64,
+    pub event: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SessionError {
     NotInitialized,
@@ -42,6 +55,8 @@ pub enum SessionError {
     CloudDenied,
     UnknownAgent(String),
     AlreadyRevoked(String),
+    AlreadyExists(String),
+    NotDeployed(String),
     Usage(String),
 }
 
@@ -54,6 +69,8 @@ impl std::fmt::Display for SessionError {
             Self::CloudDenied => write!(f, "cloud is opt-in only"),
             Self::UnknownAgent(id) => write!(f, "unknown agent: {id}"),
             Self::AlreadyRevoked(id) => write!(f, "agent already revoked: {id}"),
+            Self::AlreadyExists(id) => write!(f, "agent already exists: {id}"),
+            Self::NotDeployed(id) => write!(f, "agent not deployed: {id}"),
             Self::Usage(msg) => write!(f, "{msg}"),
         }
     }
@@ -65,7 +82,10 @@ pub struct Session {
     started: bool,
     agents: Vec<Agent>,
     intents: Vec<IntentRecord>,
+    notes: Vec<MemoryNote>,
+    audit: Vec<AuditLine>,
     next_intent: u64,
+    next_note: u64,
 }
 
 impl Session {
@@ -89,6 +109,14 @@ impl Session {
         &self.intents
     }
 
+    pub fn memory(&self) -> &[MemoryNote] {
+        &self.notes
+    }
+
+    pub fn audit(&self) -> &[AuditLine] {
+        &self.audit
+    }
+
     pub fn init(&mut self, profile: &str) -> Result<Profile, SessionError> {
         if profile != "developer" {
             return Err(SessionError::UnknownProfile(profile.into()));
@@ -104,6 +132,7 @@ impl Session {
             id: "local-researcher".into(),
             state: AgentState::Running,
         }];
+        self.record("init profile=developer");
         Ok(profile)
     }
 
@@ -112,7 +141,58 @@ impl Session {
             return Err(SessionError::NotInitialized);
         }
         self.started = true;
+        self.record("start");
         Ok(())
+    }
+
+    pub fn create_agent(&mut self, id: &str) -> Result<Agent, SessionError> {
+        self.require_started()?;
+        let id = id.trim();
+        if id.is_empty() {
+            return Err(SessionError::Usage("usage: agent create <name>".into()));
+        }
+        if self.agents.iter().any(|a| a.id == id) {
+            return Err(SessionError::AlreadyExists(id.into()));
+        }
+        let agent = Agent {
+            id: id.into(),
+            state: AgentState::Created,
+        };
+        self.agents.push(agent.clone());
+        self.record(format!("agent-create {id}"));
+        Ok(agent)
+    }
+
+    pub fn deploy_agent(&mut self, id: &str) -> Result<Agent, SessionError> {
+        self.require_started()?;
+        let agent = self
+            .agents
+            .iter_mut()
+            .find(|a| a.id == id)
+            .ok_or_else(|| SessionError::UnknownAgent(id.into()))?;
+        match agent.state {
+            AgentState::Revoked => return Err(SessionError::AlreadyRevoked(id.into())),
+            AgentState::Running => return Err(SessionError::AlreadyExists(id.into())),
+            AgentState::Created => agent.state = AgentState::Running,
+        }
+        self.record(format!("agent-deploy {id}"));
+        Ok(agent.clone())
+    }
+
+    pub fn remember(&mut self, text: &str) -> Result<MemoryNote, SessionError> {
+        self.require_started()?;
+        let text = text.trim();
+        if text.is_empty() {
+            return Err(SessionError::Usage("memory text required".into()));
+        }
+        self.next_note += 1;
+        let note = MemoryNote {
+            id: self.next_note,
+            text: text.into(),
+        };
+        self.notes.push(note.clone());
+        self.record(format!("memory {}", note.id));
+        Ok(note)
     }
 
     pub fn declare_intent(&mut self, text: &str) -> Result<IntentRecord, SessionError> {
@@ -159,6 +239,7 @@ impl Session {
             });
         }
         self.intents.push(record.clone());
+        self.record(format!("intent {}", record.id));
         Ok(record)
     }
 
@@ -182,6 +263,7 @@ impl Session {
                 });
             }
         }
+        self.record(format!("revoke {agent_id}"));
         Ok(agent.clone())
     }
 
@@ -199,6 +281,23 @@ impl Session {
                 self.start()?;
                 Ok("started local session".into())
             }
+            Some("agent") => match args.get(1).copied() {
+                Some("create") => {
+                    let id = args.get(2).copied().ok_or_else(|| {
+                        SessionError::Usage("usage: agent create <name>".into())
+                    })?;
+                    let agent = self.create_agent(id)?;
+                    Ok(format!("created agent {} state=Created", agent.id))
+                }
+                Some("deploy") => {
+                    let id = args.get(2).copied().ok_or_else(|| {
+                        SessionError::Usage("usage: agent deploy <name>".into())
+                    })?;
+                    let agent = self.deploy_agent(id)?;
+                    Ok(format!("deployed agent {} state=Running", agent.id))
+                }
+                _ => Err(SessionError::Usage("usage: agent <create|deploy>".into())),
+            },
             Some("intent") => {
                 let text = args.get(1..).unwrap_or(&[]).join(" ");
                 let record = self.declare_intent(&text)?;
@@ -210,6 +309,16 @@ impl Session {
                     record.events.len()
                 ))
             }
+            Some("memory") => {
+                if args.len() == 1 {
+                    Ok(format!("memory_notes={}", self.notes.len()))
+                } else {
+                    let text = args[1..].join(" ");
+                    let note = self.remember(&text)?;
+                    Ok(format!("memory_id={} text={}", note.id, note.text))
+                }
+            }
+            Some("audit") => Ok(format!("audit_events={}", self.audit.len())),
             Some("revoke") => {
                 let id = args.get(1).copied().ok_or_else(|| {
                     SessionError::Usage("usage: revoke <agent>".into())
@@ -218,13 +327,15 @@ impl Session {
                 Ok(format!("revoked {}", agent.id))
             }
             Some("status") => Ok(format!(
-                "started={} agents={} intents={}",
+                "started={} agents={} intents={} memory={} audit={}",
                 self.started,
                 self.agents.len(),
-                self.intents.len()
+                self.intents.len(),
+                self.notes.len(),
+                self.audit.len()
             )),
             _ => Err(SessionError::Usage(
-                "usage: gaia <init|start|intent|revoke|status>".into(),
+                "usage: gaia <init|start|agent|intent|memory|audit|revoke|status>".into(),
             )),
         }
     }
@@ -237,6 +348,13 @@ impl Session {
             return Err(SessionError::NotStarted);
         }
         Ok(())
+    }
+
+    fn record(&mut self, event: impl Into<String>) {
+        self.audit.push(AuditLine {
+            sequence: self.audit.len() as u64 + 1,
+            event: event.into(),
+        });
     }
 }
 
