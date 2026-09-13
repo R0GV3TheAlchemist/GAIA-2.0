@@ -125,7 +125,7 @@ impl<'a> MobileClient<'a> {
         HttpGateway::new(self.session).handle(HttpRequest {
             method: "POST".into(),
             path: "/intent".into(),
-            body: format!(r#"{{"text":{}}}"#, serde_json::to_string(text).unwrap_or_else(|_| "\"\".into())),
+            body: serde_json::json!({ "text": text }).to_string(),
         })
     }
 }
