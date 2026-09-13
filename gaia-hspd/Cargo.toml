@@ -1,0 +1,6 @@
+[package]
+name = "gaia-hspd"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Human superpowers catalog first cuts. Not a clinic. No doses."

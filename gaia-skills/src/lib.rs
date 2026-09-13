@@ -1,0 +1,33 @@
+//! Skills first cuts (#107–#120). Local-default. No child EI. No v1.0.
+
+mod assess;
+mod develop;
+mod graph;
+mod matching;
+mod overlay;
+mod path;
+mod profile;
+mod schema;
+mod vault;
+
+pub use assess::{hidden_profile_api, Badge, Session};
+pub use develop::{develop, DevPath};
+pub use graph::SkillGraph;
+pub use matching::{global_profile_dump, skills_v1_tagged, tek_skill, SkillCard};
+pub use overlay::{realm_stubs, wef_resolves, wef_top10};
+pub use path::novice_public_speaking;
+pub use profile::SkillProfile;
+pub use schema::{active_listening, SkillNode, REALMS};
+pub use vault::VaultProfile;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SkillError {
+    ChildEiBlocked,
+    SyncDenied,
+    UnknownSkill,
+    AmbientDenied,
+    NoGrant,
+    ChildRank,
+    ClinicalCert,
+    Unpublished,
+}

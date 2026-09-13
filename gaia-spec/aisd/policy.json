@@ -1,0 +1,4 @@
+{
+  "agents": {"min_safety": 3, "human_gate": true},
+  "deny": ["unsupervised-multi-day-coding"]
+}
