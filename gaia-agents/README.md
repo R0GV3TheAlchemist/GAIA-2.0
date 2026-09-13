@@ -1,10 +1,11 @@
 # gaia-agents
 
-- **Layer:** L5
-- **License:** MIT
-- **Implementation phase:** 3
-- **Language (planned):** Rust (core), plus Python/TS where noted in the blueprint
+L5 agent policy harness plus a Wasmtime guest proof for #24.
 
-WASM runtime, core agents, A2A, marketplace. Manifests live in gaia-spec/ until the runtime exists.
+- Policy admission (`AgentRuntime`) is data-level.
+- `WasmRuntime` admits that policy, then runs embedded WAT with fuel and memory limits.
+- No WASI linker, no marketplace package load, no containerd.
 
-Contracts: [`../gaia-spec/`](../gaia-spec/). Tracker: parent #1, phase epic listed there.
+```bash
+cargo test -p gaia-agents
+```
