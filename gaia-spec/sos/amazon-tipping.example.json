@@ -1,0 +1,6 @@
+{
+  "goal": "assess Amazon basin drought risk",
+  "constraints": ["advise-only", "no-actuator"],
+  "context": { "system": "earth-twin", "region": "amazon" },
+  "authorization": { "signed": true }
+}
