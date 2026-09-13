@@ -11,7 +11,7 @@ fn gaia_intent_prints_inspectable_local_plan() {
     let output = gaia(&["intent", "research and summarize CARE"]);
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("trust=PLACEHOLDER-NOT-CRYPTOGRAPHY"));
+    assert!(stdout.contains("trust=ed25519"));
     assert!(stdout.contains("privacy=local-only"));
     assert!(stdout.contains("execution=not-started"));
     assert!(stdout.contains("nodes=3"));
@@ -26,7 +26,7 @@ fn gaia_intent_accept_runs_local_nodes() {
     assert!(stdout.contains("completed_nodes=3"));
     assert!(stdout.contains("failed_over_nodes=0"));
     assert!(stdout.contains("audit_events=6"));
-    assert!(stdout.contains("PLACEHOLDER-NOT-CRYPTOGRAPHY"));
+    assert!(stdout.contains("audit_chain_ok=true"));
 }
 
 #[test]
