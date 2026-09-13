@@ -104,16 +104,25 @@ fn agent_for(goal: &str) -> String {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NodeAttempt {
+    pub node_id: Uuid,
+    pub primary_attempts: u32,
+    pub used_fallback: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RunReport {
     pub plan_id: Uuid,
     pub used_fallback: Vec<Uuid>,
     pub outputs: Vec<String>,
+    pub attempts: Vec<NodeAttempt>,
+    pub plan_cube_id: Option<Uuid>,
     pub cube_id: Option<Uuid>,
 }
 
 #[derive(Default)]
 pub struct Executor {
-    /// Goals containing these substrings fail once, then fallback.
+    /// Goals containing these substrings fail every primary attempt, then fallback.
     pub fail_goals: Vec<String>,
 }
 
@@ -125,28 +134,59 @@ impl Executor {
         if plan.nodes.len() < 3 {
             return Err("DAG must have 3+ nodes".into());
         }
+
         let mut used_fallback = Vec::new();
         let mut outputs = Vec::new();
+        let mut attempts = Vec::new();
+
         for node in &plan.nodes {
             let should_fail = self.fail_goals.iter().any(|f| node.goal.contains(f));
-            if should_fail {
+            let primary_budget = node.max_retries.saturating_add(1);
+            let mut succeeded = false;
+            let mut primary_attempts = 0;
+
+            for attempt in 1..=primary_budget {
+                primary_attempts = attempt;
+                if should_fail {
+                    outputs.push(format!(
+                        "retry:{} agent={} attempt={}",
+                        node.goal, node.agent, attempt
+                    ));
+                    continue;
+                }
+                outputs.push(format!("ok:{} agent={}", node.goal, node.agent));
+                succeeded = true;
+                break;
+            }
+
+            let used = !succeeded;
+            if used {
                 used_fallback.push(node.id);
                 outputs.push(format!(
                     "fallback:{} agent={}",
                     node.goal, node.fallback_agent
                 ));
-            } else {
-                outputs.push(format!("ok:{} agent={}", node.goal, node.agent));
             }
+            attempts.push(NodeAttempt {
+                node_id: node.id,
+                primary_attempts,
+                used_fallback: used,
+            });
         }
+
+        let plan_json = serde_json::to_string(plan).map_err(|e| e.to_string())?;
+        let plan_cube_id = mem.put(MemCube::new(CubeType::Plaintext, plan_json, "dag-plan"));
+
         let report = RunReport {
             plan_id: plan.id,
             used_fallback: used_fallback.clone(),
             outputs: outputs.clone(),
+            attempts: attempts.clone(),
+            plan_cube_id: Some(plan_cube_id),
             cube_id: None,
         };
-        let json = serde_json::to_string(&report).map_err(|e| e.to_string())?;
-        let cube_id = mem.put(MemCube::new(CubeType::Plaintext, json, "dag-plan-result"));
+        let result_json = serde_json::to_string(&report).map_err(|e| e.to_string())?;
+        let cube_id = mem.put(MemCube::new(CubeType::Plaintext, result_json, "dag-plan-result"));
         Ok(RunReport {
             cube_id: Some(cube_id),
             ..report

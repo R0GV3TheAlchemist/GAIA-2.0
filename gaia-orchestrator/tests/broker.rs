@@ -1,4 +1,4 @@
-//! #22 Broker: kill/reschedule, no inbound ports, queue + health metrics.
+//! #22 Broker: kill/reschedule, reconcile, carbon timetable, no inbound ports.
 
 use gaia_memos::MemOs;
 use gaia_orchestrator::{Broker, IntentEngine, TaskPlanner};
@@ -27,6 +27,9 @@ fn metrics_queue_and_health() {
     let m = b.metrics();
     assert_eq!(m.queue_depth, plan.nodes.len());
     assert!(m.executor_health.iter().any(|(id, ok)| id == "specialist-a" && *ok));
+    assert_eq!(m.desired_specialists, 2);
+    assert_eq!(m.live_specialists, 2);
+    assert!(m.carbon_ok);
 }
 
 #[test]
@@ -45,9 +48,36 @@ fn kill_reschedules_inflight() {
 }
 
 #[test]
+fn reconcile_revives_to_desired_count() {
+    let mut b = Broker::new();
+    b.enqueue_plan(&accepted_plan());
+    let _ = b.pull("specialist-a").unwrap();
+    b.kill("specialist-a");
+    assert_eq!(b.live_specialists().len(), 1);
+    let report = b.reconcile();
+    assert_eq!(report.revived, vec!["specialist-a".to_string()]);
+    assert_eq!(report.live_specialists, 2);
+    assert_eq!(b.live_specialists().len(), 2);
+    assert!(b.workers.iter().find(|w| w.id == "specialist-a").unwrap().alive);
+    assert!(b.workers.iter().find(|w| w.id == "specialist-a").unwrap().inflight.is_none());
+}
+
+#[test]
 fn carbon_window_blocks_pull() {
     let mut b = Broker::new();
     b.enqueue_plan(&accepted_plan());
     b.carbon_ok = false;
     assert!(b.pull("specialist-a").is_err());
+}
+
+#[test]
+fn carbon_timetable_blocks_peak_hours() {
+    let mut b = Broker::new();
+    b.enqueue_plan(&accepted_plan());
+    b.set_hour_utc(17);
+    assert!(!b.carbon_ok);
+    assert!(b.pull("specialist-a").unwrap_err().contains("carbon window"));
+    b.set_hour_utc(12);
+    assert!(b.carbon_ok);
+    assert!(b.pull("specialist-a").unwrap().is_some());
 }

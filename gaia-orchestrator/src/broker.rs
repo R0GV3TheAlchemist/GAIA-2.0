@@ -13,18 +13,53 @@ pub struct Worker {
 pub struct Metrics {
     pub queue_depth: usize,
     pub executor_health: Vec<(String, bool)>,
+    pub desired_specialists: usize,
+    pub live_specialists: usize,
+    pub hour_utc: u8,
+    pub carbon_ok: bool,
+}
+
+/// v0 ColonyOS hook: static hours when pulls are refused.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CarbonTimetable {
+    pub closed_hours_utc: Vec<u8>,
+}
+
+impl CarbonTimetable {
+    pub fn default_peak() -> Self {
+        Self {
+            closed_hours_utc: vec![16, 17, 18],
+        }
+    }
+
+    pub fn is_open(&self, hour_utc: u8) -> bool {
+        !self.closed_hours_utc.contains(&hour_utc)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ReconcileReport {
+    pub revived: Vec<String>,
+    pub live_specialists: usize,
+    pub desired_specialists: usize,
 }
 
 /// Pull-based resource broker. Nodes poll; no inbound ports.
 pub struct Broker {
     pub workers: Vec<Worker>,
     pub queue: Vec<String>,
-    /// v0 ColonyOS hook: static timetable. false = carbon window closed.
+    /// Desired live specialist count. Reconcile revives dead specialists up to this.
+    pub desired_specialists: usize,
+    pub timetable: CarbonTimetable,
+    pub hour_utc: u8,
+    /// v0 ColonyOS hook. Derived from timetable unless forced closed in tests.
     pub carbon_ok: bool,
 }
 
 impl Broker {
     pub fn new() -> Self {
+        let timetable = CarbonTimetable::default_peak();
+        let hour_utc = 12;
         Self {
             workers: vec![
                 Worker {
@@ -47,12 +82,20 @@ impl Broker {
                 },
             ],
             queue: Vec::new(),
+            desired_specialists: 2,
+            timetable,
+            hour_utc,
             carbon_ok: true,
         }
     }
 
     pub fn requires_inbound_ports(&self) -> bool {
         false
+    }
+
+    pub fn set_hour_utc(&mut self, hour_utc: u8) {
+        self.hour_utc = hour_utc;
+        self.carbon_ok = self.timetable.is_open(hour_utc);
     }
 
     pub fn enqueue_plan(&mut self, plan: &Plan) {
@@ -101,6 +144,32 @@ impl Broker {
         }
     }
 
+    /// Desired-state loop: revive dead specialists until live == desired.
+    /// Does not invent new workers. Does not push work; specialists still pull.
+    pub fn reconcile(&mut self) -> ReconcileReport {
+        let mut revived = Vec::new();
+        while self.live_specialists().len() < self.desired_specialists {
+            let Some(id) = self
+                .workers
+                .iter()
+                .find(|w| w.role == "specialist" && !w.alive)
+                .map(|w| w.id.clone())
+            else {
+                break;
+            };
+            if let Some(w) = self.workers.iter_mut().find(|w| w.id == id) {
+                w.alive = true;
+                w.inflight = None;
+            }
+            revived.push(id);
+        }
+        ReconcileReport {
+            revived,
+            live_specialists: self.live_specialists().len(),
+            desired_specialists: self.desired_specialists,
+        }
+    }
+
     pub fn live_specialists(&self) -> Vec<&Worker> {
         self.workers
             .iter()
@@ -116,6 +185,10 @@ impl Broker {
                 .iter()
                 .map(|w| (w.id.clone(), w.alive))
                 .collect(),
+            desired_specialists: self.desired_specialists,
+            live_specialists: self.live_specialists().len(),
+            hour_utc: self.hour_utc,
+            carbon_ok: self.carbon_ok,
         }
     }
 
