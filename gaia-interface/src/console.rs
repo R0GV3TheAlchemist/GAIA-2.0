@@ -100,120 +100,85 @@ impl<'a> PermissionConsole<'a> {
     }
 
     pub fn render_html(&self) -> String {
-        let agents = self
-            .agents()
-            .into_iter()
-            .map(|row| {
-                let pause = if row.pausable {
-                    format!(
-                        "<button type=\"button\" aria-label=\"Pause {}">Pause</button>",
-                        escape(&row.id)
-                    )
-                } else {
-                    String::new()
-                };
-                let revoke = if row.revocable {
-                    format!(
-                        "<button type=\"button\" aria-label=\"Revoke {}">Revoke</button>",
-                        escape(&row.id)
-                    )
-                } else {
-                    "<span>not revocable</span>".into()
-                };
-                format!(
-                    "<tr><td>{}</td><td>{}</td><td>{} {}</td></tr>",
-                    escape(&row.id),
-                    escape(&row.state),
-                    pause,
-                    revoke
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("");
-        let matrix = self
-            .matrix()
-            .iter()
-            .map(|cell| {
-                format!(
-                    "<tr><td>{}</td><td>{}</td><td>{}</td></tr>",
-                    escape(&cell.agent_id),
-                    escape(&cell.capability),
-                    if cell.granted { "granted" } else { "denied" }
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("");
-        let events = self
-            .traces()
-            .into_iter()
-            .map(|event| {
-                format!(
-                    "<li>intent {} · {} · {}</li>",
-                    event.intent_id,
-                    escape(&event.kind),
-                    escape(&event.detail)
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("");
-        let recipes = self
-            .studio
-            .recipes()
-            .iter()
-            .map(|recipe| {
-                format!(
-                    "<li>{} handles {}</li>",
-                    escape(&recipe.name),
-                    escape(&recipe.intent)
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("");
-        format!(
-            r#"<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>GAIA permission console</title>
-<style>
-body {{ background:#111; color:#eee; font-family:sans-serif; line-height:1.5; }}
-a:focus, button:focus {{ outline:3px solid #ffd166; }}
-button {{ background:#222; color:#fff; border:2px solid #eee; }}
-table {{ border-collapse:collapse; }}
-td, th {{ border:1px solid #666; padding:0.4rem 0.6rem; }}
-</style>
-</head>
-<body>
-<a href="#main">Skip to content</a>
-<main id="main">
-<h1>GAIA permission console</h1>
-<section aria-labelledby="agents-h">
-<h2 id="agents-h">Agents</h2>
-<table>
-<thead><tr><th>Agent</th><th>State</th><th>Control</th></tr></thead>
-<tbody>{agents}</tbody>
-</table>
-</section>
-<section aria-labelledby="matrix-h">
-<h2 id="matrix-h">Permission matrix</h2>
-<table>
-<thead><tr><th>Agent</th><th>Capability</th><th>Grant</th></tr></thead>
-<tbody>{matrix}</tbody>
-</table>
-</section>
-<section aria-labelledby="trace-h" aria-live="polite">
-<h2 id="trace-h">Intent stream</h2>
-<ol>{events}</ol>
-</section>
-<section aria-labelledby="studio-h">
-<h2 id="studio-h">Studio recipes</h2>
-<ul>{recipes}</ul>
-</section>
-</main>
-</body>
-</html>
-"#
-        )
+        let mut agents = String::new();
+        for row in self.agents() {
+            agents.push_str("<tr><td>");
+            agents.push_str(&escape(&row.id));
+            agents.push_str("</td><td>");
+            agents.push_str(&escape(&row.state));
+            agents.push_str("</td><td>");
+            if row.pausable {
+                agents.push_str("<button type=\"button\" aria-label=\"Pause ");
+                agents.push_str(&escape(&row.id));
+                agents.push_str("\">Pause</button> ");
+            }
+            if row.revocable {
+                agents.push_str("<button type=\"button\" aria-label=\"Revoke ");
+                agents.push_str(&escape(&row.id));
+                agents.push_str("\">Revoke</button>");
+            } else {
+                agents.push_str("<span>not revocable</span>");
+            }
+            agents.push_str("</td></tr>");
+        }
+
+        let mut matrix = String::new();
+        for cell in self.matrix() {
+            matrix.push_str("<tr><td>");
+            matrix.push_str(&escape(&cell.agent_id));
+            matrix.push_str("</td><td>");
+            matrix.push_str(&escape(&cell.capability));
+            matrix.push_str("</td><td>");
+            matrix.push_str(if cell.granted { "granted" } else { "denied" });
+            matrix.push_str("</td></tr>");
+        }
+
+        let mut events = String::new();
+        for event in self.traces() {
+            events.push_str("<li>intent ");
+            events.push_str(&event.intent_id.to_string());
+            events.push_str(" / ");
+            events.push_str(&escape(&event.kind));
+            events.push_str(" / ");
+            events.push_str(&escape(&event.detail));
+            events.push_str("</li>");
+        }
+
+        let mut recipes = String::new();
+        for recipe in self.studio.recipes() {
+            recipes.push_str("<li>");
+            recipes.push_str(&escape(&recipe.name));
+            recipes.push_str(" handles ");
+            recipes.push_str(&escape(&recipe.intent));
+            recipes.push_str("</li>");
+        }
+
+        let mut page = String::from(
+            "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">",
+        );
+        page.push_str("<title>GAIA permission console</title>");
+        page.push_str("<style>body{background:#111;color:#eee;font-family:sans-serif;line-height:1.5;}");
+        page.push_str("a:focus,button:focus{outline:3px solid #ffd166;}");
+        page.push_str("button{background:#222;color:#fff;border:2px solid #eee;}");
+        page.push_str("table{border-collapse:collapse;}td,th{border:1px solid #666;padding:0.4rem 0.6rem;}");
+        page.push_str("</style></head><body>");
+        page.push_str("<a href=\"#main\">Skip to content</a><main id=\"main\">");
+        page.push_str("<h1>GAIA permission console</h1>");
+        page.push_str("<section aria-labelledby=\"agents-h\"><h2 id=\"agents-h\">Agents</h2>");
+        page.push_str("<table><thead><tr><th>Agent</th><th>State</th><th>Control</th></tr></thead><tbody>");
+        page.push_str(&agents);
+        page.push_str("</tbody></table></section>");
+        page.push_str("<section aria-labelledby=\"matrix-h\"><h2 id=\"matrix-h\">Permission matrix</h2>");
+        page.push_str("<table><thead><tr><th>Agent</th><th>Capability</th><th>Grant</th></tr></thead><tbody>");
+        page.push_str(&matrix);
+        page.push_str("</tbody></table></section>");
+        page.push_str("<section aria-labelledby=\"trace-h\" aria-live=\"polite\"><h2 id=\"trace-h\">Intent stream</h2><ol>");
+        page.push_str(&events);
+        page.push_str("</ol></section>");
+        page.push_str("<section aria-labelledby=\"studio-h\"><h2 id=\"studio-h\">Studio recipes</h2><ul>");
+        page.push_str(&recipes);
+        page.push_str("</ul></section></main></body></html>");
+        page
     }
 }
 
