@@ -1,0 +1,6 @@
+{
+  "id": "hspd:practice:flow-state",
+  "risk_class": "practice",
+  "sources": ["fixture:open-literature"],
+  "trainable": true
+}

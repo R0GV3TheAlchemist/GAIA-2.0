@@ -1,0 +1,6 @@
+{
+  "id": "hspd:research:rapamycin",
+  "risk_class": "research_only",
+  "sources": ["fixture:open-literature"],
+  "trainable": false
+}
