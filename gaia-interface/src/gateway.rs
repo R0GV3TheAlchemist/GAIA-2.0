@@ -54,6 +54,19 @@ impl<'a> HttpGateway<'a> {
                 let record = self.session.declare_intent(&text)?;
                 Ok(json!(record))
             }
+            ("POST", "/agents") => {
+                let name = json_string(&req.body, "name").unwrap_or_default();
+                let agent = self.session.create_agent(&name)?;
+                Ok(json!(agent))
+            }
+            ("POST", path) if path.starts_with("/agents/") && path.ends_with("/deploy") => {
+                let id = path
+                    .trim_start_matches("/agents/")
+                    .trim_end_matches("/deploy")
+                    .trim_matches('/');
+                let agent = self.session.deploy_agent(id)?;
+                Ok(json!(agent))
+            }
             ("POST", path) if path.starts_with("/agents/") && path.ends_with("/revoke") => {
                 let id = path
                     .trim_start_matches("/agents/")
@@ -63,11 +76,20 @@ impl<'a> HttpGateway<'a> {
                 Ok(json!(agent))
             }
             ("GET", "/agents") => Ok(json!(self.session.agents())),
+            ("POST", "/memory") => {
+                let text = json_string(&req.body, "text").unwrap_or_default();
+                let note = self.session.remember(&text)?;
+                Ok(json!(note))
+            }
+            ("GET", "/memory") => Ok(json!(self.session.memory())),
+            ("GET", "/audit") => Ok(json!(self.session.audit())),
             ("GET", "/status") => Ok(json!({
                 "started": self.session.started(),
                 "profile": self.session.profile(),
                 "agents": self.session.agents().len(),
                 "intents": self.session.intents().len(),
+                "memory": self.session.memory().len(),
+                "audit": self.session.audit().len(),
             })),
             _ => Err(SessionError::Usage("unknown route".into())),
         }
@@ -83,7 +105,9 @@ fn status_for(error: &SessionError) -> u16 {
     match error {
         SessionError::NotInitialized | SessionError::NotStarted => 409,
         SessionError::UnknownProfile(_) | SessionError::UnknownAgent(_) => 404,
-        SessionError::CloudDenied | SessionError::AlreadyRevoked(_) => 403,
-        SessionError::Usage(_) => 400,
+        SessionError::CloudDenied
+        | SessionError::AlreadyRevoked(_)
+        | SessionError::AlreadyExists(_) => 403,
+        SessionError::NotDeployed(_) | SessionError::Usage(_) => 400,
     }
 }
