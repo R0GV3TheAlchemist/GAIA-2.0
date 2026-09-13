@@ -30,6 +30,11 @@ pub struct Plan {
 
 impl Plan {
     pub fn inspect(&self) -> String {
+        let state = if self.accepted {
+            "accepted"
+        } else {
+            "inspect-before-run"
+        };
         let steps: Vec<String> = self
             .nodes
             .iter()
@@ -40,14 +45,19 @@ impl Plan {
                 )
             })
             .collect();
-        format!("plan {} nodes={}\n{}", self.id, self.nodes.len(), steps.join("\n"))
+        format!(
+            "plan {} state={} nodes={}\n{}",
+            self.id,
+            state,
+            self.nodes.len(),
+            steps.join("\n")
+        )
     }
 
     pub fn accept(&mut self) {
         self.accepted = true;
     }
 
-    /// Accept only after a kernel-verifiable Ed25519 signature matches this plan's intent.
     pub fn accept_verified(&mut self, signed: &crate::trust::SignedIntent) -> Result<(), String> {
         crate::trust::IntentSigner::verify_detached(signed)?;
         if signed.intent_id != self.intent_id {
@@ -55,6 +65,37 @@ impl Plan {
         }
         self.accepted = true;
         Ok(())
+    }
+
+    pub fn topo_order(&self) -> Result<Vec<Uuid>, String> {
+        let ids: Vec<Uuid> = self.nodes.iter().map(|n| n.id).collect();
+        let mut remaining: Vec<DagNode> = self.nodes.clone();
+        let mut ordered = Vec::new();
+        while !remaining.is_empty() {
+            let ready: Vec<Uuid> = remaining
+                .iter()
+                .filter(|n| n.depends_on.iter().all(|d| ordered.contains(d) || !ids.contains(d)))
+                .map(|n| n.id)
+                .collect();
+            let ready: Vec<Uuid> = ready
+                .into_iter()
+                .filter(|id| {
+                    remaining
+                        .iter()
+                        .find(|n| n.id == *id)
+                        .map(|n| n.depends_on.iter().all(|d| ordered.contains(d)))
+                        .unwrap_or(false)
+                })
+                .collect();
+            if ready.is_empty() {
+                return Err("DAG cycle or missing dependency".into());
+            }
+            for id in ready {
+                ordered.push(id);
+                remaining.retain(|n| n.id != id);
+            }
+        }
+        Ok(ordered)
     }
 }
 
@@ -122,7 +163,6 @@ pub struct RunReport {
 
 #[derive(Default)]
 pub struct Executor {
-    /// Goals containing these substrings fail every primary attempt, then fallback.
     pub fail_goals: Vec<String>,
 }
 
@@ -134,12 +174,14 @@ impl Executor {
         if plan.nodes.len() < 3 {
             return Err("DAG must have 3+ nodes".into());
         }
+        let order = plan.topo_order()?;
 
         let mut used_fallback = Vec::new();
         let mut outputs = Vec::new();
         let mut attempts = Vec::new();
 
-        for node in &plan.nodes {
+        for id in order {
+            let node = plan.nodes.iter().find(|n| n.id == id).unwrap();
             let should_fail = self.fail_goals.iter().any(|f| node.goal.contains(f));
             let primary_budget = node.max_retries.saturating_add(1);
             let mut succeeded = false;

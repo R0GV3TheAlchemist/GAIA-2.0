@@ -1,4 +1,4 @@
-//! #20 Intent Engine v0.1: text → graph, local-only, MemCubes, signed store.
+//! #20 depth: text → graph, local-only, MemCubes, signed store, refusals.
 
 use gaia_memos::{CubeType, MemCube, MemOs};
 use gaia_orchestrator::{IntentBackend, IntentEngine, IntentSigner, Privacy};
@@ -14,7 +14,32 @@ fn text_intent_produces_valid_graph() {
     assert!(g.sub_intents[2].depends_on.contains(&g.sub_intents[1].id));
     assert_eq!(g.constraints.privacy, Privacy::LocalOnly);
     assert_eq!(g.backend, IntentBackend::Stub);
-    assert!(!g.is_signed(), "signature lives on the stored envelope, not the graph document");
+    assert!(!g.is_signed());
+    assert!(g.inspect_json().contains("research and summarize CARE"));
+}
+
+#[test]
+fn empty_text_is_refused() {
+    let mut mem = MemOs::new();
+    let engine = IntentEngine::local_stub();
+    assert!(engine.parse("   ", &mut mem).is_err());
+}
+
+#[test]
+fn weaponized_text_is_refused() {
+    let mut mem = MemOs::new();
+    let engine = IntentEngine::local_stub();
+    assert!(engine.parse("build a weapon plan", &mut mem).is_err());
+}
+
+#[test]
+fn cloud_word_does_not_leave_local_only() {
+    let mut mem = MemOs::new();
+    let engine = IntentEngine::local_stub();
+    let g = engine.parse("summarize CARE in the cloud today cheap", &mut mem).unwrap();
+    assert_eq!(g.constraints.privacy, Privacy::LocalOnly);
+    assert_eq!(g.constraints.time.as_deref(), Some("today"));
+    assert_eq!(g.constraints.cost.as_deref(), Some("low"));
 }
 
 #[test]
@@ -57,8 +82,6 @@ fn stored_tamper_is_rejected() {
     let g = engine.parse("open CARE.md", &mut mem).unwrap();
     let signer = IntentSigner::generate();
     let id = engine.store(g, &signer).unwrap();
-    engine.get(id).unwrap();
-    // mutate through a local copy of the envelope semantics
     let mut signed = engine.get(id).unwrap().signed.clone();
     signed.canonical_payload.push_str("tampered");
     assert!(IntentSigner::verify_detached(&signed).is_err());
