@@ -1,15 +1,17 @@
-//! Artificial Twin of Earth (#33–#38).
-//! Observation contract, commons catalog, nervous fabric, memory, scenarios, interface.
-//! Not Iceberg, Cesium, GraphCast weights, or a live GCM.
+//! Artificial Twin of Earth (#33–#45).
+//! Observation contract plus living-sensor contribution records.
+//! Not BirdNET, Wildlife Insights, or an eDNA sequencer.
 
 mod commons;
 mod iface;
+mod living;
 mod memory;
 mod nervous;
 mod simulate;
 
 pub use commons::{Collection, Commons, Domain, QualityTier};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
+pub use living::{LivingKind, LivingRecord};
 pub use memory::{CubeSet, ModelOutput, PlaceTime, PlanetaryMemCube, PlanetaryMemory};
 pub use nervous::{FeedKind, NervousFabric, QcTier, Sample};
 pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimError, SimMode};
