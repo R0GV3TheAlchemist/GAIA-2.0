@@ -149,40 +149,54 @@ impl IntentEngine {
     }
 
     fn parse_ollama(&self, text: &str, mem: &mut MemOs) -> Result<IntentGraph, String> {
-        let prompt = format!("Reply with the single word OK for this local intent: {text}");
-        let _reply = crate::ollama::generate(&self.ollama_host, &self.ollama_model, &prompt)?;
-        Ok(self.parse_stub(text, mem, IntentBackend::Ollama))
+        let prompt = format!(
+            "Return ONLY JSON with at least 3 sub_intents. No markdown.\n{{\"sub_intents\":[{{\"goal\":\"...\"}}]}}\nUser intent: {text}"
+        );
+        let reply = crate::ollama::generate(&self.ollama_host, &self.ollama_model, &prompt)?;
+        let goals = crate::ollama::goals_from_plan_json(&reply)?;
+        Ok(self.graph_from_goals(text, mem, IntentBackend::Ollama, goals))
     }
 
-    fn parse_stub(&self, text: &str, mem: &mut MemOs, backend: IntentBackend) -> IntentGraph {
+    fn graph_from_goals(
+        &self,
+        text: &str,
+        mem: &mut MemOs,
+        backend: IntentBackend,
+        goals: Vec<String>,
+    ) -> IntentGraph {
         let cubes = mem.recall(text, 5);
-        let retrieve = Uuid::new_v4();
-        let research = Uuid::new_v4();
-        let summarize = Uuid::new_v4();
+        let mut sub_intents = Vec::new();
+        let mut prev: Option<Uuid> = None;
+        for goal in goals {
+            let id = Uuid::new_v4();
+            sub_intents.push(SubIntent {
+                id,
+                goal,
+                depends_on: prev.into_iter().collect(),
+            });
+            prev = Some(id);
+        }
         IntentGraph {
             id: Uuid::new_v4(),
             goal: text.to_string(),
             constraints: constraints_from(text),
-            sub_intents: vec![
-                SubIntent {
-                    id: retrieve,
-                    goal: format!("retrieve context: {text}"),
-                    depends_on: vec![],
-                },
-                SubIntent {
-                    id: research,
-                    goal: format!("research: {text}"),
-                    depends_on: vec![retrieve],
-                },
-                SubIntent {
-                    id: summarize,
-                    goal: format!("summarize: {text}"),
-                    depends_on: vec![research],
-                },
-            ],
+            sub_intents,
             context_cube_ids: cubes.into_iter().map(|(_, cube)| cube.id).collect(),
             backend,
         }
+    }
+
+    fn parse_stub(&self, text: &str, mem: &mut MemOs, backend: IntentBackend) -> IntentGraph {
+        self.graph_from_goals(
+            text,
+            mem,
+            backend,
+            vec![
+                format!("retrieve context: {text}"),
+                format!("research: {text}"),
+                format!("summarize: {text}"),
+            ],
+        )
     }
 }
 
