@@ -3,9 +3,11 @@
 pub mod audit;
 pub mod broker;
 pub mod executor;
+pub mod federation;
 pub mod host;
 pub mod identity;
 
+pub use federation::{Federation, FederationError, Instance, JointTask, ResidentCube};
 pub use host::{KernelError, KernelHost, SignedBlob, TaskHandle};
 pub use identity::{Principal, PrincipalKind};
 
