@@ -1,14 +1,27 @@
-# GAIAN Privacy Constitution v0 (#57 / #58)
+# GAIAN Privacy Constitution v0 (#64)
 
-Working rules. Not a ratified legal constitution.
+Working rules. Not a ratified legal constitution and not GDPR legal advice.
 
-1. Consent first. No photo, voice, or health sample without a consent record.
-2. Local default. Raw frames do not upload by default.
-3. User-held keys. GAIAN ID is a user-held key, not a platform account.
-4. Verifiable deletion. Delete must leave a proof, not a silent no-op.
-5. No third-party likeness. Reconstruction is self-only.
-6. No child behavioral profiling.
-7. Health is opt-in only.
-8. Age-gate. Under-16 biometric ingest is refused.
-9. 16–17 requires parental consent plus self-consent.
-10. Earth Twin I/O only with explicit consent.
+Linked from the repository README.
+
+1. Consent — no photo, voice, health, memory, agent, or Earth Twin share without a record.
+2. Local-default — raw frames and embeddings stay on device unless the owner opts in.
+3. Biometric sovereignty — face, body, and voice belong to the subject.
+4. User-held keys — GAIAN ID is a user-held key, not a platform account.
+5. Deletion — wipe must leave a receipt, not a silent no-op.
+6. Transparency — the owner can read the audit log.
+7. Purpose limitation — a grant is scoped; unsigned actions are rejected.
+8. Non-weaponization — targeting and surveillance-of-person paths are refused.
+9. Equity — basic access is not paywalled in this spec.
+10. Child protection — under-16 biometric ingest and behavioral learning are refused. 16–17 needs parental plus self consent. No health-twin learning on children.
+
+## Consent catalog (SDK enum)
+
+`ConsentScope`: Face, Body, Voice, Health, Memory, Agent, EarthTwinShare.
+
+## Forbidden
+
+- Third-party likeness
+- Hidden copies
+- Insurer or employer health export
+- Child behavioral profiling

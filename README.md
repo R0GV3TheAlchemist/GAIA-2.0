@@ -28,6 +28,8 @@ This repository is the implementation monorepo. Research stays in `Documents/` a
 | [`gaia-orchestrator/`](gaia-orchestrator/) | L4 intent / planner / broker | MIT | 2 |
 | [`gaia-agents/`](gaia-agents/) | L5 runtime + registry | MIT | 3 |
 | [`gaia-interface/`](gaia-interface/) | L6 CLI / API / UI | MIT | 4 |
+| [`gaia-earth/`](gaia-earth/) | Earth Twin first cuts | Apache-2.0 | Twin 0 |
+| [`gaia-gaian/`](gaia-gaian/) | GAIAN consent + local stubs | Apache-2.0 | GAIAN 0 |
 | [`gaia-spec/`](gaia-spec/) | Protocols (normative) | CC0 | 0 |
 | [`gaia-sdk/`](gaia-sdk/) | Rust + Python + TypeScript clients | MIT | 0 |
 | [`gaia-docs/`](gaia-docs/) | Contributor + developer docs | CC-BY-4.0 | 0 |
@@ -72,6 +74,7 @@ Do not treat those commands as a published installer. There is no `curl | sh` UR
 - [Intent graph schema](gaia-spec/intent-graph.md)
 - [MemCube schema](gaia-spec/memcube.md)
 - [AIP Manifest v1.0](gaia-spec/aip-manifest.md)
+- [GAIAN Privacy Constitution](gaia-spec/gaian-constitution.md)
 - [Open questions → RFCs](gaia-spec/rfcs.md)
 
 ## Governance
