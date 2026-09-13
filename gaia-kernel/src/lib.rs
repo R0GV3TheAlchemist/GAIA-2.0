@@ -4,10 +4,14 @@ pub mod audit;
 pub mod broker;
 pub mod executor;
 pub mod host;
+pub mod hpc;
 pub mod identity;
+pub mod ports;
 
 pub use host::{KernelError, KernelHost, SignedBlob, TaskHandle};
+pub use hpc::{BatchTask, HpcAdapter};
 pub use identity::{Principal, PrincipalKind};
+pub use ports::{matrix, Arch, Footprint, PortProfile};
 
 #[cfg(test)]
 mod tests {
