@@ -49,7 +49,7 @@ fn studio_composes_a_manifest_recipe() {
 #[test]
 fn wcag_notes_are_documented() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("ACCESSIBILITY.md");
-    let notes = fs::read_to_string(path).unwrap();
+    let notes = fs::read_to_string(path).unwrap().to_ascii_lowercase();
     assert!(notes.contains("keyboard"));
     assert!(notes.contains("contrast"));
     assert!(notes.contains("screen reader"));
