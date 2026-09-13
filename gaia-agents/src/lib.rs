@@ -1,10 +1,14 @@
 //! L5 agent ecosystem (#5).
-//! #24 policy runtime plus a Wasmtime guest with fuel, memory limits, and WASI import grants.
-//! This is not containerd or a production multi-tenant sandbox. There is no WASI host.
+//! #24 Wasmtime guest, #26 A2A handoff and signed install.
+//! This is not a marketplace transport or containerd sandbox.
 
+mod a2a;
 mod runtime;
 mod wasm;
 
+pub use a2a::{
+    registry_layout, ContextBundle, Handoff, MarketError, Package, PackageMarket, PrivacyMode,
+};
 pub use runtime::{
     AgentManifest, AgentOutcome, AgentRuntime, Capability, ResourceLimits, RuntimeError,
 };
