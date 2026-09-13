@@ -1,0 +1,19 @@
+{
+  "license": "CC0-1.0",
+  "version": "0.1",
+  "note": "Skill ids are not UKD concept ids.",
+  "realms": [
+    {"id": "communication", "domains": ["listening"]},
+    {"id": "cognition", "domains": ["reasoning"]},
+    {"id": "digital", "domains": ["literacy"]},
+    {"id": "physical", "domains": ["coordination"]},
+    {"id": "craft", "domains": ["repair"]},
+    {"id": "care", "domains": ["first-aid-ref"]},
+    {"id": "social-emotional", "domains": ["self-report-only"]},
+    {"id": "civic", "domains": ["participation"]},
+    {"id": "creative", "domains": ["making"]},
+    {"id": "leadership", "domains": ["facilitation"]},
+    {"id": "traditional", "domains": []},
+    {"id": "learning", "domains": ["practice"]}
+  ]
+}
