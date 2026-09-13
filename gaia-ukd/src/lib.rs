@@ -1,20 +1,30 @@
-//! UKD first cuts (#76–#85). Not Neo4j, live SPARQL, or a v1.0 tag.
+//! UKD first cuts (#76–#90). Not Neo4j, live SPARQL, or a v1.0 tag.
 
+mod contribute;
 mod graph;
 mod ingest;
 mod intelligence;
+mod learn;
+mod literature;
 mod mark;
 mod modes;
 mod path;
+mod realms;
+mod sovereignty;
 mod store;
 mod tek;
 
+pub use contribute::{GraphView, NodeDraft};
 pub use graph::{federated_wikidata, get_node, list_realms, KnowledgeNode, REALMS};
 pub use ingest::Ingested;
 pub use intelligence::{Claim, ReviewQueue, Triple};
+pub use learn::{labels_for, plan, Labels, PlannedPath};
+pub use literature::{present, KnowledgeState, LicensedNode};
 pub use mark::{qa_script, ExportMark};
 pub use modes::{earth_twin_cites, teach_offline, tek_export, ukd_v1_tagged, GaianMode};
 pub use path::{path_to_quantum_computing, LearningPath};
+pub use realms::{cross_domain_candidates, indigenous_parallel, subjects};
+pub use sovereignty::{Agreement, CollectionState, TekGraph};
 pub use store::{Edge, GraphApi};
 pub use tek::{publish_tek, GaianKnowledge, KnowledgeLevel, TekStore};
 
