@@ -1,0 +1,6 @@
+[package]
+name = "gaia-sa"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Sentient Architecture first cuts. Metaphor, not consciousness. TEK veto. Not v1.0."
