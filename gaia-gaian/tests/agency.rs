@@ -1,0 +1,18 @@
+use gaia_gaian::{GaianError, Scope, ScopedAgent};
+
+#[test]
+fn ungranted_is_denied_and_earth_twin_has_no_biometrics() {
+    let mut agent = ScopedAgent::default();
+    assert_eq!(agent.act(Scope::Mail).unwrap_err(), GaianError::NoConsent);
+    assert!(agent.log().iter().any(|e| e.contains("denied")));
+    agent.grant(Scope::CitizenScience);
+    agent.act(Scope::CitizenScience).unwrap();
+    assert_eq!(
+        agent.earth_twin_payload(true, false, false).unwrap_err(),
+        GaianError::ThirdPartyLikeness
+    );
+    assert_eq!(agent.earth_twin_payload(false, false, false).unwrap(), "aggregate-only fixture");
+    agent.pause();
+    assert!(agent.act(Scope::CitizenScience).is_err());
+    assert!(!ScopedAgent::paid_amplification());
+}

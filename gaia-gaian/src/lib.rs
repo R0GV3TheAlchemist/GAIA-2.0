@@ -1,5 +1,17 @@
-//! GAIAN (#57–#60). Consent and age-gate only.
-//! No rembg, MediaPipe, FastAvatar, Kokoro, Flutter, or WebGPU.
+//! GAIAN first cuts through #75. Consent and local stubs.
+//! Not Ollama, wearables, or live Earth Twin I/O.
+
+mod agency;
+mod channel;
+mod digital;
+mod future;
+mod sensors;
+
+pub use agency::{ScopedAgent, Scope};
+pub use channel::{Channel, ChannelCap, Envelope};
+pub use digital::{DigitalVault, KnowKind};
+pub use future::{age_other_person, compare, Sketch};
+pub use sensors::HealthModule;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SampleKind {
@@ -25,6 +37,7 @@ pub enum GaianError {
     NotSelf,
     HealthNotOptIn,
     ThirdPartyLikeness,
+    Unsigned,
 }
 
 impl std::fmt::Display for GaianError {
@@ -36,6 +49,7 @@ impl std::fmt::Display for GaianError {
             Self::NotSelf => write!(f, "reconstruction is self-only"),
             Self::HealthNotOptIn => write!(f, "health is opt-in only"),
             Self::ThirdPartyLikeness => write!(f, "no third-party likeness"),
+            Self::Unsigned => write!(f, "unsigned GAIAN action rejected"),
         }
     }
 }
@@ -74,13 +88,11 @@ fn allow_ingest(consent: &Consent, kind: SampleKind) -> Result<(), GaianError> {
     Ok(())
 }
 
-/// #59 create path. Does not build a mesh.
 pub fn create_self(consent: &Consent, kind: SampleKind) -> Result<&'static str, GaianError> {
     allow_ingest(consent, kind)?;
     Ok("local-stub-vrm")
 }
 
-/// #60 animate path. Owner session only.
 pub fn animate_owner(consent: &Consent, third_party_face: bool) -> Result<(), GaianError> {
     allow_ingest(consent, SampleKind::Photo)?;
     if third_party_face {
