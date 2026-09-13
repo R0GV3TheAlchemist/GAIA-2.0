@@ -24,10 +24,8 @@ pub struct SuperNode {
 impl SuperNode {
     pub fn attach_diy_path(&self) -> Result<(), HspdError> {
         match self.risk {
-            RiskClass::Medical | RiskClass::Pharmacologic | RiskClass::Surgical => {
-                Err(HspdError::DiyPathForbidden)
-            }
-            _ => Ok(()),
+            RiskClass::Practice => Ok(()),
+            _ => Err(HspdError::DiyPathForbidden),
         }
     }
 }
