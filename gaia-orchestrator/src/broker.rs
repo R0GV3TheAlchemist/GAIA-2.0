@@ -19,7 +19,6 @@ pub struct Metrics {
     pub carbon_ok: bool,
 }
 
-/// v0 ColonyOS hook: static hours when pulls are refused.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CarbonTimetable {
     pub closed_hours_utc: Vec<u8>,
@@ -48,11 +47,9 @@ pub struct ReconcileReport {
 pub struct Broker {
     pub workers: Vec<Worker>,
     pub queue: Vec<String>,
-    /// Desired live specialist count. Reconcile revives dead specialists up to this.
     pub desired_specialists: usize,
     pub timetable: CarbonTimetable,
     pub hour_utc: u8,
-    /// v0 ColonyOS hook. Derived from timetable unless forced closed in tests.
     pub carbon_ok: bool,
 }
 
@@ -93,6 +90,11 @@ impl Broker {
         false
     }
 
+    /// There is no listen socket. ColonyOS pull only.
+    pub fn listen(&self, _bind: &str) -> Result<(), String> {
+        Err("broker does not open inbound ports".into())
+    }
+
     pub fn set_hour_utc(&mut self, hour_utc: u8) {
         self.hour_utc = hour_utc;
         self.carbon_ok = self.timetable.is_open(hour_utc);
@@ -104,7 +106,7 @@ impl Broker {
         }
     }
 
-    /// Worker pulls next node id. Manager only delegates; specialists execute.
+    /// FIFO pull. Manager only delegates; specialists execute.
     pub fn pull(&mut self, worker_id: &str) -> Result<Option<String>, String> {
         if !self.carbon_ok {
             return Err("carbon window closed".into());
@@ -120,12 +122,12 @@ impl Broker {
         if w.role == "manager" {
             return Ok(None);
         }
-        if let Some(job) = self.queue.pop() {
-            w.inflight = Some(job.clone());
-            Ok(Some(job))
-        } else {
-            Ok(None)
+        if self.queue.is_empty() {
+            return Ok(None);
         }
+        let job = self.queue.remove(0);
+        w.inflight = Some(job.clone());
+        Ok(Some(job))
     }
 
     pub fn complete(&mut self, worker_id: &str) {
@@ -134,18 +136,15 @@ impl Broker {
         }
     }
 
-    /// Killing an executor requeues in-flight work onto the shared pull queue.
     pub fn kill(&mut self, worker_id: &str) {
         if let Some(w) = self.workers.iter_mut().find(|w| w.id == worker_id) {
             w.alive = false;
             if let Some(job) = w.inflight.take() {
-                self.queue.push(job);
+                self.queue.insert(0, job);
             }
         }
     }
 
-    /// Desired-state loop: revive dead specialists until live == desired.
-    /// Does not invent new workers. Does not push work; specialists still pull.
     pub fn reconcile(&mut self) -> ReconcileReport {
         let mut revived = Vec::new();
         while self.live_specialists().len() < self.desired_specialists {
