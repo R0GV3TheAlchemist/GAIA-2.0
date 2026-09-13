@@ -108,6 +108,6 @@ fn status_for(error: &SessionError) -> u16 {
         SessionError::CloudDenied
         | SessionError::AlreadyRevoked(_)
         | SessionError::AlreadyExists(_) => 403,
-        SessionError::NotDeployed(_) | SessionError::Usage(_) => 400,
+        SessionError::Usage(_) => 400,
     }
 }
