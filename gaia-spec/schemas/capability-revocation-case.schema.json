@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.example/spec/v0.1/schemas/capability-revocation-case.schema.json",
+  "title": "GAIA capability revocation conformance case",
+  "description": "Behavioral fixture for post-revocation authorization. This is not a cryptographic test vector. The nested token is a capability-token document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "case_id",
+    "purpose",
+    "token",
+    "timeline",
+    "conformance_requirements"
+  ],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "token": {
+      "type": "object",
+      "description": "Capability token under test. Validated against capability-token.schema.json by the spec checker."
+    },
+    "timeline": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["at", "event"],
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revocation_epoch": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "request": {
+            "type": "object"
+          },
+          "expected_decision": {
+            "enum": ["allow", "deny"]
+          },
+          "expected_result": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expected_reason_code": {
+            "type": "string",
+            "minLength": 1
+          },
+          "expected_audit_events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "conformance_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
