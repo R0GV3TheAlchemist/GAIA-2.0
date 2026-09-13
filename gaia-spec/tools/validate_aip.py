@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Validate AIP Manifest examples against the v1.0 JSON Schema."""
+"""Validate gaia-spec example documents against the matching JSON Schema.
+
+AIP manifests, capability tokens, and revocation conformance cases live in
+the same examples/ directory. Each file is checked against the contract it
+actually claims, not against the AIP Manifest schema by default.
+"""
 from __future__ import annotations
 
 import json
@@ -7,11 +12,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_PATH = ROOT / "schemas" / "aip-manifest.schema.json"
+SCHEMA_DIR = ROOT / "schemas"
 EXAMPLES = ROOT / "examples"
+AIP_SCHEMA = SCHEMA_DIR / "aip-manifest.schema.json"
+TOKEN_SCHEMA = SCHEMA_DIR / "capability-token.schema.json"
+CASE_SCHEMA = SCHEMA_DIR / "capability-revocation-case.schema.json"
 
 try:
     from jsonschema import Draft202012Validator
+
     HAVE_JSONSCHEMA = True
 except ImportError:
     HAVE_JSONSCHEMA = False
@@ -25,7 +34,7 @@ def load(path: Path):
 
 def fallback_errors(schema: dict, instance: object) -> list[str]:
     if not isinstance(instance, dict):
-        return ["(root): manifest must be an object"]
+        return ["(root): document must be an object"]
     errs: list[str] = []
     required = schema.get("required", [])
     props = schema.get("properties", {})
@@ -71,49 +80,89 @@ def format_schema_errors(errors) -> str:
     return "\n".join(lines) if lines else "  - (unknown error)"
 
 
-def validate_one(schema, validator, path: Path) -> bool:
-    expect_fail = path.name.startswith("invalid-")
+def collect_errors(schema: dict, validator, instance: object) -> list[str]:
+    if validator is not None:
+        errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.path))
+        if not errors:
+            return []
+        return [line[4:] for line in format_schema_errors(errors).splitlines()]
+    return fallback_errors(schema, instance)
+
+
+def classify(path: Path, instance: object) -> tuple[str, bool]:
+    """Return (kind, expect_fail). kind is aip | token | case."""
+    name = path.name
+    if name.startswith("invalid-"):
+        return "aip", True
+    if name.endswith(".case.json"):
+        return "case", False
+    if isinstance(instance, dict):
+        schema_ref = instance.get("$schema", "")
+        if isinstance(schema_ref, str) and "capability-token" in schema_ref:
+            return "token", False
+        if "token_id" in instance and "manifest_version" not in instance:
+            return "token", False
+    return "aip", False
+
+
+def validate_one(schemas: dict, validators: dict, path: Path) -> bool:
     try:
         instance = load(path)
     except json.JSONDecodeError as exc:
         print(f"FAIL {path.name}: JSON parse error: {exc}")
         return False
-    if validator is not None:
-        errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.path))
-        fail = bool(errors)
-        detail = format_schema_errors(errors) if errors else ""
-    else:
-        msgs = fallback_errors(schema, instance)
-        fail = bool(msgs)
-        detail = "\n".join(f"  - {m}" for m in msgs)
+
+    kind, expect_fail = classify(path, instance)
+    schema = schemas[kind]
+    validator = validators.get(kind)
+
+    msgs = collect_errors(schema, validator, instance)
+    if kind == "case" and isinstance(instance, dict) and "token" in instance:
+        token_msgs = collect_errors(
+            schemas["token"], validators.get("token"), instance["token"]
+        )
+        msgs.extend(f"token/{m}" if not m.startswith("token/") else m for m in token_msgs)
+
+    fail = bool(msgs)
+    detail = "\n".join(f"  - {m}" for m in msgs)
+
     if expect_fail:
         if fail:
-            print(f"OK   {path.name} (rejected as expected)")
+            print(f"OK   {path.name} (rejected as expected) [{kind}]")
             print(detail)
             return True
-        print(f"FAIL {path.name}: fixture was supposed to be invalid")
+        print(f"FAIL {path.name}: fixture was supposed to be invalid [{kind}]")
         return False
     if fail:
-        print(f"FAIL {path.name}")
+        print(f"FAIL {path.name} [{kind}]")
         print(detail)
         return False
-    print(f"OK   {path.name}")
+    print(f"OK   {path.name} [{kind}]")
     return True
 
 
 def main(argv: list[str]) -> int:
-    schema = load(SCHEMA_PATH)
-    validator = None
+    schemas = {
+        "aip": load(AIP_SCHEMA),
+        "token": load(TOKEN_SCHEMA),
+        "case": load(CASE_SCHEMA),
+    }
+    validators: dict = {}
     if HAVE_JSONSCHEMA:
-        validator = Draft202012Validator(
-            schema, format_checker=Draft202012Validator.FORMAT_CHECKER
-        )
+        for kind, schema in schemas.items():
+            validators[kind] = Draft202012Validator(
+                schema, format_checker=Draft202012Validator.FORMAT_CHECKER
+            )
     else:
-        print("note: jsonschema not installed; using fallback required/enum checks", file=sys.stderr)
+        print(
+            "note: jsonschema not installed; using fallback required/enum checks",
+            file=sys.stderr,
+        )
+
     paths = [Path(p) for p in argv[1:]] if len(argv) > 1 else sorted(EXAMPLES.glob("*.json"))
     ok = True
     for path in paths:
-        ok = validate_one(schema, validator, path) and ok
+        ok = validate_one(schemas, validators, path) and ok
     return 0 if ok else 1
 
 

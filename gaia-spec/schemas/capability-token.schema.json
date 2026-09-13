@@ -18,6 +18,11 @@
     "signature"
   ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional locator for this schema. Fixtures MAY include it; runtime tokens MAY omit it."
+    },
     "token_id": {
       "type": "string",
       "minLength": 1,
