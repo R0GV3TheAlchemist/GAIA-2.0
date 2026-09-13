@@ -6,6 +6,7 @@
 //! Part 5 (#4): Kernel Ed25519 intent signatures and hash-chained audit.
 //! Part 6 (#4): Approved local DAG run, failover, lifecycle audit.
 //! Part 7 (#4): Local Ollama generate; fail closed; llama.cpp still refused.
+//! Part 8 (#4): AIP registry agent selection.
 
 mod broker;
 mod dag;
@@ -13,6 +14,7 @@ mod intent;
 mod mcp;
 mod ollama;
 mod run;
+mod select;
 mod trust;
 
 pub use broker::{Broker, CarbonTimetable, Metrics, ReconcileReport, Worker};
@@ -27,6 +29,7 @@ pub use mcp::{
     McpResource, McpTool,
 };
 pub use run::{LocalRun, LocalRunner};
+pub use select::{bind_plan_to_registry, pick_agent};
 pub use trust::{
     verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent, TrustAudit,
 };
