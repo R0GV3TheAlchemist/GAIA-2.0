@@ -88,7 +88,13 @@ impl Commons {
             .ok_or(TwinError::UnknownCollection)
     }
 
-    pub fn query(&self, id: &str, value: f64, uncertainty: f64, unit: &str) -> Result<Observation, TwinError> {
+    pub fn query(
+        &self,
+        id: &str,
+        value: f64,
+        uncertainty: f64,
+        unit: &str,
+    ) -> Result<Observation, TwinError> {
         let collection = self.get(id)?;
         Observation::admit(
             collection.system,
@@ -102,9 +108,15 @@ impl Commons {
     /// STAC-shaped record for docs and tests. Not a published catalog.
     pub fn stac_item(&self, id: &str) -> Result<String, TwinError> {
         let collection = self.get(id)?;
-        Ok(format!(
-            "{{"type":"Feature","stac_version":"1.0.0","id":"{}","properties":{{"license":"{}","quality":"{:?}","provenance":"{}"}}}}",
-            collection.id, collection.license, collection.quality, collection.provenance
-        ))
+        let mut item = String::from("stac_version=1.0.0");
+        item.push_str(" id=");
+        item.push_str(&collection.id);
+        item.push_str(" license=");
+        item.push_str(&collection.license);
+        item.push_str(" quality=");
+        item.push_str(&format!("{:?}", collection.quality));
+        item.push_str(" provenance=");
+        item.push_str(&collection.provenance);
+        Ok(item)
     }
 }
