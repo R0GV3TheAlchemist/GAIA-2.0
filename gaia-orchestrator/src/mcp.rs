@@ -164,13 +164,16 @@ impl McpRegistry {
         Ok(())
     }
 
-    pub fn invoke(&self, msg: &McpMessage) -> Result<String, String> {
-        self.admit(msg)?;
-        let found = self.tools().iter().any(|t| t.name == msg.method);
-        if !found {
+    fn dispatch_tool(&self, name: &str) -> Result<String, String> {
+        if !self.tools().iter().any(|t| t.name == name) {
             return Err("tool not in registry".into());
         }
-        Ok(format!("mcp-ok:{}", msg.method))
+        Ok(format!("mcp-ok:{name}"))
+    }
+
+    pub fn invoke(&self, msg: &McpMessage) -> Result<String, String> {
+        self.admit(msg)?;
+        self.dispatch_tool(&msg.method)
     }
 
     /// Map an intent onto a registered MCP tool and invoke it.
@@ -199,12 +202,7 @@ impl McpRegistry {
             "initialize" => Ok("protocol=2026-07-28 transport=in-process".into()),
             "tools/list" => serde_json::to_string(&self.tools()).map_err(|e| e.to_string()),
             "resources/list" => serde_json::to_string(&self.resources()).map_err(|e| e.to_string()),
-            "tools/call" => self.invoke(&McpMessage {
-                jsonrpc: req.jsonrpc.clone(),
-                method: req.params.clone(),
-                params: req.params.clone(),
-                signature: req.signature.clone(),
-            }),
+            "tools/call" => self.dispatch_tool(&req.params),
             _ => Err(format!("unknown method {}", req.method)),
         };
         match result {
