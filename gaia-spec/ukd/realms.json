@@ -1,0 +1,18 @@
+{
+  "license": "CC0-1.0",
+  "version": "0.1",
+  "realms": [
+    {"id": "physical-sciences", "domains": ["physics", "chemistry"]},
+    {"id": "life-sciences", "domains": ["biology"]},
+    {"id": "earth-systems", "domains": ["climate"]},
+    {"id": "mathematics", "domains": ["algebra"]},
+    {"id": "engineering", "domains": ["computing"]},
+    {"id": "health", "domains": ["public-health"]},
+    {"id": "social-sciences", "domains": ["economics"]},
+    {"id": "humanities", "domains": ["history"]},
+    {"id": "arts", "domains": ["music"]},
+    {"id": "traditional-knowledge", "domains": []},
+    {"id": "practical-skills", "domains": ["repair"]},
+    {"id": "governance-commons", "domains": ["policy"]}
+  ]
+}

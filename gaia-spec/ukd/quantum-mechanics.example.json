@@ -1,0 +1,9 @@
+{
+  "id": "ukd:phys:quantum-mechanics",
+  "level": "subject",
+  "aliases": ["QM"],
+  "relations": [{"rel": "PREREQUISITE_OF", "target": "ukd:eng:quantum-computing"}],
+  "learning": {"difficulty": 4},
+  "traditions": [],
+  "license": "CC0-1.0"
+}

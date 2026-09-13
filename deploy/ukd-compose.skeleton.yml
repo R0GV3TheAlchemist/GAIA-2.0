@@ -1,0 +1,6 @@
+# Skeleton only. Does not start Neo4j, AGE, SPARQL, or GraphQL.
+# Tracked for #84. Do not treat as a running stack.
+services:
+  ukd-placeholder:
+    image: busybox
+    command: ["echo", "ukd store is not deployed"]

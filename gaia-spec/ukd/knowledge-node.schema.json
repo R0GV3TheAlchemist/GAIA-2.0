@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UKDKnowledgeNode",
+  "type": "object",
+  "required": ["id", "level", "license"],
+  "additionalProperties": true,
+  "properties": {
+    "id": { "type": "string" },
+    "level": { "type": "string" },
+    "aliases": { "type": "array", "items": { "type": "string" } },
+    "relations": { "type": "array" },
+    "learning": { "type": "object" },
+    "traditions": { "type": "array" },
+    "license": { "type": "string", "minLength": 1 }
+  }
+}
