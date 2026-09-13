@@ -1,0 +1,7 @@
+{
+  "id": "aisd:science:protein-structure-prediction",
+  "measured": false,
+  "maturity": null,
+  "label": "unmeasured",
+  "limitations": ["license-check", "unmeasured"]
+}

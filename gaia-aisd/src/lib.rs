@@ -12,8 +12,8 @@ pub use card::{assign_maturity, protein_structure, AiSkill, Maturity};
 pub use catalog::{graphcast, reference_published, ToolCard};
 pub use gaps::{gap_nodes, realm_stubs, REALMS};
 pub use policy::{allow, ComponentPolicy};
-pub use recommend::recommend;
-pub use router::{ask_aisd, aisd_v1_tagged, high_stakes_level6};
+pub use recommend::{measured_families, recommend};
+pub use router::{aisd_v1_tagged, ask_aisd, high_stakes_level6};
 pub use taxonomy::{banned_level6, REALM_COUNT};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
