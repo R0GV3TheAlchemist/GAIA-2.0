@@ -4,11 +4,11 @@ Universal open-source **Super Operating System** — a meta-layer above traditio
 
 This repository is the implementation monorepo. Research stays in `Documents/` and `Documents-2/`. Normative contracts live in [`gaia-spec/`](gaia-spec/). Code lives in the layer trees below.
 
-**Status:** Phase 0 foundation plus Phase 1 userspace runtime (executor, syscall host, SFS v0.1, MemOS, Ed25519 audit). See [RFC 0001](rfcs/0001-kernel-path.md).
+**Status:** Phase 0 foundation plus Phase 1 userspace runtime (executor, syscall host, SFS v0.1, MemOS, Ed25519 audit), plus honest first cuts through the original #1–#221 board. **Not `v1.0.0`.** See [RFC 0001](rfcs/0001-kernel-path.md) and [issues #1–#10 honesty](gaia-spec/sos/ISSUES-1-10.md).
 
 **Parent tracker:** [#1](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/1)  
-**Phase 0 epic:** [#2](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/2)  
-**Phase 1 epic:** [#3](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/3)
+**Phase 0 epic:** [#2](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/2) (closed; foundation only)  
+**Phase 1 epic:** [#3](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/3) (closed; userspace only)
 
 ## Principles
 
@@ -47,7 +47,7 @@ Monorepo deviation from the future `github.com/gaia-os/*` org split is intention
 python -m pip install -e gaia-sdk/python
 python -c "from gaia_sdk import GaiaClient; print(GaiaClient().intent('hello gaia'))"
 
-# Rust SDK + Phase 1 workspace (kernel / SFS / MemOS)
+# Rust SDK + workspace
 cargo test --workspace
 cargo run -p gaia-kernel --bin gaia-executor
 
@@ -64,7 +64,7 @@ gaia agent create …
 gaia intent "…"
 ```
 
-Do not treat those commands as a published installer. There is no `curl | sh` URL yet.
+Do not treat those commands as a published installer. There is no `curl | sh` URL yet. There is no `v1.0.0` tag.
 
 ## Specification
 
@@ -76,6 +76,7 @@ Do not treat those commands as a published installer. There is no `curl | sh` UR
 - [AIP Manifest v1.0](gaia-spec/aip-manifest.md)
 - [GAIAN Privacy Constitution](gaia-spec/gaian-constitution.md)
 - [Open questions → RFCs](gaia-spec/rfcs.md)
+- [#1–#10 honesty](gaia-spec/sos/ISSUES-1-10.md)
 
 ## Governance
 

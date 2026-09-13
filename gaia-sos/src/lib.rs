@@ -4,12 +4,14 @@ mod abi;
 mod eacn;
 mod gate;
 mod identity;
+mod phases;
 mod sched;
 
 pub use abi::{learn, submit_intent, HOST_CALLS};
 pub use eacn::{discover, god_coordinator};
 pub use gate::{formal_verify_done, sos_v1_tagged, threats};
 pub use identity::{revoke_mode, t0_kernel_kloc, Capability};
+pub use phases::{phase_closed, profiles, live_llm, live_marketplace, flutter_ui};
 pub use sched::{kernel_inference, sfs_v1};
 
 pub fn second_kernel() -> bool {
