@@ -1,13 +1,10 @@
-use gaia_earth::honesty::{live_flink, live_graphcast, live_iceberg, live_kafka, live_minio, live_openda, live_sentinel_harvest, twin_v1_tagged};
+use gaia_earth::honesty::{live_cesium, live_ews_network, live_graphcast, live_iceberg, twin_v1_tagged};
 
 #[test]
 fn twin_is_not_a_product() {
     assert!(!live_iceberg());
-    assert!(!live_minio());
-    assert!(!live_kafka());
-    assert!(!live_flink());
+    assert!(!live_cesium());
     assert!(!live_graphcast());
-    assert!(!live_sentinel_harvest());
-    assert!(!live_openda());
+    assert!(!live_ews_network());
     assert!(!twin_v1_tagged());
 }

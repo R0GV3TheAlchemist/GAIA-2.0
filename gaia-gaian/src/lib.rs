@@ -11,6 +11,7 @@ mod design;
 mod digital;
 mod future;
 mod health;
+pub mod honesty;
 mod living;
 mod package;
 mod sensors;
