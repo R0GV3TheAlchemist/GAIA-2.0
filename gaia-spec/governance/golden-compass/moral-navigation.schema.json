@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.example/spec/governance/golden-compass/moral-navigation.schema.json",
+  "title": "GAIA Golden Compass Decision Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "scope", "proposal", "responsible_attention", "diamond", "authority", "decision", "feedback"],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "scope": {"enum": ["personal", "community", "infrastructure", "knowledge", "planetary"]},
+    "proposal": {"type": "string", "minLength": 1},
+    "responsible_attention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observations", "uncertainty", "affected_parties", "alternatives"],
+      "properties": {
+        "observations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "uncertainty": {"type": "string", "minLength": 1},
+        "affected_parties": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "alternatives": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "diamond": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth", "care", "growth", "balance", "wisdom"],
+      "properties": {
+        "truth": {"type": "string", "minLength": 1},
+        "care": {"type": "string", "minLength": 1},
+        "growth": {"type": "string", "minLength": 1},
+        "balance": {"type": "string", "minLength": 1},
+        "wisdom": {"type": "string", "minLength": 1}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "consent_status", "subsidiarity", "hard_constraints"],
+      "properties": {
+        "status": {"enum": ["authorized", "requires_escalation", "not_authorized"]},
+        "consent_status": {"enum": ["not_required", "valid", "missing", "refused"]},
+        "subsidiarity": {"type": "string", "minLength": 1},
+        "hard_constraints": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "decision": {"enum": ["proceed", "narrow", "defer", "escalate", "refuse"]},
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metrics", "review_at", "repair_path"],
+      "properties": {
+        "metrics": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "review_at": {"type": "string", "format": "date-time"},
+        "repair_path": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
