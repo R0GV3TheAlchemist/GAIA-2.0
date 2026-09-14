@@ -1,0 +1,30 @@
+{
+  "id": "golden-compass-valid-fixture",
+  "scope": "personal",
+  "proposal": "Offer a local, editable learning recommendation.",
+  "responsible_attention": {
+    "observations": ["The learner requested a self-paced recommendation."],
+    "uncertainty": "Available study time may change.",
+    "affected_parties": ["Learner"],
+    "alternatives": ["Provide an editable recommendation."]
+  },
+  "diamond": {
+    "truth": "Cite the proposed resources.",
+    "care": "Do not profile the learner or share records.",
+    "growth": "Support learner-defined goals.",
+    "balance": "Permit revision and stopping.",
+    "wisdom": "Use the lowest-risk, local option."
+  },
+  "authority": {
+    "status": "authorized",
+    "consent_status": "valid",
+    "subsidiarity": "The learner controls the decision.",
+    "hard_constraints": ["No external sharing without consent."]
+  },
+  "decision": "proceed",
+  "feedback": {
+    "metrics": ["Learner-reported usefulness"],
+    "review_at": "2026-10-13T00:00:00Z",
+    "repair_path": "The learner can revise or delete the recommendation."
+  }
+}
