@@ -1,0 +1,30 @@
+{
+  "id": "golden-compass-missing-evidence-fixture",
+  "scope": "community",
+  "proposal": "Deploy a community intervention.",
+  "responsible_attention": {
+    "observations": [],
+    "uncertainty": "Unknown.",
+    "affected_parties": ["Community members"],
+    "alternatives": ["Defer."]
+  },
+  "diamond": {
+    "truth": "No evidence is available.",
+    "care": "Potential harms are unknown.",
+    "growth": "Potential benefit is asserted.",
+    "balance": "Tradeoffs are unknown.",
+    "wisdom": "Do not proceed."
+  },
+  "authority": {
+    "status": "requires_escalation",
+    "consent_status": "missing",
+    "subsidiarity": "Community authority is required.",
+    "hard_constraints": ["Evidence is required."]
+  },
+  "decision": "defer",
+  "feedback": {
+    "metrics": ["Evidence completeness"],
+    "review_at": "2026-10-13T00:00:00Z",
+    "repair_path": "Collect appropriate evidence or stop the proposal."
+  }
+}

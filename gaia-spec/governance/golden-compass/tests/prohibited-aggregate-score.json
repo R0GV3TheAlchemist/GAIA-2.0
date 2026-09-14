@@ -1,0 +1,31 @@
+{
+  "id": "golden-compass-prohibited-score-fixture",
+  "scope": "planetary",
+  "proposal": "Authorize a broad intervention from one aggregate moral score.",
+  "flourishing_score": 99,
+  "responsible_attention": {
+    "observations": ["An aggregate score was proposed."],
+    "uncertainty": "The score hides distributional effects.",
+    "affected_parties": ["Multiple communities and ecosystems"],
+    "alternatives": ["Use a structured review."]
+  },
+  "diamond": {
+    "truth": "A single score is inadequate evidence.",
+    "care": "The score can hide rights violations.",
+    "growth": "Aggregate benefit is not sufficient.",
+    "balance": "Tradeoffs are not visible.",
+    "wisdom": "Refuse score-only authorization."
+  },
+  "authority": {
+    "status": "not_authorized",
+    "consent_status": "missing",
+    "subsidiarity": "No legitimate authority has approved the action.",
+    "hard_constraints": ["No aggregate moral score."]
+  },
+  "decision": "refuse",
+  "feedback": {
+    "metrics": ["Structured-review completeness"],
+    "review_at": "2026-10-13T00:00:00Z",
+    "repair_path": "Replace the score-only proposal with a structured, rights-respecting review."
+  }
+}

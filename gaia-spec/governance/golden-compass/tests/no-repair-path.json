@@ -1,0 +1,28 @@
+{
+  "id": "golden-compass-no-repair-path-fixture",
+  "scope": "infrastructure",
+  "proposal": "Run a local pilot.",
+  "responsible_attention": {
+    "observations": ["A pilot may have side effects."],
+    "uncertainty": "Outcome is uncertain.",
+    "affected_parties": ["Local users"],
+    "alternatives": ["Defer.", "Run a reversible pilot."]
+  },
+  "diamond": {
+    "truth": "Evidence is incomplete.",
+    "care": "Side effects must be addressed.",
+    "growth": "A pilot may support learning.",
+    "balance": "Scope should be limited.",
+    "wisdom": "Do not proceed without repair planning."
+  },
+  "authority": {
+    "status": "authorized",
+    "consent_status": "valid",
+    "subsidiarity": "Local authority reviewed the pilot.",
+    "hard_constraints": ["A repair path is required."]
+  },
+  "decision": "defer",
+  "feedback": {
+    "metrics": ["Outcome measurement"]
+  }
+}
