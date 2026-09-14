@@ -29,9 +29,7 @@ def fixture_kind(path: Path) -> str:
         return "token"
     if ".case." in name:
         return "case"
-    if name.startswith("invalid-") or name.endswith("-agent.json"):
-        return "aip"
-    raise ValueError(f"no schema routing rule for fixture {name}")
+    return "aip"
 
 
 def load_json(path: Path):
