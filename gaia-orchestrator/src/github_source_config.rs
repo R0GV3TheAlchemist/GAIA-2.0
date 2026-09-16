@@ -72,5 +72,13 @@ pub fn load_github_source_policy(json: &str) -> Result<GitHubSourcePolicy, Strin
         return Err("source policy exceeds local safety limits".into());
     }
 
-    Ok(GitHubSourcePolicy::default())
+    Ok(GitHubSourcePolicy::from_loaded(
+        config.allowed_repositories,
+        config.allowed_paths,
+        config.denied_path_patterns,
+        config.limits.max_file_bytes,
+        config.limits.max_response_bytes,
+        config.limits.max_results,
+        config.limits.requests_per_minute,
+    ))
 }
