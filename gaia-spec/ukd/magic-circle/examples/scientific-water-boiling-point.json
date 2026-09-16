@@ -1,0 +1,42 @@
+{
+  "id": "example-scientific-water-boiling-point",
+  "publication_status": "approved-for-public-example",
+  "epistemic_status": "knowledge_claim",
+  "library_ring": "science",
+  "learning_path": "understanding",
+  "claim": "Pure water boils at 100 °C (373.15 K) at a pressure of 1 standard atmosphere.",
+  "sources": [
+    {
+      "label": "Public introductory chemistry statement of the standard boiling point of water at 1 atm.",
+      "kind": "document",
+      "provenance": "Local educational example; not a live instrument reading."
+    }
+  ],
+  "interpretation": "This is a scoped empirical convention under stated pressure, not a universal property of all aqueous mixtures or altitudes.",
+  "application": "May be used for education. Must not authorize industrial process control without local measurement and qualified authority.",
+  "diamond": {
+    "truth": "The claim is limited to pure water at 1 atm; counter-evidence includes pressure change and impurities.",
+    "memory": "Retain the pressure condition and the educational provenance of this example.",
+    "discovery": "Local boiling temperature was not measured here.",
+    "understanding": "Boiling point depends on pressure and composition.",
+    "wisdom": "Hold as a textbook knowledge claim with uncertainty; do not treat as site instrumentation."
+  },
+  "symbology": {
+    "category": "empirical_claim",
+    "operational_claim": false
+  },
+  "uncertainty": "No local thermometer reading or laboratory certificate is attached.",
+  "dissent": [],
+  "correction_path": "Qualify or retract if a cited standard or measurement disagrees.",
+  "unfinished_horizon": "Mixture effects, altitude, isotopic composition, and instrument calibration remain out of scope.",
+  "viriditas": {
+    "tradition_contextual": true,
+    "generative_effects": "Supports basic scientific literacy without concealing pressure dependence.",
+    "concealed_harm": "None intended; overgeneralizing to unsafe process control would conceal risk."
+  },
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "not_required",
+    "community_authority": "Public scientific convention; no community-held restriction applies to this textbook statement."
+  }
+}

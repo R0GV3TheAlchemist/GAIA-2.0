@@ -1,0 +1,27 @@
+{
+  "id": "magic-circle-prohibited-wisdom-score-fixture",
+  "publication_status": "approved-for-public-example",
+  "epistemic_status": "wisdom_judgment",
+  "wisdom_score": 99,
+  "sources": [
+    {
+      "label": "An aggregate score.",
+      "kind": "document"
+    }
+  ],
+  "interpretation": "A single score is offered as wisdom.",
+  "diamond": {
+    "truth": "A score hides evidence.",
+    "memory": "Score-only records conceal sources.",
+    "discovery": "Dissent is hidden.",
+    "understanding": "The Diamond cannot collapse to a number.",
+    "wisdom": "Refuse score-only knowledge authority."
+  },
+  "uncertainty": "The score is unexplained.",
+  "unfinished_horizon": "Hidden.",
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "not_required",
+    "community_authority": "None."
+  }
+}

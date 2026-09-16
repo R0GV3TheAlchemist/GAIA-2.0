@@ -1,0 +1,42 @@
+{
+  "id": "example-historical-viriditas-usage",
+  "publication_status": "approved-for-public-example",
+  "epistemic_status": "knowledge_claim",
+  "library_ring": "history",
+  "learning_path": "memory",
+  "claim": "Hildegard of Bingen used the Latin term viriditas in twelfth-century theological and cosmological writing, commonly glossed as greenness or greening power.",
+  "sources": [
+    {
+      "label": "Historical attribution of the term viriditas to Hildegard of Bingen's writings.",
+      "kind": "historical",
+      "provenance": "Local historical example for category distinction; not a critical edition."
+    }
+  ],
+  "interpretation": "The term belongs to a medieval theological vocabulary of vitality. This record does not translate it into a universal scientific quantity or moral score.",
+  "application": "Permitted as historical literacy. Not permitted as biological law, wellness ranking, or operational authority.",
+  "diamond": {
+    "truth": "The historical usage claim is about a term and an author, not about measured greening energy.",
+    "memory": "Keep the theological and historical context attached; do not strip it into a slogan.",
+    "discovery": "Manuscript variants, translation debates, and reception history are not settled here.",
+    "understanding": "Viriditas in this record is tradition-contextual vocabulary, not an SI quantity.",
+    "wisdom": "Hold the historical claim; refuse scientific or supernatural-causation promotion."
+  },
+  "symbology": {
+    "category": "religious_spiritual",
+    "operational_claim": false
+  },
+  "uncertainty": "No primary-manuscript collation or professional historical review is attached.",
+  "dissent": ["Translators disagree on the best English gloss."],
+  "correction_path": "Qualify wording if a cited critical edition disagrees; do not silently modernize the term into science.",
+  "unfinished_horizon": "Broader medieval Latin usage, Hildegard's full corpus, and living theological interpretation remain open.",
+  "viriditas": {
+    "tradition_contextual": true,
+    "generative_effects": "Preserves historical understanding without converting a sacred vocabulary into a metric.",
+    "concealed_harm": "Flattening the term into a universal science claim would conceal its tradition-specific meaning."
+  },
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "not_required",
+    "community_authority": "Historical public scholarship about a medieval author; living communities retain their own theological authority."
+  }
+}

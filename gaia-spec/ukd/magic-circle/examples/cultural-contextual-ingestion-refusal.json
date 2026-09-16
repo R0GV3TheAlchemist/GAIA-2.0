@@ -1,0 +1,42 @@
+{
+  "id": "example-cultural-contextual-ingestion-refusal",
+  "publication_status": "approved-for-public-example",
+  "epistemic_status": "observation",
+  "library_ring": "place",
+  "learning_path": "memory",
+  "claim": "A request to ingest living ceremonial knowledge into UKD was observed and refused. No ceremonial content is stored.",
+  "sources": [
+    {
+      "label": "Local observation that an ingestion request named community-held ceremonial knowledge without applicable authority.",
+      "kind": "observation",
+      "provenance": "Synthetic governance example; no community, place, or rite is identified."
+    }
+  ],
+  "interpretation": "Cultural context requires community authority. Absence of that authority is not a gap to be filled by scraping, inference, or generic symbolism.",
+  "application": "Do not store, publish, train on, or summarize the requested ceremonial content. Record only the refusal.",
+  "diamond": {
+    "truth": "The only warranted content is that a request occurred and was refused.",
+    "memory": "Remember the refusal and the non-collection rule; do not remember the ceremony.",
+    "discovery": "What the ceremony means is not available to GAIA without grant and is not to be sought here.",
+    "understanding": "Place-based and ceremonial knowledge is community-governed, not a missing Library Ring slot.",
+    "wisdom": "Withdraw collection. Keep the public example limited to the refusal."
+  },
+  "symbology": {
+    "category": "indigenous_community_held",
+    "operational_claim": false
+  },
+  "uncertainty": "No applicable community, steward, or consent grant is present.",
+  "dissent": [],
+  "correction_path": "If a legitimate community later grants scoped access, create a new community-governed record; do not reopen this one as content.",
+  "unfinished_horizon": "Living knowledge remains with its holders. Completeness is not a goal.",
+  "viriditas": {
+    "tradition_contextual": true,
+    "generative_effects": "Protects agency, consent, and future possibility by refusing extraction.",
+    "concealed_harm": "Ingesting the ceremony as 'cultural data' would conceal extraction as education."
+  },
+  "authority": {
+    "status": "not_authorized_to_store",
+    "consent_status": "missing",
+    "community_authority": "Applicable community authority was not present; default is non-collection."
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "id": "magic-circle-valid-fixture",
+  "publication_status": "approved-for-public-example",
+  "epistemic_status": "knowledge_claim",
+  "claim": "The circumference of a Euclidean circle is 2\u03c0r.",
+  "sources": [
+    {
+      "label": "Public formal-geometry identity for Euclidean circumference.",
+      "kind": "document",
+      "provenance": "Local educational fixture."
+    }
+  ],
+  "interpretation": "This is a formal mathematical identity in Euclidean geometry, not a metaphysical claim.",
+  "diamond": {
+    "truth": "The identity holds in Euclidean geometry as taught in public mathematics.",
+    "memory": "Retain the Euclidean scope.",
+    "discovery": "Non-Euclidean analogues are out of scope.",
+    "understanding": "r is the radius; \u03c0 is the circle constant.",
+    "wisdom": "Hold as formal geometry; do not promote to empirical causation or symbolism."
+  },
+  "symbology": {
+    "category": "formal_geometry",
+    "operational_claim": false
+  },
+  "uncertainty": "This fixture does not survey historical proofs or physical measurement.",
+  "unfinished_horizon": "History of \u03c0, numerical approximation, and physical circles remain open.",
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "not_required",
+    "community_authority": "Public mathematics; no restricted tradition is implicated."
+  }
+}
