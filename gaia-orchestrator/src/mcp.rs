@@ -144,6 +144,14 @@ impl McpRegistry {
         Err("MCP is in-process only; no TCP listen".into())
     }
 
+    pub fn serve_once<R: std::io::BufRead, W: std::io::Write>(
+        &self,
+        reader: &mut R,
+        writer: &mut W,
+    ) -> Result<(), String> {
+        crate::mcp_stdio::serve_once(self, reader, writer)
+    }
+
     pub fn list(&self) -> &[AipManifest] {
         &self.agents
     }
@@ -182,7 +190,11 @@ impl McpRegistry {
         self.dispatch_tool(&msg.method)
     }
 
-    pub fn invoke_from_intent(&self, graph: &IntentGraph, signer: &IntentSigner) -> Result<String, String> {
+    pub fn invoke_from_intent(
+        &self,
+        graph: &IntentGraph,
+        signer: &IntentSigner,
+    ) -> Result<String, String> {
         let method = if graph.goal.to_ascii_lowercase().contains("research") {
             "research.summarize"
         } else {
