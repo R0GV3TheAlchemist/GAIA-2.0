@@ -1,0 +1,6 @@
+[package]
+name = "gaia-geometry"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Formal geometry + First-Law symbol contracts. Not sacred power. Not a moral score."
