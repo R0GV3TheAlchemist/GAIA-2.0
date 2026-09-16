@@ -1,0 +1,43 @@
+{
+  "id": "example-user-declared-consent-circle",
+  "publication_status": "private-draft",
+  "epistemic_status": "interpretation",
+  "library_ring": "human_experience",
+  "learning_path": "application",
+  "claim": "The account holder declares that a drawn circle in their local notes means 'pause and check consent' before acting.",
+  "sources": [
+    {
+      "label": "User-declared personal meaning for a circle mark in local notes.",
+      "kind": "user_declared",
+      "provenance": "Local private declaration; not inferred from behavior, biometrics, or astrology."
+    }
+  ],
+  "interpretation": "This meaning is personal and local. It is not a personality profile, not a prediction, and not a claim about other people.",
+  "application": "May remind the account holder to pause. May not command people, nature, or outcomes.",
+  "diamond": {
+    "truth": "The only evidence is the user's declaration.",
+    "memory": "Keep the declaration private-draft unless the user later approves publication.",
+    "discovery": "No hidden meaning is to be inferred from the mark.",
+    "understanding": "The circle is a user-declared checklist cue, not a supernatural mechanism.",
+    "wisdom": "Honor the local meaning with First Law mapping; refuse identity inference."
+  },
+  "symbology": {
+    "category": "personal_symbolism",
+    "operational_claim": true,
+    "accountability_mapping": "process=pause and check consent; inputs=draft action and consent state; outputs=proceed, defer, or refuse; steward=account holder; constraints=local/private by default, no identity inference, no command of others; evidence=user declaration only; correction=user may revise or delete."
+  },
+  "uncertainty": "The declaration can be changed or withdrawn by the user at any time.",
+  "dissent": [],
+  "correction_path": "User revises or deletes the local record; GAIA must not infer a replacement meaning.",
+  "unfinished_horizon": "Other marks, moods, and unstated meanings are unknown and must not be invented.",
+  "viriditas": {
+    "tradition_contextual": true,
+    "generative_effects": "Increases the user's agency to pause and refuse without concealing the advisory limit.",
+    "concealed_harm": "Inferring belief, health, or authority from the mark would conceal profiling as personalization."
+  },
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "valid",
+    "community_authority": "The account holder is the only steward of this personal declaration."
+  }
+}

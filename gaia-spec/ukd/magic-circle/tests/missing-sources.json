@@ -1,0 +1,22 @@
+{
+  "id": "magic-circle-missing-sources-fixture",
+  "publication_status": "approved-for-public-example",
+  "epistemic_status": "knowledge_claim",
+  "claim": "An unsourced claim.",
+  "sources": [],
+  "interpretation": "Interpretation without sources.",
+  "diamond": {
+    "truth": "No evidence is attached.",
+    "memory": "Nothing to retain.",
+    "discovery": "Sources are missing.",
+    "understanding": "Status cannot be warranted.",
+    "wisdom": "Do not hold as knowledge."
+  },
+  "uncertainty": "Sources are absent.",
+  "unfinished_horizon": "Everything remains unknown without sources.",
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "not_required",
+    "community_authority": "None."
+  }
+}

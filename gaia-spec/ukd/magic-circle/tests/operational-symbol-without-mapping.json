@@ -1,0 +1,30 @@
+{
+  "id": "magic-circle-operational-symbol-without-mapping-fixture",
+  "publication_status": "private-draft",
+  "epistemic_status": "interpretation",
+  "sources": [
+    {
+      "label": "A circle mark.",
+      "kind": "user_declared"
+    }
+  ],
+  "interpretation": "The circle is presented as causing outcomes.",
+  "diamond": {
+    "truth": "No process mapping is present.",
+    "memory": "User mark only.",
+    "discovery": "Causal mechanism is unstated.",
+    "understanding": "This collapses symbol into operation.",
+    "wisdom": "Refuse operational claim without First Law mapping."
+  },
+  "symbology": {
+    "category": "personal_symbolism",
+    "operational_claim": true
+  },
+  "uncertainty": "No accountable process is defined.",
+  "unfinished_horizon": "Mapping is absent.",
+  "authority": {
+    "status": "advisory_only",
+    "consent_status": "valid",
+    "community_authority": "Account holder."
+  }
+}
