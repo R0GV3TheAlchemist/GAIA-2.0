@@ -10,7 +10,10 @@ mod registry;
 pub use compass::{Compass, Cardinal};
 pub use diamond::{Alignment, Gate};
 pub use primitive::{Circle, Point, Vesica};
-pub use registry::{lookup, operational, SymbolContract, SymbolKind};
+pub use registry::{
+    lookup, operational, refuse_category_collapse, refuse_command_circle, refuse_tek_extract,
+    SymbolContract, SymbolKind,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GeoError {
