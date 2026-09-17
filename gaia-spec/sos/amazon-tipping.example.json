@@ -1,6 +1,59 @@
 {
-  "goal": "assess Amazon basin drought risk",
-  "constraints": ["advise-only", "no-actuator"],
-  "context": { "system": "earth-twin", "region": "amazon" },
-  "authorization": { "signed": true }
+  "spec_version": "gaia.intent/v0.1",
+  "intent_id": "urn:uuid:7f2e2a1b-15ea-4d4d-98c8-b3d9444c8c12",
+  "issued_at": "2026-09-17T13:24:00Z",
+  "expires_at": "2026-09-17T14:24:00Z",
+  "subject": {
+    "did": "did:gaia:human:kyle-steen",
+    "kind": "human"
+  },
+  "goal": {
+    "summary": "Retrieve and summarize uncertainty-bearing indicators relevant to Amazon rainforest tipping-risk monitoring.",
+    "purpose": "Support a human-reviewed Earth Twin research assessment.",
+    "outcome": "A cited read-only report identifying available indicators, provenance, uncertainty, coverage limits, and data gaps."
+  },
+  "authorization": {
+    "grant_id": "urn:gaia:grant:earth-research-readonly-v1",
+    "capabilities": [
+      "earth.data.read",
+      "knowledge.retrieve",
+      "research.summarize"
+    ],
+    "delegation": "single_hop",
+    "confirmation": "not_required"
+  },
+  "constraints": {
+    "side_effects": "read_only",
+    "network": "allowlisted",
+    "data_classes": [
+      "public"
+    ],
+    "max_runtime_seconds": 300
+  },
+  "context": {
+    "memcube_refs": [
+      "urn:gaia:memcube:earth:amazon:tipping-risk:baseline-v1"
+    ],
+    "region": {
+      "type": "named_region",
+      "value": "Amazon Basin"
+    },
+    "provenance_requirements": [
+      "source_required",
+      "license_required",
+      "uncertainty_required",
+      "synthetic_label_required"
+    ]
+  },
+  "target": {
+    "kind": "workflow",
+    "id": "earth.amazon_tipping_risk.research.v1"
+  },
+  "nonce": "amazon-risk-research-2026-09-17-0001",
+  "signature": {
+    "algorithm": "Ed25519",
+    "key_id": "did:gaia:human:kyle-steen#earth-research-key-1",
+    "payload_hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "value": "BASE64URL_ENCODED_TEST_SIGNATURE_REPLACE_DURING_CRYPTOGRAPHIC_TEST"
+  }
 }

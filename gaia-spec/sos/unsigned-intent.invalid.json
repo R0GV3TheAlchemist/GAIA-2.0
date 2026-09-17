@@ -1,0 +1,38 @@
+{
+  "spec_version": "gaia.intent/v0.1",
+  "intent_id": "urn:uuid:7f2e2a1b-15ea-4d4d-98c8-b3d9444c8c12",
+  "issued_at": "2026-09-17T13:24:00Z",
+  "expires_at": "2026-09-17T14:24:00Z",
+  "subject": {
+    "did": "did:gaia:human:kyle-steen",
+    "kind": "human"
+  },
+  "goal": {
+    "summary": "Retrieve and summarize uncertainty-bearing indicators relevant to Amazon rainforest tipping-risk monitoring.",
+    "purpose": "Negative fixture: default policy must refuse an unsigned Intent."
+  },
+  "authorization": {
+    "grant_id": "urn:gaia:grant:earth-research-readonly-v1",
+    "capabilities": [
+      "earth.data.read"
+    ],
+    "delegation": "none",
+    "confirmation": "not_required"
+  },
+  "constraints": {
+    "side_effects": "read_only",
+    "network": "deny",
+    "data_classes": [
+      "public"
+    ],
+    "max_runtime_seconds": 60
+  },
+  "context": {
+    "memcube_refs": []
+  },
+  "target": {
+    "kind": "workflow",
+    "id": "earth.amazon_tipping_risk.research.v1"
+  },
+  "nonce": "unsigned-amazon-risk-2026-09-17-0001"
+}
