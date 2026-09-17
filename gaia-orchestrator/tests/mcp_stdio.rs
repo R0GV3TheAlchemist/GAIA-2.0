@@ -22,7 +22,7 @@ fn tcp_listen_stays_refused() {
 
 #[test]
 fn stdio_signed_tool_call_dispatches_and_returns_one_response_line() {
-    let registry = McpRegistry::local();
+    let mut registry = McpRegistry::local();
     let signer = IntentSigner::generate();
     let request = JsonRpcRequest::signed(&signer, 4, "tools/call", "research.summarize");
     let request_json = serde_json::to_string(&request).unwrap();
@@ -42,7 +42,7 @@ fn stdio_signed_tool_call_dispatches_and_returns_one_response_line() {
 
 #[test]
 fn stdio_unsigned_tool_call_returns_error_without_dispatch() {
-    let registry = McpRegistry::local();
+    let mut registry = McpRegistry::local();
     let request = JsonRpcRequest::unsigned(3, "tools/call", "research.summarize");
     let request_json = serde_json::to_string(&request).unwrap();
 
@@ -56,11 +56,12 @@ fn stdio_unsigned_tool_call_returns_error_without_dispatch() {
     assert_eq!(response.id, 3);
     assert!(response.result.is_none());
     assert!(response.error.unwrap().contains("unsigned"));
+    assert_eq!(registry.handler_invocations, 0);
 }
 
 #[test]
 fn stdio_rejects_malformed_json_before_dispatch() {
-    let registry = McpRegistry::local();
+    let mut registry = McpRegistry::local();
     let mut reader = Cursor::new("{not-json}\n");
     let mut writer = Vec::new();
 
@@ -72,7 +73,7 @@ fn stdio_rejects_malformed_json_before_dispatch() {
 
 #[test]
 fn durable_session_file_roundtrip_keeps_signature_gate() {
-    let reg = McpRegistry::local();
+    let mut reg = McpRegistry::local();
     let unsigned = reg.handle(JsonRpcRequest::unsigned(3, "tools/call", "research.summarize"));
     assert!(unsigned.error.as_ref().unwrap().contains("unsigned"));
 
