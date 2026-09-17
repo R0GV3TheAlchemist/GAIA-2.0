@@ -5,6 +5,7 @@ mod eacn;
 mod gate;
 mod identity;
 mod phases;
+mod revival;
 mod sched;
 
 pub use abi::{learn, submit_intent, HOST_CALLS};
@@ -12,6 +13,7 @@ pub use eacn::{discover, god_coordinator};
 pub use gate::{formal_verify_done, sos_v1_tagged, threats};
 pub use identity::{revoke_mode, t0_kernel_kloc, AuthorizationError, Capability, CapabilityAuthority, CapabilityId, Constraints, Delegation, EntityId, EntityKind, Operation};
 pub use phases::{hal_tiers, live_containerd, live_mcp, live_slurm, live_whisper, HalTier};
+pub use revival::{adopted_module_count, live_owm, map_concept, maturity, mcre_suite_restored, refuse_archive_exec, refuse_consciousness_runtime, virelai_736_claimed, Grade, RevivalMap};
 pub use sched::{kernel_inference, sfs_v1};
 
 pub fn second_kernel() -> bool { false }
