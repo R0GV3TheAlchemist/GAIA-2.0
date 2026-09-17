@@ -1,0 +1,6 @@
+-- Applied live as gaia20_anti_chaos_control_plane on gaia-2-0 (yylqoiqobydrdsnnulip) 2026-09-17.
+-- Source of truth is the live migration; this file is the repo mirror.
+-- Objects: canon_nodes, canon_edges, trace_events, task_runs, task_nodes,
+-- criticality_snapshots, work_items, system_gaps, gap_locks,
+-- classify_branching_ratio, classify_qrc_phase, compute_overall_phi,
+-- detect_system_gaps, acquire_gap_lock, v_chaos_regime, v_work_avalanche.

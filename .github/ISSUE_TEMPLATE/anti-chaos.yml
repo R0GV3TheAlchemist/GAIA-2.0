@@ -1,0 +1,33 @@
+name: Anti-chaos work item
+description: New work must declare an epic parent so issues cannot avalanche.
+title: '[anti-chaos] '
+labels: ['anti-chaos']
+body:
+  - type: dropdown
+    id: plane
+    attributes:
+      label: Plane
+      options: [GitHub, Supabase, Hugging Face, Hardware SOC, Runtime lock]
+    validations:
+      required: true
+  - type: input
+    id: parent_epic
+    attributes:
+      label: Parent epic number
+      placeholder: '190'
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: Gap this closes
+      description: Which system_gaps row or missing lock does this address?
+    validations:
+      required: true
+  - type: input
+    id: canon
+    attributes:
+      label: Canon refs
+      placeholder: C30, C42
+    validations:
+      required: true
