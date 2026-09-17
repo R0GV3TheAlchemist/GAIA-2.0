@@ -23,7 +23,7 @@ fn at01_signed_intent_invokes_once_with_provenance() {
 }
 
 #[test]
-at02_resources_list_exposes_aip_without_secrets() {
+fn at02_resources_list_exposes_aip_without_secrets() {
     let mut reg = McpRegistry::local();
     let signer = IntentSigner::generate();
     let listed = reg.handle(JsonRpcRequest::signed(&signer, 2, "resources/list", "{}"));
@@ -37,7 +37,7 @@ at02_resources_list_exposes_aip_without_secrets() {
 }
 
 #[test]
-at03_unsigned_is_unauthenticated_without_handler() {
+fn at03_unsigned_is_unauthenticated_without_handler() {
     let mut reg = McpRegistry::local();
     let err = reg
         .invoke(&McpMessage::unsigned("research.summarize", "{}"))
@@ -48,7 +48,7 @@ at03_unsigned_is_unauthenticated_without_handler() {
 }
 
 #[test]
-at04_forged_signature_is_invalid_without_handler() {
+fn at04_forged_signature_is_invalid_without_handler() {
     let mut reg = McpRegistry::local();
     let err = reg
         .invoke(&McpMessage::marked_signed(
@@ -62,7 +62,7 @@ at04_forged_signature_is_invalid_without_handler() {
 }
 
 #[test]
-at05_unknown_and_revoked_keys_are_untrusted() {
+fn at05_unknown_and_revoked_keys_are_untrusted() {
     let trusted = IntentSigner::generate();
     let stranger = IntentSigner::generate();
     let mut unknown = McpRegistry::local().trust(&trusted);
@@ -90,7 +90,7 @@ at05_unknown_and_revoked_keys_are_untrusted() {
 }
 
 #[test]
-at06_policy_denies_remote_network_without_handler() {
+fn at06_policy_denies_remote_network_without_handler() {
     let signer = IntentSigner::generate();
     let mut reg = McpRegistry::local().trust(&signer);
     let denied = reg.handle(JsonRpcRequest::signed(
