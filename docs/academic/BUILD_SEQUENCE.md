@@ -1,34 +1,34 @@
 # GAIA 2.0 Build Sequence
 
 **Filed:** 2026-09-17  
+**Updated:** 2026-09-17 Slice B applied  
 **Rule:** finish the backbone that already exists before opening new universes.
 
 ## Already true
 
 1. Public monorepo `GAIA-2.0` with crates, proofs, CI, supabase/, huggingface/.
-2. Supabase project `gaia-2-0` healthy in us-east-2 with 10 RLS tables and 6 migrations.
+2. Supabase project `gaia-2-0` healthy in us-east-2 with RLS tables and Slice B memory columns.
 3. Hugging Face account exists; Hub is empty.
 4. Research corpus covers cognition, memory, consent, flourishing, education, HRV, particle geometry, and AlScN/GaN.
 
 ## Sequence
 
-### Slice A — Records and law (this pack)
+### Slice A — Records and law — done
 
-- Commit these records under `docs/academic/` in `GAIA-2.0`.
-- Add front-matter to each: `status: records`, `requires: []`, `tags: [academic, github, supabase, huggingface]`.
-- Link STACK.md to this pack instead of duplicating it.
+Committed under `docs/academic/` in `GAIA-2.0` (`8e910b8`).
 
-### Slice B — Memory truth
+### Slice B — Memory truth — applied on Supabase 2026-09-17
 
-- Keep HOT/WARM/COLD as storage temperature.
-- Add `cognitive_type`, `gaian_id`, `provenance_source`, `confidence` to `memories`.
-- Implement Metric 6 as a `security_invoker` view (already started in a fix migration).
-- Export anonymized `memory_access_events` only with RESEARCH_USE consent.
+- HOT/WARM/COLD kept as storage temperature.
+- Added `cognitive_type`, `gaian_id`, `provenance_source`, `confidence`.
+- Metric 6 view `memory_metric_6_retention_30d` uses `security_invoker`.
+- No Hugging Face memory export (no RESEARCH_USE cohort).
+- Proof: `proofs/PROOF-GAIA20-MEMORY-004.md` (partial until 30-day cohort exists).
 
-### Slice C — Consent as proof, not a log
+### Slice C — Consent as proof, not a log — next
 
 - Migrate `consent_events` toward HMAC chain + fourteen scopes.
-- Block Execution paths when Safety/Consent circuit is OPEN (agent runtime already has incident types).
+- Block Execution paths when Safety/Consent circuit is OPEN.
 - Do not claim GDPR erasure until key destruction receipts exist.
 
 ### Slice D — Lithic completeness
@@ -61,9 +61,3 @@ Only after A–C. Identity file, Telos, child rules, and GAIAN-to-GAIAN envelope
 - No canon merge without Proof.
 - No service-role keys in client apps.
 - No training on user memory without RESEARCH_USE grant.
-
-## Success for “no problems anymore”
-
-Problems in this project have been: canon without proof, docs without a live store, stores without RLS, and claims without datasets. The stack now has a public repo, a healthy database with RLS, and an empty Hub waiting for honest cards.
-
-“No problems anymore” means every claim has a row in `proofs`, every personal row has a consent scope, and every public artefact has a card that states what it is not.
