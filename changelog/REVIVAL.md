@@ -1,8 +1,8 @@
 # Revival changelog
 
-## 2026-09-17
+## 2026-09-17 evening
 
-- Merged #324: MCP AT-01..AT-06 local gate. #23 stays open for AT-07..AT-10.
-- Merged #195 Host/Intent ABI docs. Merged #196 capability contracts.
-- Ingested VirelaiOS transfer documents as `gaia-spec/revival/` evidence.
-- Encoded refusals in `gaia-sos` revival module: no 736-module claim, no MCRE suite, no live OWM, no archive script exec, no consciousness runtime.
+- main advanced through memory CT-002, agents CT-003, academic records pack, memory Slice B.
+- Attached zips inventoried in `gaia-spec/revival/ARCHIVES.md`.
+- Seed policy path encoded in `gaia-sos` pipeline (default deny).
+- NEXUS 3743-file tree not copied. Empty human-evolution zip recorded as empty.
