@@ -55,7 +55,7 @@ fn main() {
         std::process::exit(1);
     }
 
-    let mcp = McpRegistry::local();
+    let mut mcp = McpRegistry::local();
     match mcp.invoke_from_intent(&graph, &signer) {
         Ok(dispatch) => println!("mcp_dispatch={dispatch}"),
         Err(error) => {
