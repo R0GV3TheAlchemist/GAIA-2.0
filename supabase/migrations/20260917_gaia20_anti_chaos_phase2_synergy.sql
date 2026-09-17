@@ -1,0 +1,2 @@
+-- Applied live as gaia20_anti_chaos_phase2_synergy on gaia-2-0 2026-09-17.
+-- 10 Phase-2 epics under METAs; synergy_compute DAG schumann || emotional -> synergy.
