@@ -1,0 +1,11 @@
+package gaia:sos@0.1.0;
+
+interface identity {
+  enum entity-kind { human, agent, device, organization, service }
+  record entity-id { kind: entity-kind, value: string }
+  enum operation { read, observe, invoke, advise, actuate, declare }
+  record capability-request { subject: entity-id, resource: string, operation: operation, purpose: string, now: u64 }
+  variant authorization-error { unknown-capability, denied, revoked, invalid-delegation }
+  authorize: func(capability-id: string, request: capability-request) -> result<_, authorization-error>;
+  revoke: func(capability-id: string) -> result<u64, authorization-error>;
+}
