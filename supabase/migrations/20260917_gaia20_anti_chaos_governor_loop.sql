@@ -1,0 +1,3 @@
+-- Applied live as gaia20_anti_chaos_governor_loop on gaia-2-0 (yylqoiqobydrdsnnulip) 2026-09-17.
+-- Adds execution_blocked(), v_execution_gate, META/Phase-0 work_items,
+-- memristor + qrc criticality snapshots, github_unmirrored warn, canon_load trace.
