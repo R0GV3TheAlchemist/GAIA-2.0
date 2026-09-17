@@ -23,7 +23,7 @@ pub fn decode_line(line: &str) -> Result<String, String> {
 }
 
 pub fn serve_once<R: BufRead, W: Write>(
-    registry: &McpRegistry,
+    registry: &mut McpRegistry,
     reader: &mut R,
     writer: &mut W,
 ) -> Result<(), String> {
