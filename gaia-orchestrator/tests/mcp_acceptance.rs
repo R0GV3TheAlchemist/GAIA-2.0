@@ -4,7 +4,7 @@ use gaia_memos::MemOs;
 use gaia_orchestrator::{IntentEngine, IntentSigner, JsonRpcRequest, McpMessage, McpRegistry};
 
 #[test]
-at01_signed_intent_invokes_once_with_provenance() {
+fn at01_signed_intent_invokes_once_with_provenance() {
     let mut mem = MemOs::new();
     let graph = IntentEngine::local_stub()
         .parse("research and summarize CARE", &mut mem)
