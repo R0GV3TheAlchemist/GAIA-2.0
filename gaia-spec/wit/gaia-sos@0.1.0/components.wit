@@ -1,0 +1,11 @@
+package gaia:sos@0.1.0;
+
+interface component-meta {
+  enum component-kind { agent, tool, sensor, knowledge, gaian }
+  record declaration { kind: component-kind, id: string, version: string, effects: list<string> }
+}
+world agent { import component-meta; }
+world tool { import component-meta; }
+world sensor { import component-meta; }
+world knowledge { import component-meta; }
+world gaian { import component-meta; }

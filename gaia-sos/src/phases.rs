@@ -1,53 +1,6 @@
-//! Honest status for Super OS #1–#30.
+//! Honest HAL tier targets for #196. Deployment targets, not kernel claims.
 
-pub fn phase_closed(n: u32) -> bool {
-    matches!(n, 2 | 3)
-}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HalTier { T0, T1, T2, T3, T4 }
 
-pub fn live_llm() -> bool {
-    false
-}
-
-pub fn live_marketplace() -> bool {
-    false
-}
-
-pub fn flutter_ui() -> bool {
-    false
-}
-
-pub fn profiles() -> [&'static str; 4] {
-    ["embedded", "desktop", "cloud", "hpc"]
-}
-
-pub fn live_fuse() -> bool {
-    false
-}
-
-pub fn live_qdrant() -> bool {
-    false
-}
-
-pub fn live_ollama() -> bool {
-    false
-}
-
-pub fn inbound_ports_required() -> bool {
-    false
-}
-
-pub fn live_mcp() -> bool {
-    false
-}
-
-pub fn live_containerd() -> bool {
-    false
-}
-
-pub fn live_whisper() -> bool {
-    false
-}
-
-pub fn live_slurm() -> bool {
-    false
-}
+pub fn hal_tiers() -> [HalTier; 5] { [HalTier::T0, HalTier::T1, HalTier::T2, HalTier::T3, HalTier::T4] }
