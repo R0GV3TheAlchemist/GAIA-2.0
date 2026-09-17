@@ -1,0 +1,2 @@
+-- Applied live as gaia20_anti_chaos_phase1_taskgraph on gaia-2-0 2026-09-17.
+-- 12 Phase-1 epics, neural SOC snapshot, COMPLETE memory_recall DAG (embed	o search	o rerank).
