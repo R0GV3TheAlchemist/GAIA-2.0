@@ -11,7 +11,7 @@ pub use abi::{learn, submit_intent, HOST_CALLS};
 pub use eacn::{discover, god_coordinator};
 pub use gate::{formal_verify_done, sos_v1_tagged, threats};
 pub use identity::{revoke_mode, t0_kernel_kloc, AuthorizationError, Capability, CapabilityAuthority, CapabilityId, Constraints, Delegation, EntityId, EntityKind, Operation};
-pub use phases::{hal_tiers, HalTier};
+pub use phases::{hal_tiers, live_containerd, live_mcp, live_slurm, live_whisper, HalTier};
 pub use sched::{kernel_inference, sfs_v1};
 
 pub fn second_kernel() -> bool { false }
