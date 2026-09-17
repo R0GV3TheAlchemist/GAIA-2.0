@@ -1,0 +1,2 @@
+-- Applied live as gaia20_anti_chaos_work_item_cap_trigger on gaia-2-0 2026-09-17.
+-- BEFORE INSERT: reject OPEN work_items when 50 OPEN rows already exist.

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Epic-first GitHub → work_items ingest. Never dump more than 50 OPEN rows per run."""
+"""Epic-first GitHub → work_items ingest. Never dump more than 50 OPEN rows."""
 from __future__ import annotations
 
 BATCH_LIMIT = 50
+OPEN_CAP = 50
 META_PARENTS = {
     190: None,
     176: None,
@@ -13,12 +14,11 @@ META_PARENTS = {
     202: 201,
     58: 213,
 }
-
 PHASE0 = [34, 78, 94, 108, 122, 133, 145, 156, 167]
 
 
-def plan_batch(open_numbers: list[int]) -> list[int]:
-    """Parents first, then Phase-0, then remaining — capped."""
+def plan_batch(open_numbers: list[int], already_mirrored: int = 0) -> list[int]:
+    room = max(0, OPEN_CAP - already_mirrored)
     ordered = []
     for n in list(META_PARENTS) + PHASE0:
         if n in open_numbers and n not in ordered:
@@ -26,10 +26,9 @@ def plan_batch(open_numbers: list[int]) -> list[int]:
     for n in open_numbers:
         if n not in ordered:
             ordered.append(n)
-    return ordered[:BATCH_LIMIT]
+    return ordered[: min(BATCH_LIMIT, room)]
 
 
 if __name__ == "__main__":
-    print("batch_limit", BATCH_LIMIT)
-    print("meta_parents", list(META_PARENTS))
-    print("phase0", PHASE0)
+    print("open_cap", OPEN_CAP)
+    print("room_if_at_cap", plan_batch(list(range(1, 300)), already_mirrored=50))

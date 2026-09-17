@@ -8,12 +8,9 @@
 
 | Object | Count |
 |---|---|
-| work_items | 50 (avalanche cap; not exceeded) |
-| task_runs | 3 |
-| task_nodes | 10 |
-| trace_events | 4 |
-| criticality_snapshots | 4 |
+| work_items | 50 |
+| task_runs / task_nodes | 3 / 10 |
+| cap trigger | `prevent_work_item_avalanche` live |
 | gap_locks | 0 |
 
-DAGs: memory_recall, synergy_compute, stage_session.
-No further OPEN ingest until leaves are parented or closed.
+The 51st OPEN insert is rejected in Postgres. Leaves stay on GitHub until parented or closed.
