@@ -1,0 +1,2 @@
+-- Applied live as gaia20_anti_chaos_phase3_stage on gaia-2-0 2026-09-17.
+-- 10 Phase-3 epics; work_items=50 (cap); stage_session DAG affect||codex -> ceremony -> arc_update.

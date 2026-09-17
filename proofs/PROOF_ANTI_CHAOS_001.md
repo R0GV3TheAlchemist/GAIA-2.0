@@ -8,12 +8,12 @@
 
 | Object | Count |
 |---|---|
-| work_items (META + P0 + P1 + P2) | 40 |
-| task_runs | 2 (`memory_recall`, `synergy_compute`) |
-| task_nodes | 6 |
-| trace_events | 3 |
+| work_items | 50 (avalanche cap; not exceeded) |
+| task_runs | 3 |
+| task_nodes | 10 |
+| trace_events | 4 |
 | criticality_snapshots | 4 |
 | gap_locks | 0 |
 
-DAGs: embed	o search	o rerank; schumann || emotional 	o synergy (factor 0.79).
-Still under avalanche cap (50). GitHub OPEN ~202 vs 40 mirrored.
+DAGs: memory_recall, synergy_compute, stage_session.
+No further OPEN ingest until leaves are parented or closed.
