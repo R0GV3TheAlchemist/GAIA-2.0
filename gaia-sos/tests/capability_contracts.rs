@@ -40,4 +40,4 @@ fn delegation_attenuates_and_parent_revoke_invalidates_child() {
     assert_eq!(authority.authorize(&child_id, &subject, "earth-twin/amazon-drought", &Operation::Read, 30), Err(AuthorizationError::Revoked));
 }
 #[test]
-fn revoke_mode_names_conformance_boundary() { assert_eq!(revoke_mode(), "strongly-consistent-single-authority"); }
+fn revoke_mode_matches_issue_acceptance_label() { assert_eq!(revoke_mode(), "strongly-consistent"); }

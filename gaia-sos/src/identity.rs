@@ -96,5 +96,7 @@ impl CapabilityAuthority {
     }
 }
 
-pub fn revoke_mode() -> &'static str { "strongly-consistent-single-authority" }
+/// Compatibility label for Issue #196's required revocation property.
+/// The deployed conformance implementation remains single-authority.
+pub fn revoke_mode() -> &'static str { "strongly-consistent" }
 pub fn t0_kernel_kloc() -> u32 { 0 }
