@@ -14,7 +14,7 @@ fn graph() -> gaia_orchestrator::IntentGraph {
 }
 
 #[test]
-generate_keeps_noop_sink_behavior() {
+fn generate_keeps_noop_sink_behavior() {
     let graph = graph();
     let mut audit = TrustAudit::generate();
     audit.append(graph.id, None, None, "node-started");
