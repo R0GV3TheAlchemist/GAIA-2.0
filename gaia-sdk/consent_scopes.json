@@ -1,0 +1,27 @@
+{
+  "author": "Kyle Steen / R0GV3 the Alchemist",
+  "issue": 64,
+  "enum_name": "ConsentScope",
+  "scopes": [
+    {"id": "face", "description": "Face imagery or embeddings"},
+    {"id": "body", "description": "Body or pose signals"},
+    {"id": "voice", "description": "Voice audio or speaker embeddings"},
+    {"id": "health", "description": "Health, biometric, or medical-adjacent signals"},
+    {"id": "memory", "description": "Episodic or long-term memory records"},
+    {"id": "agent", "description": "Agent actions taken on the Gaian's behalf"},
+    {"id": "earth_twin_share", "description": "Share with the Earth Twin / planetary layer"}
+  ],
+  "forbidden": [
+    "third_party_likeness_without_consent",
+    "hidden_copies",
+    "insurer_health_export",
+    "employer_health_export",
+    "child_behavioral_profiling",
+    "child_health_twin_learning",
+    "child_phase3_personality_learning"
+  ],
+  "age_gate": {
+    "guardian_required_under": 16,
+    "child_max_personality_phase": 2
+  }
+}
