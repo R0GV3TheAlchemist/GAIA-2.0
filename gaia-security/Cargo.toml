@@ -1,0 +1,10 @@
+[package]
+name = "gaia-security"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "GAIA 2.0 AI Security Layer — prompt-injection firewall, replay protection, memory provenance, capability revocation"
+
+[dependencies]
+sha2 = "0.10"
+hex = "0.4"
