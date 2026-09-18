@@ -29,7 +29,6 @@ impl PolicyDecision {
 pub struct PolicyEngine;
 
 impl PolicyEngine {
-    /// Facts are constructed here from typed inputs. Agent/model text is not a fact source.
     pub fn evaluate(
         now: u64,
         intent: &SignedIntent,
@@ -42,93 +41,80 @@ impl PolicyEngine {
         untrusted: Option<&UntrustedContent>,
     ) -> PolicyDecision {
         if emergency_stop {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::EmergencyStop,
-            };
+            return deny(ReasonCode::EmergencyStop);
         }
         if action.tool.is_empty() || action.target.is_empty() {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::Malformed,
-            };
+            return deny(ReasonCode::Malformed);
         }
-        if revoked.is_revoked(&action.agent_id) || revoked.is_revoked(&manifest.agent_id) {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::Revoked,
-            };
+        if revoked.is_revoked(&action.agent_id)
+            || revoked.is_revoked(&manifest.agent_id)
+            || revoked.is_revoked(&manifest.manifest_id)
+            || revoked.is_revoked(&manifest.gateway_id)
+            || revoked.is_revoked(&manifest.server_id)
+            || revoked.is_revoked(&manifest.issuer_id)
+        {
+            return deny(ReasonCode::Revoked);
         }
         if action.agent_id != manifest.agent_id {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::CrossAgent,
-            };
+            return deny(ReasonCode::CrossAgent);
+        }
+        if action.gateway_id != manifest.gateway_id
+            || action.server_id != manifest.server_id
+            || action.resource_id != manifest.resource_id
+        {
+            return deny(ReasonCode::ContextMismatch);
+        }
+        if !action.nonce.is_empty() && action.nonce != manifest.nonce {
+            return deny(ReasonCode::NonceMismatch);
+        }
+        if action.wants_delegation && !manifest.allow_delegation {
+            return deny(ReasonCode::DelegationDenied);
+        }
+        if manifest.not_yet_valid(now) {
+            return deny(ReasonCode::NotYetValid);
         }
         if now >= intent.expires_at || manifest.expired(now) {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::Expired,
-            };
+            return deny(ReasonCode::Expired);
         }
         if manifest.budget_exceeded() {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::BudgetExceeded,
-            };
+            return deny(ReasonCode::BudgetExceeded);
         }
         if let Some(u) = untrusted {
             if u.contains_authority_claim() {
-                return PolicyDecision::Deny {
-                    reason: ReasonCode::UntrustedAuthority,
-                };
+                return deny(ReasonCode::UntrustedAuthority);
             }
         }
         if !manifest.tool_allowed(&action.tool) {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::ToolNotListed,
-            };
+            return deny(ReasonCode::ToolNotListed);
         }
         if action.target.contains("..") || action.target.contains('\0') {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::TraversalDenied,
-            };
+            return deny(ReasonCode::TraversalDenied);
         }
         if is_protected_path(&action.target) {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::ProtectedPath,
-            };
+            return deny(ReasonCode::ProtectedPath);
         }
         if matches!(
             action.action_class,
             ActionClass::LocalRead | ActionClass::ScratchWrite | ActionClass::RepoWrite
         ) && !manifest.path_allowed(&action.target)
         {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::PathDenied,
-            };
+            return deny(ReasonCode::PathDenied);
         }
         if action.action_class == ActionClass::IdentityCreate {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::IdentityCreateDenied,
-            };
+            return deny(ReasonCode::IdentityCreateDenied);
         }
         if action.action_class == ActionClass::SecretAccess {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::SecretDenied,
-            };
+            return deny(ReasonCode::SecretDenied);
         }
         if action.action_class.agent_forbidden() || !manifest.risk_allowed(action.action_class) {
-            return PolicyDecision::Deny {
-                reason: ReasonCode::TierForbidden,
-            };
+            return deny(ReasonCode::TierForbidden);
         }
         if action.action_class == ActionClass::NetworkEgress {
             match classify_destination(&action.target) {
-                EgressClass::ForbiddenSsrf => {
-                    return PolicyDecision::Deny {
-                        reason: ReasonCode::SsrfDenied,
-                    }
-                }
+                EgressClass::ForbiddenSsrf => return deny(ReasonCode::SsrfDenied),
                 EgressClass::PublicOrUnknown => {
                     if !manifest.dest_allowed(&action.target) {
-                        return PolicyDecision::Deny {
-                            reason: ReasonCode::EgressDenied,
-                        };
+                        return deny(ReasonCode::EgressDenied);
                     }
                 }
                 EgressClass::Allowlisted => {}
@@ -137,15 +123,12 @@ impl PolicyEngine {
 
         if action.action_class.requires_approval() {
             return match approval {
-                None => PolicyDecision::Deny {
-                    reason: ReasonCode::ApprovalMissing,
-                },
-                Some(r) => match r.validate(now, intent, manifest, action, revoked, consumed_approvals)
-                {
+                None => deny(ReasonCode::ApprovalMissing),
+                Some(r) => match r.validate(now, intent, manifest, action, revoked, consumed_approvals) {
                     Ok(()) => PolicyDecision::Allow {
                         reason: ReasonCode::Allow,
                     },
-                    Err(reason) => PolicyDecision::Deny { reason },
+                    Err(reason) => deny(reason),
                 },
             };
         }
@@ -154,6 +137,10 @@ impl PolicyEngine {
             reason: ReasonCode::Allow,
         }
     }
+}
+
+fn deny(reason: ReasonCode) -> PolicyDecision {
+    PolicyDecision::Deny { reason }
 }
 
 fn is_protected_path(path: &str) -> bool {
