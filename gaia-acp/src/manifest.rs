@@ -36,9 +36,15 @@ impl RevocationList {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CapabilityManifest {
+    pub manifest_id: String,
+    pub issuer_id: String,
     pub agent_id: String,
+    pub gateway_id: String,
+    pub server_id: String,
+    pub resource_id: String,
     pub task_id: String,
     pub issued_at: u64,
+    pub not_before: u64,
     pub expires_at: u64,
     pub allowed_tools: Vec<String>,
     pub allowed_paths: Vec<String>,
@@ -47,14 +53,23 @@ pub struct CapabilityManifest {
     pub actions_used: u32,
     pub max_risk: RiskTier,
     pub policy_version: String,
+    pub nonce: String,
+    pub allow_delegation: bool,
+    pub revocation_epoch: u64,
 }
 
 impl CapabilityManifest {
     pub fn local_reader(agent_id: &str, now: u64) -> Self {
         Self {
+            manifest_id: format!("man-{agent_id}"),
+            issuer_id: "issuer-local".into(),
             agent_id: agent_id.into(),
+            gateway_id: "gateway-local".into(),
+            server_id: "server-local".into(),
+            resource_id: "repo-local".into(),
             task_id: format!("task-{agent_id}"),
             issued_at: now,
+            not_before: now,
             expires_at: now + 3600,
             allowed_tools: vec!["local_parse".into(), "local_read".into(), "scratch_write".into()],
             allowed_paths: vec!["scratch/".into(), "docs/".into()],
@@ -63,11 +78,18 @@ impl CapabilityManifest {
             actions_used: 0,
             max_risk: RiskTier::T2,
             policy_version: crate::policy::POLICY_VERSION.into(),
+            nonce: format!("nonce-{agent_id}"),
+            allow_delegation: false,
+            revocation_epoch: 0,
         }
     }
 
     pub fn expired(&self, now: u64) -> bool {
         now >= self.expires_at
+    }
+
+    pub fn not_yet_valid(&self, now: u64) -> bool {
+        now < self.not_before
     }
 
     pub fn budget_exceeded(&self) -> bool {
