@@ -15,7 +15,7 @@ mod types;
 pub use adapter::{FakeAdapter, RecordingAdapter};
 pub use approval::{ApprovalDecision, HumanApprovalReceipt};
 pub use audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
-pub use config::{lint_mcp_config, McpServerConfig};
+pub use config::{description_is_untrusted, digest_pinned, lint_mcp_config, McpServerConfig};
 pub use gateway::{ControlPlane, InvokeResult};
 pub use manifest::{CapabilityManifest, IdentityKind, PrincipalId, RevocationList};
 pub use policy::{PolicyDecision, PolicyEngine, POLICY_VERSION};
