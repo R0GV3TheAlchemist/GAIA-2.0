@@ -1,4 +1,7 @@
-use crate::{Broker, IntentSigner, Plan, SignedIntent, TrustAudit};
+use crate::{
+    permit_execution, Broker, ExecutionGate, InMemoryGate, Plan, RunPermit, SignedIntent,
+    TrustAudit,
+};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,7 +15,7 @@ pub struct LocalRun {
 pub struct LocalRunner;
 
 impl LocalRunner {
-    /// Runs only an accepted plan whose intent signature verifies.
+    /// Compatibility entry point: a local clear gate preserves the existing no-network behavior.
     pub fn run(
         plan: &Plan,
         broker: &mut Broker,
@@ -20,13 +23,42 @@ impl LocalRunner {
         signed: &SignedIntent,
         kill_after_first_pull: Option<&str>,
     ) -> Result<LocalRun, String> {
-        IntentSigner::verify_detached(signed)?;
+        let gate = InMemoryGate::clear();
+        Self::run_with_gate(plan, broker, audit, signed, &gate, false, kill_after_first_pull)
+    }
+
+    /// Runs an accepted, signed plan only after the local execution gate permits it.
+    /// This method is local-only: it does not query Supabase or make network calls.
+    pub fn run_with_gate(
+        plan: &Plan,
+        broker: &mut Broker,
+        audit: &mut TrustAudit,
+        signed: &SignedIntent,
+        gate: &dyn ExecutionGate,
+        deployed: bool,
+        kill_after_first_pull: Option<&str>,
+    ) -> Result<LocalRun, String> {
+        crate::IntentSigner::verify_detached(signed)?;
         if signed.intent_id != plan.intent_id {
             return Err("signed intent does not match plan".into());
         }
         if !plan.accepted {
             return Err("plan must be inspected and accepted before local run".into());
         }
+
+        match permit_execution(gate, deployed) {
+            RunPermit::Allow { telemetry } => {
+                if let Some(event) = telemetry {
+                    audit.emit_trace(event);
+                }
+            }
+            RunPermit::Deny { event } => {
+                let reason = event.reason_code.clone();
+                audit.emit_trace(event);
+                return Err(format!("execution blocked by gate: {reason}"));
+            }
+        }
+
         broker.enqueue_plan(plan);
         let mut completed_jobs = Vec::new();
         let mut failed_over_jobs = Vec::new();
@@ -38,19 +70,36 @@ impl LocalRunner {
                 .first()
                 .map(|w| w.id.clone())
                 .ok_or_else(|| "no live specialist for queued work".to_string())?;
-            let Some(job) = broker.pull(&worker_id)? else { break };
-            audit.append(plan.intent_id, Some(plan.id), Some(&worker_id), format!("node-started:{job}"));
+            let Some(job) = broker.pull(&worker_id)? else {
+                break;
+            };
+            audit.append(
+                plan.intent_id,
+                Some(plan.id),
+                Some(&worker_id),
+                format!("node-started:{job}"),
+            );
 
             if !killed && kill_after_first_pull == Some(worker_id.as_str()) {
                 broker.kill(&worker_id);
-                audit.append(plan.intent_id, Some(plan.id), Some(&worker_id), format!("node-failed-over:{job}"));
+                audit.append(
+                    plan.intent_id,
+                    Some(plan.id),
+                    Some(&worker_id),
+                    format!("node-failed-over:{job}"),
+                );
                 failed_over_jobs.push(job);
                 killed = true;
                 continue;
             }
 
             broker.complete(&worker_id);
-            audit.append(plan.intent_id, Some(plan.id), Some(&worker_id), format!("node-completed:{job}"));
+            audit.append(
+                plan.intent_id,
+                Some(plan.id),
+                Some(&worker_id),
+                format!("node-completed:{job}"),
+            );
             completed_jobs.push(job);
         }
 
