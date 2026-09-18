@@ -99,7 +99,8 @@ fn high_risk_requires_exact_single_use_receipt() {
         "https://example.invalid/issue/1",
         ActionClass::ExternalWrite,
     );
-    assert_eq!(p.invoke(&mut m, &a, None, None).reason, ReasonCode::ApprovalMissing);
+    // Autonomy gate runs first (#374): outbound needs a receipt.
+    assert_eq!(p.invoke(&mut m, &a, None, None).reason, ReasonCode::ConfirmRequired);
 
     let rec = HumanApprovalReceipt::grant_for("apr-1", "human-1", &p.intent, &a, now() + 60);
     assert!(p.invoke(&mut m, &a, Some(&rec), None).allowed);
@@ -147,7 +148,7 @@ fn identity_secret_and_tier5_forbidden() {
     let id = action("agent-a", "mkid", "new-user", ActionClass::IdentityCreate);
     assert_eq!(p.invoke(&mut m, &id, None, None).reason, ReasonCode::IdentityCreateDenied);
     let sec = action("agent-a", "vault", "secrets/prod", ActionClass::SecretAccess);
-    assert_eq!(p.invoke(&mut m, &sec, None, None).reason, ReasonCode::SecretDenied);
+    assert_eq!(p.invoke(&mut m, &sec, None, None).reason, ReasonCode::VaultDumpDenied);
 }
 
 #[test]
