@@ -3,8 +3,8 @@
 
 use gaia_memos::MemOs;
 use gaia_orchestrator::{
-    Broker, InMemoryGate, IntentEngine, IntentSigner, LocalRunner, TaskPlanner, TraceEventKind,
-    TrustAudit,
+    Broker, InMemoryGate, InMemorySink, IntentEngine, IntentSigner, LocalRunner, TaskPlanner,
+    TraceEventKind, TrustAudit,
 };
 
 fn graph_and_plan() -> (gaia_orchestrator::IntentGraph, gaia_orchestrator::Plan) {
@@ -81,8 +81,9 @@ fn active_gap_lock_blocks_before_queue_or_node_dispatch() {
     let signed = IntentSigner::generate().sign(&graph);
     plan.accept_verified(&signed).unwrap();
     let gate = InMemoryGate::locked("gap-42");
+    let sink = InMemorySink::new();
     let mut broker = Broker::new();
-    let mut audit = TrustAudit::default();
+    let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
 
     let err = LocalRunner::run_with_gate(
         &plan,
@@ -100,6 +101,10 @@ fn active_gap_lock_blocks_before_queue_or_node_dispatch() {
     assert!(audit.events().is_empty());
     assert_eq!(audit.kernel_len(), 0);
     assert!(audit.chain_ok());
+    let events = sink.events();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].kind, TraceEventKind::ExecutionBlockedByGapLock);
+    assert_eq!(events[0].reason_code, "GAIA_GAP_LOCK_ACTIVE");
 }
 
 #[test]
@@ -134,8 +139,9 @@ fn deployed_control_plane_unavailability_blocks_before_dispatch() {
     let signed = IntentSigner::generate().sign(&graph);
     plan.accept_verified(&signed).unwrap();
     let gate = InMemoryGate::unavailable();
+    let sink = InMemorySink::new();
     let mut broker = Broker::new();
-    let mut audit = TrustAudit::default();
+    let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
 
     let err = LocalRunner::run_with_gate(
         &plan,
@@ -153,4 +159,8 @@ fn deployed_control_plane_unavailability_blocks_before_dispatch() {
     assert!(audit.events().is_empty());
     assert_eq!(audit.kernel_len(), 0);
     assert!(audit.chain_ok());
+    let events = sink.events();
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].kind, TraceEventKind::ControlPlaneUnavailable);
+    assert_eq!(events[0].reason_code, "GAIA_CONTROL_PLANE_UNAVAILABLE");
 }
