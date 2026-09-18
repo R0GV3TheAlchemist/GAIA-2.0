@@ -30,28 +30,35 @@ impl TierStore {
         Self::default()
     }
 
-    pub fn put(&mut self, cube: TierCube) {
+    pub fn put(&mut self, cube: TierCube) -> Result<(), TwinError> {
+        if self.cubes.iter().any(|existing| existing.id == cube.id) {
+            return Err(TwinError::UnlabeledPoint);
+        }
         self.cubes.push(cube);
+        Ok(())
     }
 
     pub fn fetch(&self, place: &str, tier: MemoryTier) -> Result<&TierCube, TwinError> {
         self.cubes
             .iter()
-            .find(|c| c.place == place && c.tier == tier)
+            .find(|cube| cube.place == place && cube.tier == tier)
             .ok_or(TwinError::UnlabeledPoint)
     }
 
     pub fn associate(&mut self, from_id: &str, to_id: &str) -> Result<(), TwinError> {
-        let exists = self.cubes.iter().any(|c| c.id == to_id);
-        if !exists {
+        if from_id == to_id || !self.cubes.iter().any(|cube| cube.id == to_id) {
             return Err(TwinError::UnlabeledPoint);
         }
+
         let cube = self
             .cubes
             .iter_mut()
-            .find(|c| c.id == from_id)
+            .find(|cube| cube.id == from_id)
             .ok_or(TwinError::UnlabeledPoint)?;
-        cube.associations.push(to_id.into());
+
+        if !cube.associations.iter().any(|id| id == to_id) {
+            cube.associations.push(to_id.into());
+        }
         Ok(())
     }
 }
