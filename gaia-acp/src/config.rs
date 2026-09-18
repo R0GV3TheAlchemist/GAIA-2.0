@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::types::ReasonCode;
+use crate::types::{ReasonCode, UntrustedContent};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct McpServerConfig {
@@ -29,8 +29,24 @@ impl McpServerConfig {
     }
 }
 
+pub fn digest_pinned(version: &str) -> bool {
+    let rest = match version.strip_prefix("sha256:") {
+        Some(r) => r,
+        None => return false,
+    };
+    rest.len() == 64 && rest.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+/// Tool descriptions are untrusted text. They cannot authorize anything.
+pub fn description_is_untrusted(server_id: &str, body: &str) -> UntrustedContent {
+    UntrustedContent {
+        source: format!("mcp-description:{server_id}"),
+        body: body.into(),
+    }
+}
+
 pub fn lint_mcp_config(cfg: &McpServerConfig) -> Result<(), ReasonCode> {
-    if !cfg.reviewed {
+    if !cfg.reviewed || cfg.publisher.is_empty() || cfg.server_id.is_empty() {
         return Err(ReasonCode::ConfigRejected);
     }
     if cfg.shell_wrapper
@@ -40,10 +56,7 @@ pub fn lint_mcp_config(cfg: &McpServerConfig) -> Result<(), ReasonCode> {
     {
         return Err(ReasonCode::ConfigRejected);
     }
-    if cfg.version == "latest" || cfg.image.ends_with(":latest") {
-        return Err(ReasonCode::ConfigRejected);
-    }
-    if !cfg.version.starts_with("sha256:") {
+    if cfg.version == "latest" || cfg.image.ends_with(":latest") || !digest_pinned(&cfg.version) {
         return Err(ReasonCode::ConfigRejected);
     }
     let secretish = ["TOKEN", "SECRET", "PASSWORD", "API_KEY"];
