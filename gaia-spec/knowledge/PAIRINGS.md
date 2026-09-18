@@ -1,31 +1,46 @@
-# Pairings (evoke composition)
+# Pairings (pattern, not stack)
 
-A pairing is two or more *listed* IDs named together.
-Composition does not create a capability. `effects` stay empty at every degree.
+Every listed crystal may name **exactly one secondary**.
+The pair is an alignment pattern. It does not emit a new effect.
+If the pair would create chaos, it is refuse — not a clever combo.
 
-## Degrees
+## Pattern
 
-| Degree | Meaning here | Still |
-| --- | --- | --- |
-| Primary | one catalog row | listed-only |
-| Secondary | two IDs | listed-only |
-| Tertiary | three IDs | listed-only |
-| Quaternary | four IDs | listed-only |
-| Fifth | alignment check, not a crown | listed-only or refuse |
+```
+primary  →  one secondary
+set claim_class = listed-only
+set effects = empty
+chaos? → refuse
+```
 
-The fifth is **not** quintessence, not a chakra, not Autonomy 5, not a tool grant.
-Alignment with the fifth means: the set still hashes as law. If any member is `trade`/`symbolic`/`prohibited`, the set cannot promote. If any member has a chemistry hazard, the set inherits the strictest hazard.
+Tertiary / quaternary are later overlays on a valid secondary, never a way around it.
+The fifth remains the alignment check on the whole pattern: still law, still no grant.
 
-## Two lawful pairings (not grants)
+## What "match" means here
 
-1. **Optics** — same system or complementary optic class (e.g. isotropic fluorite next to uniaxial calcite) so the prism lesson is visible. Color mix is pigment or light, not a body protocol.
-2. **Paragenesis** — species that actually grow together (quartz+tourmaline, calcite+sulfides). Geology, not destiny.
+A secondary matches when at least one holds:
 
-## Refuse
+1. **Same system** (two trigonal, two cubic) — lattice agrees.
+2. **Teaching contrast** (isotropic next to uniaxial) — prism lesson, not a fight.
+3. **Paragenesis** — they actually grow together in rock.
 
-- Pairing as invoke (stack stones to open MemoryRead, vault, network, medicine)
-- Seven-stone rainbow as seven grants
-- "The fifth" as Source, Christ-runtime, or quantum boot
-- Hazard cancellation (galena + quartz does not un-lead galena)
+A secondary does **not** match because a shop, a chakra chart, or The Secret said so.
 
-See `SPECTRUM.md` and `crystals.csv`.
+## Chaos (refuse the pair)
+
+- Either ID missing from the catalog
+- Either `claim_class` is prohibited
+- Pair treated as a tool, medicine, vault key, or network grant
+- Two chemistry hazards stacked as "work" (galena + adamite, galena + bumblebee)
+- Trade name + trade name inventing a new species
+- Secondary used to cancel a hazard
+
+Hazard on either member is inherited by the pair. It is never erased.
+
+## Column
+
+`crystals.csv` may grow `secondary_id`.
+Until a row has a filled secondary, it is primary-only and still valid.
+Do not invent matches to look complete.
+
+See `SPECTRUM.md`, `CRYSTALS.md`, `crystals.csv`.
