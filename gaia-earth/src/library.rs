@@ -16,6 +16,8 @@ pub struct Dist {
     pub mean: f64,
     pub uncertainty: f64,
     pub source: SourceKind,
+    pub model: String,
+    pub uncertainty_method: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,7 +46,7 @@ impl ScenarioLibrary {
     }
 
     pub fn run(id: &str) -> Result<Vec<Dist>, TwinError> {
-        let _ = Self::spec(id)?;
+        let spec = Self::spec(id)?;
         Ok(["climate", "biodiversity", "economy", "welfare", "tipping-risk"]
             .into_iter()
             .map(|metric| Dist {
@@ -52,6 +54,8 @@ impl ScenarioLibrary {
                 mean: 0.0,
                 uncertainty: 1.0,
                 source: SourceKind::Synthetic,
+                model: spec.model.clone(),
+                uncertainty_method: spec.method.clone(),
             })
             .collect())
     }
