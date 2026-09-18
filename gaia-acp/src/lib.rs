@@ -7,6 +7,7 @@ mod audit;
 mod autonomy;
 mod config;
 mod gateway;
+mod live_trace;
 mod manifest;
 mod policy;
 mod sandbox;
@@ -19,6 +20,10 @@ pub use audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
 pub use autonomy::{gate as autonomy_gate, AutonomyLevel, ConfirmDomain, PeerEnvelope};
 pub use config::{description_is_untrusted, digest_pinned, lint_mcp_config, McpServerConfig};
 pub use gateway::{ControlPlane, InvokeResult};
+pub use live_trace::{
+    credential_is_absent, map_row, try_forward, LiveSendError, LiveTraceConfig, LiveTraceMode,
+    LiveTraceRole, LiveTraceRow, LiveTraceTransport, RecordingLiveTransport,
+};
 pub use manifest::{CapabilityManifest, IdentityKind, PrincipalId, RevocationList};
 pub use policy::{PolicyDecision, PolicyEngine, POLICY_VERSION};
 pub use sandbox::{classify_destination, classify_rebinding_host, classify_redirect, EgressClass, SandboxProfile};
