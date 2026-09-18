@@ -1,9 +1,10 @@
 use crate::adapter::{FakeAdapter, RecordingAdapter};
 use crate::approval::HumanApprovalReceipt;
 use crate::audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
+use crate::autonomy::{gate, AutonomyLevel};
 use crate::manifest::{CapabilityManifest, RevocationList};
 use crate::policy::{PolicyDecision, PolicyEngine};
-use crate::trace::{from_invoke, MemoryTraceSink, TraceKind, TraceSink};
+use crate::trace::{from_invoke, ClaimClass, MemoryTraceSink, TraceKind, TraceSink};
 use crate::types::{ProposedAction, ReasonCode, SignedIntent, UntrustedContent};
 
 #[derive(Debug)]
@@ -16,6 +17,7 @@ pub struct ControlPlane {
     pub emergency_stop: bool,
     pub audit: AuditChain,
     pub traces: MemoryTraceSink,
+    pub autonomy: AutonomyLevel,
     deny_streak: u32,
 }
 
@@ -43,6 +45,7 @@ impl ControlPlane {
             emergency_stop: false,
             audit: AuditChain::default(),
             traces: MemoryTraceSink::default(),
+            autonomy: AutonomyLevel::BoundedRemediate,
             deny_streak: 0,
         };
         plane.transition(PlaneState::Registered, agent_id)?;
@@ -67,6 +70,7 @@ impl ControlPlane {
             &self.intent.intent_id.clone(),
             reason,
             request_hash,
+            ClaimClass::Established,
         );
         self.traces.emit(ev);
     }
@@ -160,6 +164,16 @@ impl ControlPlane {
                 allowed: false,
                 executed: false,
                 reason: ReasonCode::StateInvalid,
+                receipt,
+            };
+        }
+
+        if let Err(reason) = gate(self.autonomy, action, approval) {
+            let receipt = self.deny(action, reason);
+            return InvokeResult {
+                allowed: false,
+                executed: false,
+                reason,
                 receipt,
             };
         }

@@ -1,9 +1,18 @@
-//! Local trace + gap-lock boundary (#335).
+//! Local trace + gap-lock boundary (#335, #375).
 //! No live Supabase, HTTP, or credentials.
 
 use serde::{Deserialize, Serialize};
 
 use crate::types::ReasonCode;
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum ClaimClass {
+    #[default]
+    Established,
+    Experimental,
+    Symbolic,
+    Prohibited,
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum TraceKind {
@@ -25,6 +34,7 @@ pub struct TraceEvent {
     pub outcome: String,
     pub reason: String,
     pub request_hash: String,
+    pub claim_class: ClaimClass,
 }
 
 impl TraceEvent {
@@ -82,6 +92,7 @@ pub fn refuse_live_supabase() -> Result<(), &'static str> {
     Err("trace sink is local-only; no live Supabase write")
 }
 
+/// Prohibited claims cannot be emitted as an allow (#375).
 pub fn from_invoke(
     kind: TraceKind,
     ts: u64,
@@ -90,7 +101,13 @@ pub fn from_invoke(
     correlation_id: &str,
     reason: ReasonCode,
     request_hash: &str,
+    claim_class: ClaimClass,
 ) -> TraceEvent {
+    let kind = if matches!(kind, TraceKind::Allow) && matches!(claim_class, ClaimClass::Prohibited) {
+        TraceKind::Deny
+    } else {
+        kind
+    };
     TraceEvent {
         kind,
         ts,
@@ -108,5 +125,6 @@ pub fn from_invoke(
         .into(),
         reason: reason.as_str().into(),
         request_hash: request_hash.into(),
+        claim_class,
     }
 }
