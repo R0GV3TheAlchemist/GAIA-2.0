@@ -1,0 +1,48 @@
+# Predecessor ledger (#366)
+
+Status: frozen 2026-09-18. Pointers only. No private file bodies.
+
+Columns:
+- **usable-as** — what may enter GAIA-2.0 later
+- **status** — `source` (exists, not copied) / `mapped` (artifact already on this repo) / `listed-only` (ID reserved) / `refuse`
+
+## Repositories
+
+| Name | Last SHA seen | Status | Usable-as | Refuse-as |
+| --- | --- | --- | --- | --- |
+| `R0GV3TheAlchemist/GAIA-2.0` | living `main` | mapped | Enforcement plane | Claiming v1.0 OS complete |
+| `R0GV3TheAlchemist/GAIA` (private) | `49d7a7ff` | source | Stable subject IDs; opening-ledger habit | Subject-folder dump; magic/superpower DBs as crates |
+| `R0GV3TheAlchemist/GAIA-Old-Repository` (private) | `72071153` | source | Crate-name map; claim-validation *gate*; doctrine→schema→test | `apps 2` / `node_modules`; quantum/sentience lanes as runtime |
+| `R0GV3TheAlchemist/NEXUS-Old-Repository` (private) | `59ea6fd` | source | Configured-constant honesty; refusal language | Planetary CI; live EM/Schumann-as-physics; energy-grid actuators |
+
+## Zip intakes (already inventoried)
+
+| Name | Status | Usable-as | Refuse-as |
+| --- | --- | --- | --- |
+| Virelai master / seed / addons / stable-build | source | Default-deny, confirm, audit-without-raw-prompts | Second kernel; UCL; 736 live modules; MCRE 97% claim |
+| Virelai Consolidated Files NEW (~412 entries) | source | Name/ethic overlap only | 379-md tree import; nested zip extract into CI |
+| Virelai Already Consolidated (~1400 entries) | source | Same keep-list | `.py` essays as OS; Saela multi-MB dumps |
+| NEXUS architecture zip | refuse | — | Bulk 3k+ file import |
+
+## Global refuse list
+
+These stay refuse even if an ancestor goes CI-green:
+
+1. Second kernel / second OS product
+2. Universal multi-paradigm language as a crate
+3. Consciousness / sentience / bonding as runtime state
+4. Live Earth-cavity or Schumann measurement as a boot truth
+5. Planetary-grid or energy-grid actuators
+6. Vault or raw-memory dump between peers
+7. Levels 4–5 autonomy in software (needs a written artifact, not code)
+8. Finder-duplicate trees (`apps 2`, `.github 2`) and committed `node_modules`
+9. Catalog rows treated as capability grants
+10. Private conversation dumps, tokens, or `.env` bodies on this public repo
+
+## Already mapped on this repo
+
+- Autonomy Suggest(1) + confirm domains + peer envelope — PR #362, issues #220 / #187
+- Local trace sink — PR #361, issue #335 (live write still open)
+- #334 advisor remediation — merged; keep #23 and #341 open
+
+Parent: #365. Next research children: #367 claim classes, #368 ID ledger, #369 red-CI rule.
