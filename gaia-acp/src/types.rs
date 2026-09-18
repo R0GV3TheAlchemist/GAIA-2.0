@@ -86,6 +86,10 @@ pub enum ReasonCode {
     DelegationDenied,
     HashTampered,
     NonceMismatch,
+    AutonomyCap,
+    ConfirmRequired,
+    VaultDumpDenied,
+    LifeSafetyDenied,
 }
 
 impl ReasonCode {
@@ -122,6 +126,10 @@ impl ReasonCode {
             ReasonCode::DelegationDenied => "GAIA_ACP_DELEGATION_DENIED",
             ReasonCode::HashTampered => "GAIA_ACP_HASH_TAMPERED",
             ReasonCode::NonceMismatch => "GAIA_ACP_NONCE_MISMATCH",
+            ReasonCode::AutonomyCap => "GAIA_ACP_AUTONOMY_CAP",
+            ReasonCode::ConfirmRequired => "GAIA_ACP_CONFIRM_REQUIRED",
+            ReasonCode::VaultDumpDenied => "GAIA_ACP_VAULT_DUMP_DENIED",
+            ReasonCode::LifeSafetyDenied => "GAIA_ACP_LIFE_SAFETY_DENIED",
         }
     }
 }
