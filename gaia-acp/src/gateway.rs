@@ -1,3 +1,4 @@
+use crate::adapter::{FakeAdapter, RecordingAdapter};
 use crate::approval::HumanApprovalReceipt;
 use crate::audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
 use crate::manifest::{CapabilityManifest, RevocationList};
@@ -101,13 +102,24 @@ impl ControlPlane {
         );
     }
 
-    /// Sole fake-adapter invocation path.
     pub fn invoke(
         &mut self,
         manifest: &mut CapabilityManifest,
         action: &ProposedAction,
         approval: Option<&HumanApprovalReceipt>,
         untrusted: Option<&UntrustedContent>,
+    ) -> InvokeResult {
+        let mut adapter = RecordingAdapter::default();
+        self.invoke_with_adapter(manifest, action, approval, untrusted, &mut adapter)
+    }
+
+    pub fn invoke_with_adapter<A: FakeAdapter>(
+        &mut self,
+        manifest: &mut CapabilityManifest,
+        action: &ProposedAction,
+        approval: Option<&HumanApprovalReceipt>,
+        untrusted: Option<&UntrustedContent>,
+        adapter: &mut A,
     ) -> InvokeResult {
         self.audit.push(
             PlaneEvent::ToolProposed,
@@ -159,18 +171,23 @@ impl ControlPlane {
                 }
                 manifest.actions_used = manifest.actions_used.saturating_add(1);
                 self.deny_streak = 0;
+                let executed = adapter.execute(action).is_ok();
                 let receipt = self.audit.push(
-                    PlaneEvent::CallAllowed,
+                    if executed {
+                        PlaneEvent::ExecutionCompleted
+                    } else {
+                        PlaneEvent::ExecutionFailed
+                    },
                     &action.agent_id,
                     &action.tool,
                     format!("{:?}", action.action_class).as_str(),
                     &action.request_hash(),
                     reason,
-                    "allowed",
+                    if executed { "executed" } else { "adapter-fail" },
                 );
                 InvokeResult {
                     allowed: true,
-                    executed: true,
+                    executed,
                     reason,
                     receipt,
                 }
@@ -199,10 +216,7 @@ impl ControlPlane {
                 "repeated-deny",
             );
         }
-        let ev = if matches!(
-            reason,
-            ReasonCode::EgressDenied | ReasonCode::SsrfDenied
-        ) {
+        let ev = if matches!(reason, ReasonCode::EgressDenied | ReasonCode::SsrfDenied) {
             PlaneEvent::EgressDenied
         } else {
             PlaneEvent::CallDenied
