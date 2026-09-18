@@ -1,0 +1,20 @@
+name: Load-bearing canon
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  load-bearing-canon:
+    name: C77 privacy authorship gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Require load-bearing canon files
+        run: bash scripts/check_load_bearing_canon.sh
