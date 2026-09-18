@@ -3,6 +3,7 @@ use crate::approval::HumanApprovalReceipt;
 use crate::audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
 use crate::manifest::{CapabilityManifest, RevocationList};
 use crate::policy::{PolicyDecision, PolicyEngine};
+use crate::trace::{from_invoke, MemoryTraceSink, TraceKind, TraceSink};
 use crate::types::{ProposedAction, ReasonCode, SignedIntent, UntrustedContent};
 
 #[derive(Debug)]
@@ -14,6 +15,7 @@ pub struct ControlPlane {
     pub consumed_approvals: Vec<String>,
     pub emergency_stop: bool,
     pub audit: AuditChain,
+    pub traces: MemoryTraceSink,
     deny_streak: u32,
 }
 
@@ -40,6 +42,7 @@ impl ControlPlane {
             consumed_approvals: Vec::new(),
             emergency_stop: false,
             audit: AuditChain::default(),
+            traces: MemoryTraceSink::default(),
             deny_streak: 0,
         };
         plane.transition(PlaneState::Registered, agent_id)?;
@@ -47,6 +50,25 @@ impl ControlPlane {
         plane.transition(PlaneState::SessionStarted, agent_id)?;
         plane.transition(PlaneState::ManifestIssued, agent_id)?;
         Ok(plane)
+    }
+
+    fn emit(
+        &mut self,
+        kind: TraceKind,
+        agent_id: &str,
+        reason: ReasonCode,
+        request_hash: &str,
+    ) {
+        let ev = from_invoke(
+            kind,
+            self.now,
+            agent_id,
+            &self.intent.intent_id.clone(),
+            &self.intent.intent_id.clone(),
+            reason,
+            request_hash,
+        );
+        self.traces.emit(ev);
     }
 
     pub fn transition(&mut self, next: PlaneState, agent_id: &str) -> Result<(), ReasonCode> {
@@ -100,6 +122,7 @@ impl ControlPlane {
             ReasonCode::EmergencyStop,
             "killed",
         );
+        self.emit(TraceKind::Kill, agent_id, ReasonCode::EmergencyStop, "0");
     }
 
     pub fn invoke(
@@ -185,6 +208,16 @@ impl ControlPlane {
                     reason,
                     if executed { "executed" } else { "adapter-fail" },
                 );
+                self.emit(
+                    if executed {
+                        TraceKind::Allow
+                    } else {
+                        TraceKind::ExecutionFailure
+                    },
+                    &action.agent_id,
+                    reason,
+                    &action.request_hash(),
+                );
                 InvokeResult {
                     allowed: true,
                     executed,
@@ -221,7 +254,7 @@ impl ControlPlane {
         } else {
             PlaneEvent::CallDenied
         };
-        self.audit.push(
+        let receipt = self.audit.push(
             ev,
             &action.agent_id,
             &action.tool,
@@ -229,6 +262,13 @@ impl ControlPlane {
             &action.request_hash(),
             reason,
             "denied",
-        )
+        );
+        let kind = if matches!(reason, ReasonCode::ApprovalReplay) {
+            TraceKind::Replay
+        } else {
+            TraceKind::Deny
+        };
+        self.emit(kind, &action.agent_id, reason, &action.request_hash());
+        receipt
     }
 }
