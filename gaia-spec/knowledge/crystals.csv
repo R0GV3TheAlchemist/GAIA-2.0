@@ -1,22 +1,22 @@
-id,label,kind,claim_class,effects,hazard,notes
-abalone-shell,Abalone Shell,biological,listed-only,,none,nacre CaCO3; not a mineral species
-adamite,Adamite,mineral,listed-only,,arsenate,Zn2(AsO4)OH; chemistry warning only
-aegirine,Aegirine,mineral,listed-only,,none,NaFeSi2O6 pyroxene
-amazonite,Amazonite,mineral,listed-only,,lead,Pb-bearing microcline; not a medicine
-amber,Amber,organic,listed-only,,none,fossil resin; not a lattice
-amblygonite,Amblygonite,mineral,listed-only,,none,LiAlPO4(F;OH)
-amethyst,Amethyst,mineral,listed-only,,none,quartz variety
-ametrine,Ametrine,mineral,listed-only,,none,quartz; amethyst+citrine zones
-ammolite,Ammolite,fossil,listed-only,,none,iridescent aragonite on ammonite
-ammonite,Ammonite,fossil,listed-only,,none,fossil cephalopod
-andara-glass,Andara Glass,glass,listed-only,,none,trade glass/slag; not IMA species
-angel-aura-quartz,Angel Aura Quartz,treated,listed-only,,none,quartz + metal vapor coat
-angelite,Angelite,mineral,listed-only,,none,trade name for blue anhydrite
-apache-tear,Apache Tear,glass,listed-only,,none,nodular obsidian
-apophyllite,Apophyllite,mineral,listed-only,,none,sheet silicate
-apricot-agate,Apricot Agate,mineral,listed-only,,none,chalcedony color trade name
-aqua-aura-quartz,Aqua Aura Quartz,treated,listed-only,,none,quartz + gold coat
-aquamarine,Aquamarine,mineral,listed-only,,none,beryl Be3Al2Si6O18
-aragonite,Aragonite,mineral,listed-only,,none,CaCO3 polymorph
-auralite-23,Auralite 23,trade,listed-only,,none,trade assemblage; not one species
-azurite,Azurite,mineral,listed-only,,none,Cu3(CO3)2(OH)2
+id,label,kind,system,optic,claim_class,effects,hazard,notes
+abalone-shell,Abalone Shell,biological,none,isotropic,listed-only,,none,nacre CaCO3; not a mineral species
+adamite,Adamite,mineral,orthorhombic,biaxial,listed-only,,arsenate,Zn2(AsO4)OH; chemistry warning only
+aegirine,Aegirine,mineral,monoclinic,biaxial,listed-only,,none,NaFeSi2O6 pyroxene
+amazonite,Amazonite,mineral,triclinic,biaxial,listed-only,,lead,Pb-bearing microcline; not a medicine
+amber,Amber,organic,amorphous,isotropic,listed-only,,none,fossil resin; not a lattice
+amblygonite,Amblygonite,mineral,triclinic,biaxial,listed-only,,none,LiAlPO4(F;OH)
+amethyst,Amethyst,mineral,trigonal,uniaxial,listed-only,,none,quartz variety
+ametrine,Ametrine,mineral,trigonal,uniaxial,listed-only,,none,quartz; amethyst+citrine zones
+ammolite,Ammolite,fossil,orthorhombic,biaxial,listed-only,,none,aragonite on ammonite; CaCO3
+ammonite,Ammonite,fossil,none,none,listed-only,,none,fossil cephalopod
+andara-glass,Andara Glass,glass,amorphous,isotropic,listed-only,,none,trade glass/slag; not IMA species
+angel-aura-quartz,Angel Aura Quartz,treated,trigonal,uniaxial,listed-only,,none,quartz + metal vapor coat
+angelite,Angelite,mineral,orthorhombic,biaxial,listed-only,,none,trade name for blue anhydrite
+apache-tear,Apache Tear,glass,amorphous,isotropic,listed-only,,none,nodular obsidian
+apophyllite,Apophyllite,mineral,tetragonal,uniaxial,listed-only,,none,sheet silicate
+apricot-agate,Apricot Agate,mineral,trigonal,uniaxial,listed-only,,none,chalcedony; microcrystalline quartz
+aqua-aura-quartz,Aqua Aura Quartz,treated,trigonal,uniaxial,listed-only,,none,quartz + gold coat
+aquamarine,Aquamarine,mineral,hexagonal,uniaxial,listed-only,,none,beryl Be3Al2Si6O18
+aragonite,Aragonite,mineral,orthorhombic,biaxial,listed-only,,none,CaCO3 polymorph
+auralite-23,Auralite 23,trade,mixed,mixed,listed-only,,none,trade assemblage; not one species
+azurite,Azurite,mineral,monoclinic,biaxial,listed-only,,none,Cu3(CO3)2(OH)2
