@@ -1,4 +1,4 @@
-//! Deterministic local adversarial corpus for #341–#348.
+//! Deterministic local adversarial corpus for #341-#348 and #352.
 
 use gaia_acp::*;
 
@@ -14,6 +14,11 @@ fn action(agent: &str, tool: &str, target: &str, class: ActionClass) -> Proposed
         target: target.into(),
         action_class: class,
         payload: "ok".into(),
+        nonce: format!("nonce-{agent}"),
+        gateway_id: "gateway-local".into(),
+        server_id: "server-local".into(),
+        resource_id: "repo-local".into(),
+        wants_delegation: false,
     }
 }
 
@@ -253,4 +258,59 @@ fn corpus_covers_injection_sources() {
             "{src}"
         );
     }
+}
+
+#[test]
+fn receipt_content_tamper_fails_rehash() {
+    let (mut p, mut m) = plane();
+    let a = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    let _ = p.invoke(&mut m, &a, None, None);
+    assert!(p.audit.chain_ok());
+    p.audit.receipts_mut()[0].outcome = "tampered".into();
+    assert!(!p.audit.chain_ok());
+}
+
+#[test]
+fn context_nonce_not_before_and_delegation() {
+    let (mut p, mut m) = plane();
+    let mut bad_gw = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    bad_gw.gateway_id = "other-gw".into();
+    assert_eq!(p.invoke(&mut m, &bad_gw, None, None).reason, ReasonCode::ContextMismatch);
+
+    let mut bad_nonce = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    bad_nonce.nonce = "wrong".into();
+    assert_eq!(p.invoke(&mut m, &bad_nonce, None, None).reason, ReasonCode::NonceMismatch);
+
+    let mut del = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    del.wants_delegation = true;
+    assert_eq!(p.invoke(&mut m, &del, None, None).reason, ReasonCode::DelegationDenied);
+
+    m.not_before = now() + 50;
+    let a = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    assert_eq!(p.invoke(&mut m, &a, None, None).reason, ReasonCode::NotYetValid);
+}
+
+#[test]
+fn revoke_manifest_and_gateway() {
+    let (mut p, mut m) = plane();
+    p.revoke(&m.manifest_id);
+    let a = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    assert_eq!(p.invoke(&mut m, &a, None, None).reason, ReasonCode::Revoked);
+    let (mut p2, mut m2) = plane();
+    p2.revoke("gateway-local");
+    assert_eq!(p2.invoke(&mut m2, &a, None, None).reason, ReasonCode::Revoked);
+}
+
+#[test]
+fn denied_never_reaches_recording_adapter() {
+    let (mut p, mut m) = plane();
+    let mut rec = RecordingAdapter::default();
+    let deny = action("agent-a", "shell", "scratch/x", ActionClass::LocalParse);
+    let r = p.invoke_with_adapter(&mut m, &deny, None, None, &mut rec);
+    assert!(!r.executed);
+    assert_eq!(rec.count(), 0);
+    let allow = action("agent-a", "local_read", "docs/a.md", ActionClass::LocalRead);
+    let r2 = p.invoke_with_adapter(&mut m, &allow, None, None, &mut rec);
+    assert!(r2.executed);
+    assert_eq!(rec.count(), 1);
 }

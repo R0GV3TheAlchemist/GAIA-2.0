@@ -85,6 +85,44 @@ impl ActionReceipt {
         let s = self.serialize_public();
         secrets.iter().any(|x| !x.is_empty() && s.contains(x))
     }
+
+    pub fn recompute_hash(&self) -> String {
+        hash_fields(
+            &self.previous_hash,
+            self.sequence,
+            self.event,
+            &self.agent_id,
+            &self.tool,
+            &self.request_hash,
+            &self.reason,
+            &self.outcome,
+            &self.action_class,
+        )
+    }
+}
+
+fn hash_fields(
+    previous_hash: &str,
+    sequence: u64,
+    event: PlaneEvent,
+    agent_id: &str,
+    tool: &str,
+    request_hash: &str,
+    reason: &str,
+    outcome: &str,
+    action_class: &str,
+) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(previous_hash.as_bytes());
+    hasher.update(sequence.to_le_bytes());
+    hasher.update(format!("{event:?}").as_bytes());
+    hasher.update(agent_id.as_bytes());
+    hasher.update(tool.as_bytes());
+    hasher.update(request_hash.as_bytes());
+    hasher.update(reason.as_bytes());
+    hasher.update(outcome.as_bytes());
+    hasher.update(action_class.as_bytes());
+    hex::encode(hasher.finalize())
 }
 
 #[derive(Debug, Default)]
@@ -116,15 +154,18 @@ impl AuditChain {
     ) -> ActionReceipt {
         let previous_hash = self.last_hash();
         let sequence = self.receipts.len() as u64 + 1;
-        let mut hasher = Sha256::new();
-        hasher.update(previous_hash.as_bytes());
-        hasher.update(sequence.to_le_bytes());
-        hasher.update(format!("{event:?}").as_bytes());
-        hasher.update(agent_id.as_bytes());
-        hasher.update(tool.as_bytes());
-        hasher.update(request_hash.as_bytes());
-        hasher.update(reason.as_str().as_bytes());
-        let hash = hex::encode(hasher.finalize());
+        let reason_s = reason.as_str();
+        let hash = hash_fields(
+            &previous_hash,
+            sequence,
+            event,
+            agent_id,
+            tool,
+            request_hash,
+            reason_s,
+            outcome,
+            action_class,
+        );
         let receipt = ActionReceipt {
             sequence,
             event,
@@ -134,7 +175,7 @@ impl AuditChain {
             tool: tool.into(),
             action_class: action_class.into(),
             request_hash: request_hash.into(),
-            reason: reason.as_str().into(),
+            reason: reason_s.into(),
             outcome: outcome.into(),
             policy_version: crate::policy::POLICY_VERSION.into(),
         };
@@ -146,10 +187,17 @@ impl AuditChain {
         &self.receipts
     }
 
+    pub fn receipts_mut(&mut self) -> &mut [ActionReceipt] {
+        &mut self.receipts
+    }
+
     pub fn chain_ok(&self) -> bool {
         let mut prev = "0".to_string();
         for (i, r) in self.receipts.iter().enumerate() {
             if r.sequence != i as u64 + 1 || r.previous_hash != prev {
+                return false;
+            }
+            if r.hash != r.recompute_hash() {
                 return false;
             }
             prev = r.hash.clone();

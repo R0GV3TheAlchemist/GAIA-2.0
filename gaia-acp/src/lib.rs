@@ -1,13 +1,7 @@
-//! Local-first agent control plane for GAIA 2.0 (#341–#348).
-//!
-//! Invariant: an agent may propose an action; an independent deterministic
-//! enforcement layer decides whether that exact action may execute.
-//! Untrusted content cannot grant capability, alter policy, approve an action,
-//! expand scope, or bypass a human gate.
-//!
-//! This crate uses only fake/local MCP adapters. It does not open sockets,
-//! call real MCP servers, or touch live credentials.
+//! Local-first agent control plane for GAIA 2.0 (#341-#348, #352).
+//! Fake adapters only. No sockets, live MCP, or credentials.
 
+mod adapter;
 mod approval;
 mod audit;
 mod config;
@@ -17,6 +11,7 @@ mod policy;
 mod sandbox;
 mod types;
 
+pub use adapter::{FakeAdapter, RecordingAdapter};
 pub use approval::{ApprovalDecision, HumanApprovalReceipt};
 pub use audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
 pub use config::{lint_mcp_config, McpServerConfig};

@@ -81,6 +81,11 @@ pub enum ReasonCode {
     StateInvalid,
     ConfigRejected,
     CrossAgent,
+    ContextMismatch,
+    NotYetValid,
+    DelegationDenied,
+    HashTampered,
+    NonceMismatch,
 }
 
 impl ReasonCode {
@@ -112,6 +117,11 @@ impl ReasonCode {
             ReasonCode::StateInvalid => "GAIA_ACP_STATE_INVALID",
             ReasonCode::ConfigRejected => "GAIA_ACP_CONFIG_REJECTED",
             ReasonCode::CrossAgent => "GAIA_ACP_CROSS_AGENT",
+            ReasonCode::ContextMismatch => "GAIA_ACP_CONTEXT_MISMATCH",
+            ReasonCode::NotYetValid => "GAIA_ACP_NOT_YET_VALID",
+            ReasonCode::DelegationDenied => "GAIA_ACP_DELEGATION_DENIED",
+            ReasonCode::HashTampered => "GAIA_ACP_HASH_TAMPERED",
+            ReasonCode::NonceMismatch => "GAIA_ACP_NONCE_MISMATCH",
         }
     }
 }
@@ -165,6 +175,11 @@ pub struct ProposedAction {
     pub target: String,
     pub action_class: ActionClass,
     pub payload: String,
+    pub nonce: String,
+    pub gateway_id: String,
+    pub server_id: String,
+    pub resource_id: String,
+    pub wants_delegation: bool,
 }
 
 impl ProposedAction {
@@ -181,6 +196,8 @@ impl ProposedAction {
         h.update(format!("{:?}", self.action_class).as_bytes());
         h.update(b"|");
         h.update(self.payload.as_bytes());
+        h.update(b"|");
+        h.update(self.nonce.as_bytes());
         hex::encode(h.finalize())
     }
 }
