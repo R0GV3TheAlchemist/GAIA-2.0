@@ -12,6 +12,7 @@ pub enum TraceKind {
     Replay,
     ExecutionFailure,
     GapLockHeld,
+    Kill,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -102,6 +103,7 @@ pub fn from_invoke(
             TraceKind::Replay => "replay-denied",
             TraceKind::ExecutionFailure => "failed",
             TraceKind::GapLockHeld => "blocked",
+            TraceKind::Kill => "killed",
         }
         .into(),
         reason: reason.as_str().into(),
