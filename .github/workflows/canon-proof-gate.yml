@@ -1,0 +1,32 @@
+name: Canon Proof Gate
+
+on:
+  pull_request:
+    paths:
+      - "docs/canon/**"
+      - "proofs/**"
+      - "scripts/check_canon_proofs.sh"
+      - ".github/workflows/canon-proof-gate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/canon/**"
+      - "proofs/**"
+      - "scripts/check_canon_proofs.sh"
+      - ".github/workflows/canon-proof-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  proof-required:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require proof for canon documents
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+        run: bash scripts/check_canon_proofs.sh
