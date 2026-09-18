@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::intent::IntentGraph;
+use crate::trace::{TraceEvent, TraceEventSink, NoopSink};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SignedIntent {
@@ -119,10 +120,12 @@ pub struct AuditEvent {
 }
 
 /// Hash-chained, Ed25519-signed audit. Events() remains the orchestrator view.
+/// Optional telemetry sink is best-effort and never authoritative.
 pub struct TrustAudit {
     principal: Principal,
     log: AuditLog,
     events: Vec<AuditEvent>,
+    sink: Box<dyn TraceEventSink>,
 }
 
 impl Default for TrustAudit {
@@ -137,6 +140,16 @@ impl TrustAudit {
             principal: Principal::generate(PrincipalKind::Service),
             log: AuditLog::default(),
             events: Vec::new(),
+            sink: Box::new(NoopSink),
+        }
+    }
+
+    pub fn with_sink(sink: Box<dyn TraceEventSink>) -> Self {
+        Self {
+            principal: Principal::generate(PrincipalKind::Service),
+            log: AuditLog::default(),
+            events: Vec::new(),
+            sink,
         }
     }
 
@@ -164,7 +177,19 @@ impl TrustAudit {
         );
         self.log.append(&self.principal, "orchestrator", &detail);
         self.events.push(entry.clone());
+        let trace = TraceEvent::classify(
+            &event,
+            intent_id,
+            plan_id,
+            executor_id,
+            entry.sequence,
+        );
+        self.sink.emit(trace);
         entry
+    }
+
+    pub fn emit_trace(&self, event: TraceEvent) {
+        self.sink.emit(event);
     }
 
     pub fn events(&self) -> &[AuditEvent] {
