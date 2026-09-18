@@ -3,7 +3,7 @@
 use gaia_memos::MemOs;
 use gaia_orchestrator::{
     control_plane_unavailable_event, gap_lock_event, InMemorySink, IntentEngine, TaskPlanner,
-    TraceEvent, TraceEventKind, TrustAudit,
+    TraceEvent, TraceEventKind, TraceEventSink, TrustAudit,
 };
 
 fn graph() -> gaia_orchestrator::IntentGraph {
@@ -11,6 +11,14 @@ fn graph() -> gaia_orchestrator::IntentGraph {
     IntentEngine::local_stub()
         .parse("research and summarize CARE", &mut mem)
         .unwrap()
+}
+
+struct BoomSink;
+
+impl TraceEventSink for BoomSink {
+    fn emit(&self, _event: TraceEvent) {
+        panic!("sink must not break the audit chain");
+    }
 }
 
 #[test]
@@ -68,6 +76,55 @@ fn with_sink_receives_typed_events_after_append() {
 }
 
 #[test]
+fn allow_deny_replay_and_execution_failure_shapes() {
+    let graph = graph();
+    let sink = InMemorySink::new();
+    let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
+    audit.append(graph.id, None, None, "GAIA_ALLOW");
+    audit.append(graph.id, None, None, "GAIA_DENY");
+    audit.append(graph.id, None, None, "GAIA_REPLAY");
+    audit.append(graph.id, None, None, "GAIA_EXECUTION_FAILURE");
+    let events = sink.events();
+    assert_eq!(events[0].kind, TraceEventKind::Allow);
+    assert_eq!(events[0].outcome, "allow");
+    assert_eq!(events[1].kind, TraceEventKind::Deny);
+    assert_eq!(events[1].outcome, "deny");
+    assert_eq!(events[2].kind, TraceEventKind::Replay);
+    assert_eq!(events[2].outcome, "replay");
+    assert_eq!(events[3].kind, TraceEventKind::ExecutionFailure);
+    assert_eq!(events[3].outcome, "execution_failure");
+    assert!(audit.chain_ok());
+}
+
+#[test]
+fn freeform_error_text_is_other_not_execution_failure() {
+    let graph = graph();
+    let sink = InMemorySink::new();
+    let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
+    audit.append(
+        graph.id,
+        None,
+        None,
+        "please replay this if the research fails",
+    );
+    let events = sink.events();
+    assert_eq!(events[0].kind, TraceEventKind::Other);
+    let encoded = serde_json::to_string(&events[0]).unwrap();
+    assert!(!encoded.contains("please replay"));
+    assert!(!encoded.contains("research fails"));
+}
+
+#[test]
+fn sink_panic_does_not_invalidate_kernel_chain() {
+    let graph = graph();
+    let mut audit = TrustAudit::with_sink(Box::new(BoomSink));
+    audit.append(graph.id, None, None, "GAIA_ALLOW");
+    assert_eq!(audit.events().len(), 1);
+    assert_eq!(audit.kernel_len(), 1);
+    assert!(audit.chain_ok());
+}
+
+#[test]
 fn gap_lock_and_control_plane_are_distinct_kinds() {
     let sink = InMemorySink::new();
     let audit = TrustAudit::with_sink(Box::new(sink.clone()));
@@ -77,7 +134,10 @@ fn gap_lock_and_control_plane_are_distinct_kinds() {
     assert_eq!(events[0].kind, TraceEventKind::ExecutionBlockedByGapLock);
     assert_eq!(events[0].outcome, "blocked");
     assert_eq!(events[1].kind, TraceEventKind::ControlPlaneUnavailable);
-    assert_eq!(events[1].meta.execution_mode.as_deref(), Some("local-dev-fallback"));
+    assert_eq!(
+        events[1].meta.execution_mode.as_deref(),
+        Some("local-dev-fallback")
+    );
     assert!(audit.chain_ok());
     assert_eq!(audit.kernel_len(), 0);
 }

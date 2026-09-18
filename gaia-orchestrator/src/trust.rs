@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::intent::IntentGraph;
-use crate::trace::{TraceEvent, TraceEventSink, NoopSink};
+use crate::trace::{NoopSink, TraceEvent, TraceEventSink};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SignedIntent {
@@ -184,12 +184,16 @@ impl TrustAudit {
             executor_id,
             entry.sequence,
         );
-        self.sink.emit(trace);
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.sink.emit(trace);
+        }));
         entry
     }
 
     pub fn emit_trace(&self, event: TraceEvent) {
-        self.sink.emit(event);
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            self.sink.emit(event);
+        }));
     }
 
     pub fn events(&self) -> &[AuditEvent] {
