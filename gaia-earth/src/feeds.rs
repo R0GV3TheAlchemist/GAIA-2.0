@@ -1,6 +1,6 @@
 //! #42 first-wave connectors. Bounded fixtures. Not live Copernicus, Kafka, or GBIF HTTP.
 
-use crate::{Observation, SourceKind, SystemTwin, TwinError};
+use crate::{Lake, Observation, SourceKind, SystemTwin, TwinError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Connector {
@@ -89,5 +89,12 @@ impl FeedBus {
             provenance: format!("fixture sample; not a live {connector:?} pull"),
             observation,
         })
+    }
+    /// Bounded sample → lake. Missing host is not invented.
+    pub fn ingest_sample(&self, lake: &mut Lake, connector: Connector) -> Result<(), TwinError> {
+        let rec = self.pull_sample(connector)?;
+        lake.write_raw(connector.topic(), rec.observation)?;
+        lake.promote(connector.topic())?;
+        Ok(())
     }
 }
