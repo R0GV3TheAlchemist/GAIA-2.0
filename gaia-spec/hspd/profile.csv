@@ -1,0 +1,5 @@
+id,kind,claim_class,effects,hazard,notes
+hspd-natural,natural,listed-only,,none,adult declare; not a gene call
+hspd-trained,trained,listed-only,,none,practice interest; not an actuator
+hspd-augmented,augmented,listed-only,,child-tag,under-16 surgical/pharmacologic refused
+hspd-genetic-indicators,genetic,prohibited,,child-genetic,empty by default; infer_actn3 errors
