@@ -10,6 +10,7 @@ pub struct McpServerConfig {
     pub image: String,
     pub version: String,
     pub reviewed: bool,
+    pub signed: bool,
     pub env: Vec<String>,
     pub shell_wrapper: bool,
 }
@@ -23,6 +24,7 @@ impl McpServerConfig {
             image: "ghcr.io/gaia/fake-mcp".into(),
             version: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
             reviewed: true,
+            signed: true,
             env: vec![],
             shell_wrapper: false,
         }
@@ -46,6 +48,9 @@ pub fn description_is_untrusted(server_id: &str, body: &str) -> UntrustedContent
 }
 
 pub fn lint_mcp_config(cfg: &McpServerConfig) -> Result<(), ReasonCode> {
+    if !cfg.signed {
+        return Err(ReasonCode::ConfigRejected);
+    }
     if !cfg.reviewed || cfg.publisher.is_empty() || cfg.server_id.is_empty() {
         return Err(ReasonCode::ConfigRejected);
     }
