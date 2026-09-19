@@ -1,0 +1,5 @@
+id,kind,source,claim_class,effects,hazard,notes
+ukd-domain,knowledge,R#4,listed-only,,none,human knowledge domain label; not a store
+aikd-domain,knowledge,R#5,listed-only,,none,AI knowledge domain label; see gaia-spec/aikd-domains.json
+human-skill,skill,R#6,listed-only,,none,skill name only; no grant
+ai-skill,skill,R#7,listed-only,,none,tool/skill name only; token still required

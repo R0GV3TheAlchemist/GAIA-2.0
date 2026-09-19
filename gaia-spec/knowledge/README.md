@@ -11,9 +11,21 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | BREGMAN.md | D_h, dual coords, prox |
 | MIRROR-DESCENT.md | regret proof recipe; MD vs MP |
 | STOCHASTIC-VI.md | S-SEG, I-SEG, SMP, VR |
+| CORPUS-INDEX.md | Documents/ one-line binds (#412) |
+| EXTRACT-R1.md | R#1 refuse + local contracts (#405) |
+| EXTRACT-R4-R7.md | knowledge/skills listed schema (#406) |
+| EXTRACT-R8-R11.md | superpowers/magic symbolic refuse (#407) |
+| EXTRACT-R12-R16.md | sentient infra/arch language (#408) |
+| EXTRACT-R2-R17.md | twin-as-record (#409) |
+| EXTRACT-R18-R27.md | scale ladder (#410) |
+| EXTRACT-R28-R31.md | ocean/space/bio/governance (#411) |
+| knowledge-skills.csv | listed domain rows; effects empty |
+| scale-layers.csv | one row per layer; R#20 prohibited |
 
 Refuse:
 - preference labels as soul or constitution
 - a Nash of a judge as a human pause
 - quantum-consciousness runtime
 - catalog or alignment doc as an actuator
+- sentient runtime, twin-as-person, magic/superpower actuator
+- live MCP, child-as-source, bio ingest protocol
