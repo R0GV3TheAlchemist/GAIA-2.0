@@ -5,7 +5,7 @@ use gaia_si::{
 };
 
 #[test]
-essay_si_is_language_not_v1() {
+fn essay_si_is_language_not_v1() {
     assert!(!si_v1_tagged());
     assert_eq!(articles().len(), 8);
     assert!(!cameras_default());
