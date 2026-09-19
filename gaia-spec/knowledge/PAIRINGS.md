@@ -48,15 +48,23 @@ See `SPECTRUM.md`, `CRYSTALS.md`, `crystals.csv`.
 ## First pass (#413)
 
 Filled **130 / 172**. Left **42** empty on purpose.
+Table: `pairings-413.csv`.
 
-Left empty includes chemistry rows that must not be "completed" by a partner
-(adamite, galena, vanadinite, wulfenite, bumblebee-jasper, tremolite, sulfur,
-amazonite/lead, cobaltoan-calcite, blue-halite / pink-halite as ingest work)
-and trade titles that would only pair to another title
-(super-seven, prophecy-stone, auralite-23, septarian, shiva-lingam).
+## Second pass (remainder)
 
-Trade+trade jasper titles were stripped even when the rock looks related.
+Resolved the 42:
 
-Prism teaching pair on this pass: `clear-quartz` / `fluorite` / `clear-calcite`.
-Paragenesis example: `azurite` ↔ `malachite`. Quartz colors point at `clear-quartz`.
-Effects stay empty. No fifth.
+- Filled **15** — lattice / paragenesis / teaching only. Table: `pairings-remainder.csv`.
+- Refused **27** — stay empty. Table: `pairings-refuse.csv`.
+
+Filled: aegirine↔bronzite, amblygonite→lepidolite, blue-apatite→turquoise,
+brucite→magnesite, chaoite→shungite, credite↔creedite,
+dumortierite→clear-quartz, grape-agate→amethyst, meteorite→hematite,
+purpurite→rhodochrosite, seraphinite→fuchsite, ulexite→selenite,
+zincite→hematite.
+
+Refused: arsenate/lead/cobalt/asbestos/sulfur/soluble-ingest rows;
+trade+trade jasper titles; assemblage and sacred-object titles; lab-hopper bismuth.
+
+Running total: **145 / 172** have a secondary. **27** remain empty by law.
+Effects stay empty. No fifth. No dual-sign. #341 stays open.
