@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "claims": [
+    {"id": "autonomy-default-suggest", "class": "established"},
+    {"id": "planetary-sentience-runtime", "class": "prohibited"}
+  ]
+}

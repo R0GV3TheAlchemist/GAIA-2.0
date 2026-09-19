@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "claims": [
+    {"id": "autonomy-default-suggest", "class": "established"},
+    {"id": "confirm-money-legal-medical-irreversible-outbound", "class": "established"},
+    {"id": "peer-envelope-no-vault", "class": "established"},
+    {"id": "local-trace-not-live-write", "class": "established"},
+    {"id": "mcp-descriptions-untrusted", "class": "established"},
+    {"id": "claim-validation-ci", "class": "experimental"},
+    {"id": "claim-class-on-trace", "class": "experimental"},
+    {"id": "knowledge-id-ledger", "class": "experimental"},
+    {"id": "geometry-operator-language", "class": "symbolic"},
+    {"id": "twin-as-record-label", "class": "symbolic"},
+    {"id": "planetary-sentience-runtime", "class": "prohibited"},
+    {"id": "earth-cavity-boot-truth", "class": "prohibited"},
+    {"id": "autonomy-4-5-in-software", "class": "prohibited"},
+    {"id": "universal-multi-paradigm-language", "class": "prohibited"},
+    {"id": "second-kernel-crate", "class": "prohibited"},
+    {"id": "catalog-row-as-grant", "class": "prohibited"},
+    {"id": "quantum-consciousness-runtime", "class": "prohibited"},
+    {"id": "live-mcp-as-product", "class": "prohibited"},
+    {"id": "twin-as-person", "class": "prohibited"}
+  ]
+}

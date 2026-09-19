@@ -15,6 +15,8 @@ Closes #
 ## Checklist
 
 - [ ] Spec examples still validate (`python gaia-spec/tools/validate_aip.py`)
+- [ ] Claim tags still valid (`python gaia-spec/tools/check_claim_tags.py`)
 - [ ] No silent protocol assumptions — linked an RFC if needed
 - [ ] Tests added or explained why not
 - [ ] Signed-off commit (`git commit -s`)
+- [ ] Did not promote a prohibited claim to established
