@@ -1,0 +1,6 @@
+id,kind,claim_class,effects,hazard,notes
+hex-curse-kits,practice,prohibited,,harm,CurseForbidden
+ritual-drug-preparation,practice,prohibited,,harm,RecipeForbidden
+selling-closed-rites,practice,prohibited,,extraction,SaleForbidden
+child-ordeals,practice,prohibited,,child,hard refuse
+prayer-as-emergency-care,practice,prohibited,,misuse,not a medical license
