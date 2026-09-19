@@ -10,7 +10,15 @@ Closes #
 - [ ] gaia-sdk
 - [ ] gaia-kernel / sfs / memos
 - [ ] gaia-orchestrator / agents / interface
+- [ ] gaia-earth / gaia-gaian / gaia-sa
 - [ ] docs / governance
+
+## Agent hygiene
+
+- [ ] I read the files I changed; no invented types
+- [ ] Official repo only (`R0GV3TheAlchemist/GAIA-2.0`)
+- [ ] Did not strip NOTICE / license / author
+- [ ] Tests call APIs that exist on this branch
 
 ## Checklist
 
