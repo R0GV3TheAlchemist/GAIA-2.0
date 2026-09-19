@@ -43,7 +43,7 @@ Verified, date-corrected:
 | Gaffney et al., Nature Sustainability | **28 Mar 2025** | DOI 10.1038/s41893-025-01536-6; comment, not a runtime |
 | Wang, arXiv:2604.16518, Apr 2026 | **15 Apr 2026** | on-orbit survey; not an orbital actuator |
 | Rubin, Heins, Friston et al., Scientific Reports | **3 Aug 2026** | elementary planetary agency; **language, not a product** |
-| Sharma et al., DECICE, arXiv:2605.25292 | **24 May 2026** (submitted); COMPSAC 2026 exhibition | continuum paper; not ColonyOS / Slurm merge |
+| Sharma et al., DECICE, arXiv:2605.25292 | **24 May 2026** (submitted); COMPSAC 2026 exhibition | continuum paper; Slurm/K8s in the paper is **not** ColonyOS merge |
 | UN A/RES/79/325 Scientific Panel + Dialogue | **26 Aug 2025**; members appointed **12 Feb 2026** | peer governance; not a live council |
 | Mohammed, Sensor Review (reused as Aug 2026) | **26 Jan 2026** | already corrected in #449 |
 | Asterinas / ColonyOS / DestinE / GraphCast | research peers | **not crates, not live harvest** |
@@ -77,6 +77,26 @@ Unverified or vendor-scale claims stay `experimental` and **out of runtime**:
 | Space | listed space contract | orbital actuator; SBSP product; constellation write |
 | Biological | listed sources | ingest protocol; child-as-source; wetware runtime |
 | Governance | GOVERNANCE.md + golden-compass | second constitution without #378; live Planetary Council |
+
+## Per-doc notes
+
+UNIFIED — master composition. Perez-Ortiz (arXiv:2606.13704, submitted 9 Jun 2026) is a position paper. DTC four-layer dated 25 Aug 2026 stays unverified. No live `/earth/*` or `/infra/control` surface.
+
+PLANETARY INFRA — DECICE (arXiv:2605.25292, submitted 24 May 2026, COMPSAC 2026 exhibition) describes K8s + Slurm in *that* project. `live_slurm` / `live_kafka` / `live_iceberg` / `live_flink` / `live_cesium` stay false. Four Cs is language, not a scorecard.
+
+PLANETARY SENTIENT — Rubin, Heins, Friston et al., Scientific Reports, 3 Aug 2026 is elementary agency as **language**. Stage-6 "planetary consciousness" is prohibited as crate state. `advise("conscious planet", false)` and `refuse_consciousness_runtime()` already error.
+
+Continental / Country / State / City / Community — subsidiarity. Continental-mind and city AUDiT write are prohibited. Country Diia/Doot/Doot-class agents stay experimental language. TRAIGA / SB 53 are law citations, not crates. `cameras_default()` stays false; no default neighborhood watch.
+
+Home / Individual — local contract + #57 record. Photo→GAIAN-in-60s is refused (`infer_from_photo`). Default level is 1. Child is not a source. Oura / Watch illness-prediction percents stay experimental. Home is not a hive; `live_ollama` / `live_whisper` stay false.
+
+Ocean — Digital Twin of the Ocean is a listed contract. No live harvest, no AUV fleet actuator this slice.
+
+Space — Wang arXiv:2604.16518 (15 Apr 2026) is a survey. FCC "AI Sat Mini" filing is not a deployment. SBSP is energy language, not an actuator. No constellation write.
+
+Biological — NatureLM / GBIF / iNaturalist are peers, not scrapes. Microbiome / wetware / DishBrain stay prohibited as runtime. `medical_product` and `pathogen_protocol` already refuse.
+
+Governance — UN A/RES/79/325 adopted 26 Aug 2025; 40-member panel appointed 12 Feb 2026. Earth alignment (Gaffney et al., 28 Mar 2025) is a comment. CARE is listed ethic. Essay "GAIA 2.0 Constitution v1.0" is **not** a second constitution; promote only with #378 artifact. No live Planetary Council.
 
 ## Bind to existing plane
 
