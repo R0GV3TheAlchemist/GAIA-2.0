@@ -1,11 +1,15 @@
 layer,source,claim_class,effects,notes
-planetary-system,R#18,experimental,,composition only; no hive
-planetary-infra,R#19,experimental,,infra language
-planetary-sentience,R#20,prohibited,,language only; never runtime state
-continental,R#21,experimental,,local contract
-national,R#22,experimental,,local contract
-state,R#23,experimental,,local contract
-urban,R#24,experimental,,local contract
-community,R#25,experimental,,local contract; no default watch
-home,R#26,experimental,,local contract; consent first
-personal,R#27,experimental,,twin-as-record; no biometric raw
+planetary-system,R#18 UNIFIED,experimental,,composition only; no hive
+planetary-infra,R#19 PLANETARY INFRA,experimental,,infra language; #33 record
+planetary-sentience,R#20 PLANETARY SENTIENT,prohibited,,language only; never runtime state
+continental,R#21 Continental,experimental,,local contract
+national,R#22 Country,experimental,,local contract
+state,R#23 State & Province,experimental,,local contract
+urban,R#24 City,experimental,,local contract
+community,R#25 Community,experimental,,local contract; no default watch
+home,R#26 Home,experimental,,local contract; consent first
+personal,R#27 IndividualPersonal,experimental,,twin-as-record; no biometric raw
+ocean,R#28 Ocean,experimental,,local ocean contract; no live DTO harvest
+space,R#29 Space,experimental,,local space contract; no orbital actuator
+biological,R#30 Biological Layer,experimental,,listed sources; no ingest protocol
+governance,R#31 Governance Framework,experimental,,promote only with #378 artifact
