@@ -31,6 +31,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../aikd/ | open-model registry + benches as data (#457 / #100) |
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
+| ../hspd/ | declare-only vault profile (#463 / #141) |
 
 Refuse:
 - preference labels as soul or constitution
