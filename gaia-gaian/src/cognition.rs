@@ -61,6 +61,14 @@ impl PersonalMemory {
         &self.notes
     }
 
+    pub fn retrieve(&self, note: &str) -> bool {
+        self.notes.iter().any(|(_, n)| n == note)
+    }
+
+    pub fn forget(&mut self, note: &str) {
+        self.notes.retain(|(_, n)| n != note);
+    }
+
     pub fn wipe(&mut self) {
         self.notes.clear();
     }
