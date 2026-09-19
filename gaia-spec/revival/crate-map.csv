@@ -1,0 +1,15 @@
+old_crate,current,gap,issue
+gaia-policy,gaia-acp/policy.rs,none,
+gaia-vault,gaia-acp/PeerEnvelope,none,220
+gaia-memory,gaia-memos+gaia-kernel/AuditLog,spec,
+gaia-contracts,gaia-spec+gaia-acp/types.rs,none,
+gaia-crypto,gaia-kernel/identity,none,392
+gaia-core,gaia-kernel+gaia-sos,spec,
+gaia-session,gaia-interface,spec,
+gaia-server,gaia-interface+gaia-orchestrator,spec,
+gaia-fs,gaia-orchestrator/github_source+gaia-acp/sandbox,spec,
+gaia-net,gaia-acp/sandbox,code,
+gaia-scheduler,gaia-orchestrator/broker,spec,
+gaia-notify,,refuse,335
+gaia-power,,refuse,
+gaia-ffi,,refuse,
