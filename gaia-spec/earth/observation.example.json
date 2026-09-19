@@ -1,0 +1,11 @@
+{
+  "system": "atmosphere",
+  "source": "measured",
+  "value": 15.2,
+  "uncertainty": 0.3,
+  "unit": "degC",
+  "method": "station-mean",
+  "provenance": "fixture:local",
+  "timestamp_unix": 1700000000,
+  "quality": "operational"
+}

@@ -1,6 +1,6 @@
 //! #46 quality tiers and a one-field assimilation blend. Not OpenDA or neural DA.
 
-use crate::{Observation, SourceKind, TwinError};
+use crate::{Observation, SourceKind, SystemTwin, TwinError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QualityClass {
@@ -20,6 +20,15 @@ pub struct CuratedRecord {
     pub quality: QualityClass,
 }
 
+/// Loose physical range so an unlabeled spike cannot ship as curated.
+pub fn in_range(system: SystemTwin, value: f64, unit: &str) -> bool {
+    match (system, unit) {
+        (SystemTwin::Atmosphere, "degC") => (-90.0..=60.0).contains(&value),
+        (SystemTwin::Ocean, "degC") => (-3.0..=40.0).contains(&value),
+        _ => true,
+    }
+}
+
 impl CuratedRecord {
     pub fn ship(
         observation: Observation,
@@ -32,6 +41,9 @@ impl CuratedRecord {
             return Err(TwinError::MissingUncertainty);
         }
         if method.trim().is_empty() || provenance.trim().is_empty() {
+            return Err(TwinError::UnlabeledPoint);
+        }
+        if !in_range(observation.system, observation.value, &observation.unit) {
             return Err(TwinError::UnlabeledPoint);
         }
         Ok(Self {
