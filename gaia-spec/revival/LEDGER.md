@@ -1,6 +1,6 @@
 # Predecessor ledger (#366)
 
-Status: frozen 2026-09-18. Pointers only. No private file bodies.
+Status: frozen 2026-09-18; mapped line updated 2026-09-19. Pointers only. No private file bodies.
 
 Columns:
 - **usable-as** — what may enter GAIA-2.0 later
@@ -41,8 +41,11 @@ These stay refuse even if an ancestor goes CI-green:
 
 ## Already mapped on this repo
 
-- Autonomy Suggest(1) + confirm domains + peer envelope — PR #362, issues #220 / #187
-- Local trace sink — PR #361, issue #335 (live write still open)
-- #334 advisor remediation — merged; keep #23 and #341 open
+- Autonomy Suggest(1) + confirm domains + peer envelope — #220 / #187
+- GAIAN identity file + Telos — #218
+- Claim classes on local TraceEvent — #375; confirm on invoke — #374
+- Local trace sink — #335 (live Supabase write still open)
+- Earth observation record + QC — #46; nine system profiles — #56; feed fixtures — #42
+- #334 advisor remediation merged. **#341 is closed.** #23 stays a kernel epic if still open.
 
-Parent: #365. Next research children: #367 claim classes, #368 ID ledger, #369 red-CI rule.
+Parent META #365 children are complete.
