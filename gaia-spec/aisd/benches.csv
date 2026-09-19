@@ -1,0 +1,3 @@
+id,bench,maps_to_skill,claim_class,published,gaia_measured,notes
+bench-mmlu,MMLU,aisd:knowledge:exam,listed-only,, ,empty until #124
+bench-elo,Elo,aisd:chat:preference,listed-only,, ,reference_published only
