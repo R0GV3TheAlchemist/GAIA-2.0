@@ -1,9 +1,59 @@
 {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.local/spec/gaian/identity.schema.json",
+  "title": "GAIAN identity file",
   "type": "object",
-  "required": ["gaian_id", "telos"],
+  "additionalProperties": false,
+  "required": ["gaian_id", "telos", "declared_by_owner"],
   "properties": {
-    "gaian_id": { "type": "string" },
-    "telos": { "type": "string" },
-    "anchors": { "type": "array" }
+    "gaian_id": { "type": "string", "minLength": 1 },
+    "model_id": { "type": "string" },
+    "declared_by_owner": { "const": true },
+    "photo_inference": { "const": "forbidden" },
+    "telos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purpose"],
+      "properties": {
+        "purpose": { "type": "string", "minLength": 1 },
+        "horizon": { "type": "string" }
+      }
+    },
+    "anchors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "episodic": { "type": "array", "items": { "type": "string" } },
+        "semantic": { "type": "array", "items": { "type": "string" } },
+        "procedural": { "type": "array", "items": { "type": "string" } },
+        "relational": { "type": "array", "items": { "type": "string" } },
+        "aspirational": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "personality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uncertainty"],
+      "properties": {
+        "dimensions": { "type": "object", "additionalProperties": { "type": "number" } },
+        "uncertainty": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "demographics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "source": { "const": "owner-declared" },
+        "gender": { "type": "string" },
+        "age_band": { "type": "string" }
+      }
+    }
+  },
+  "not": {
+    "anyOf": [
+      { "required": ["inferred_gender"] },
+      { "required": ["inferred_age"] }
+    ]
   }
 }
