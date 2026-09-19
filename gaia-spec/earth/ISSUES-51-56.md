@@ -9,4 +9,4 @@ No Twin v1.0.
 | #53 | OPEN | Scientist API / policy UI stubs | No targeting endpoints |
 | #54 | OPEN | Boundary watch + drill stubs | Not a live EWS network |
 | #55 | OPEN | Course-correction steps; checklist forbids weapons | **No Twin v1.0** |
-| #56 | OPEN | Nine system-twin profiles as data | Not nine live operational twins |
+| #56 | SPEC | Nine system-twin profiles as data (`SYSTEMS.md`) | Not nine live operational twins |
