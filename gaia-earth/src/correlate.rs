@@ -36,4 +36,27 @@ impl BoundaryIndicator {
             cadence: "monthly".into(),
         }
     }
+
+    pub fn nine() -> [Self; 9] {
+        [
+            row("climate-change", "CO2", "ppm", "monthly"),
+            row("biosphere-integrity", "extinction-rate", "E/MSY", "annual"),
+            row("land-system-change", "forest-fraction", "1", "annual"),
+            row("freshwater-change", "runoff", "mm", "monthly"),
+            row("biogeochemical-flows", "N-P", "Tg", "annual"),
+            row("ocean-acidification", "pH", "1", "monthly"),
+            row("atmospheric-aerosols", "AOD", "1", "daily"),
+            row("novel-entities", "index", "1", "annual"),
+            row("stratospheric-ozone", "DU", "DU", "monthly"),
+        ]
+    }
+}
+
+fn row(name: &str, owner: &str, unit: &str, cadence: &str) -> BoundaryIndicator {
+    BoundaryIndicator {
+        name: name.into(),
+        owner: owner.into(),
+        unit: unit.into(),
+        cadence: cadence.into(),
+    }
 }
