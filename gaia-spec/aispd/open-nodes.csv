@@ -1,0 +1,4 @@
+id,kind,claim_class,effects,hazard,notes
+weather-graphcast-class,weather,listed-only,,none,cites #48 #104; measured pending
+exam-usmle,exam,listed-only,,none,reference_published only
+wet-lab,lab,prohibited,,bio,wet_lab Denied
