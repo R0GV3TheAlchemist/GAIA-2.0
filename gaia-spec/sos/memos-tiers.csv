@@ -1,0 +1,6 @@
+id,tier,claim_class,effects,notes
+memos-t1,working,listed-only,,name only; not a live cube
+memos-t2,episodic,listed-only,,name only
+memos-t3,semantic,listed-only,,name only
+memos-t4,procedural,listed-only,,name only
+memos-t5,archival,listed-only,,name only; no lake ingest
