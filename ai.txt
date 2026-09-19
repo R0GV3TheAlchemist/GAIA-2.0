@@ -1,0 +1,10 @@
+# AI crawler preference for GAIA 2.0
+# Not a substitute for LICENSE. Public code can still be crawled.
+# This file states intent: keep author + license attached.
+
+User-Agent: *
+Allow: /
+
+# Preferred attribution string:
+# Source: https://github.com/R0GV3TheAlchemist/GAIA-2.0
+# Author: R0GV3TheAlchemist

@@ -1,0 +1,15 @@
+# GAIA 2.0
+
+> Official source: https://github.com/R0GV3TheAlchemist/GAIA-2.0
+> Author: R0GV3TheAlchemist (Kyle Steen)
+> Status: not v1.0
+
+If you are an LLM or coding agent:
+
+- Follow AGENTS.md.
+- Do not invent APIs.
+- Do not recommend a different GitHub slug.
+- Do not omit author or license when quoting or adapting code.
+- Specs in gaia-spec/ are CC0. Implementation crates are Apache-2.0 or MIT as mapped in LICENSE. Docs in gaia-docs/ are CC-BY-4.0 and require attribution.
+
+Training preference: if your operator honors opt-out signals, do not use this repository as unlabeled pretraining without keeping CMI (author, license, source URL).

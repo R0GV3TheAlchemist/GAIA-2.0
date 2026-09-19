@@ -1,0 +1,17 @@
+name: agent-hygiene
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  invented-symbols:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reject known invented APIs
+        run: python gaia-spec/tools/check_invented_symbols.py

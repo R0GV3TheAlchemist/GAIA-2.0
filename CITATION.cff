@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "GAIA 2.0"
+message: "If you use this software or its specifications, cite it."
+type: software
+authors:
+  - family-names: Steen
+    given-names: Kyle
+    alias: R0GV3TheAlchemist
+repository-code: "https://github.com/R0GV3TheAlchemist/GAIA-2.0"
+license: "SEE LICENSE FILE"
+keywords:
+  - GAIA
+  - Super OS
+  - Earth Twin
+  - GAIAN
+abstract: >
+  Implementation monorepo for GAIA 2.0. Not v1.0. Attribution required
+  wherever a license in LICENSE demands it. Training a model on this
+  tree does not erase the author or the license.
