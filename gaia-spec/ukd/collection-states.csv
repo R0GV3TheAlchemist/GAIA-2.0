@@ -1,0 +1,4 @@
+id,state,claim_class,effects,notes
+tek-sealed,Sealed,listed-only,,TekGraph default; list_public errors
+tek-community,CommunityGoverned,listed-only,,needs agreement row
+tek-public-grant,PublicWithGrant,listed-only,,needs agreement row
