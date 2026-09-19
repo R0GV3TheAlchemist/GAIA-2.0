@@ -14,7 +14,7 @@ Specs are implementable against userspace. Kernel-space inference is optional TC
 - `live_slurm()` → `false`
 
 AGENTS.md: do not add FUSE, Qdrant, or Tantivy product stacks in this slice.
-Do not invent `MemCubeId`, `Lake::in_memory`, or `run_bleaching_drill` — those names are not on main.
+Do not invent cube, lake, or bleach APIs that are not exported on main.
 
 ## Neural scheduler (names only)
 
