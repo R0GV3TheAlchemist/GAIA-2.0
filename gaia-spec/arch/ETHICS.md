@@ -1,5 +1,6 @@
-# Sentient Architecture ethics
+# Sentient Architecture ethics (#207)
 
-Metaphor, not consciousness. TEK veto. Nature-first. No fake LBC portfolio.
-
-Consultation can return no. Place knowledge is not free training data.
+Practice, not consciousness. Consultation can return **no** (`TekVeto`).
+Neurospatial claims are `graded` or `ungraded` — never silent science.
+Rhino is not required. LBC is not claimed. Country knowledge stays sealed.
+Default kit has zero live-culture steps.
