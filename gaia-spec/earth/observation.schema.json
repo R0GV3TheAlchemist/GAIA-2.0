@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.local/spec/earth/observation.schema.json",
+  "title": "Earth Twin curated observation (#46)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["system", "source", "value", "uncertainty", "unit", "method", "provenance", "timestamp_unix", "quality"],
+  "properties": {
+    "system": {
+      "enum": ["atmosphere", "ocean", "land", "biosphere", "cryosphere", "lithosphere", "anthroposphere", "technosphere", "magnetosphere"]
+    },
+    "source": { "enum": ["measured", "synthetic"] },
+    "value": { "type": "number" },
+    "uncertainty": { "type": "number", "minimum": 0 },
+    "unit": { "type": "string", "minLength": 1 },
+    "method": { "type": "string", "minLength": 1 },
+    "provenance": { "type": "string", "minLength": 1 },
+    "timestamp_unix": { "type": "integer", "minimum": 0 },
+    "quality": { "enum": ["reference", "operational", "mesonet", "archive", "caution"] }
+  }
+}
