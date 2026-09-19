@@ -3,7 +3,7 @@
 Sources: R#28 ocean, R#29 space, R#30 biological layer, R#31 governance.
 Cross-link Documents/ Biological Layer, CARE, Governance Framework, ocean/space infra notes.
 Issue: #411 under META #404.
-Deep-research follow-up: `EXTRACT-SCALE-LAYERS.md` + `scale-sources.csv` (#451).
+Deep-research follow-up: `EXTRACT-SCALE-LAYERS.md` + `scale-sources.csv` (#451, deepen #453).
 
 ## Bind
 

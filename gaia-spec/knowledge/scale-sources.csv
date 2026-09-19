@@ -3,7 +3,7 @@ pcai-perez,planetary-system,arXiv:2606.13704 Perez-Ortiz ICML 2026,experimental,
 earth-align-gaffney,governance,Nat Sustain 10.1038/s41893-025-01536-6,experimental,,28 Mar 2025 comment; principle not a runtime
 onorbit-wang,space,arXiv:2604.16518 Wang Apr 2026,experimental,,survey 15 Apr 2026; not an orbital actuator
 friston-agency,planetary-sentience,Sci Rep Rubin Heins Friston 3 Aug 2026,prohibited,,elementary agency is language; never crate state
-decice,planetary-infra,arXiv:2605.25292 DECICE,experimental,,continuum scheduling paper; not ColonyOS merge
+decice,planetary-infra,arXiv:2605.25292 DECICE,experimental,,submitted 24 May 2026; COMPSAC exhibition; not ColonyOS/Slurm merge
 mohammed-reuse,planetary-infra,Sensor Review 10.1108/SR-10-2025-0822,experimental,,essay reused Aug 2026; published 26 Jan 2026
 asterinas-reuse,planetary-infra,arXiv:2506.03876 ATC 2025,experimental,,listed research; not a crate
 graphcast-live,planetary-infra,essay GraphCast/TerraMind/ESFM,prohibited,,live_graphcast stays false
@@ -15,9 +15,16 @@ naturelm-scrape,biological,essay NatureLM-audio / GBIF,prohibited,,no live scrap
 microbiome-protocol,biological,essay gut-brain / wetware,prohibited,,no ingest protocol; medical_product false
 ocean-dto-live,ocean,essay Digital Twin of the Ocean,experimental,,listed contract; no live harvest
 care-promote,governance,essay CARE + UN Dialogue,experimental,,listed ethic; no live council
+un-res-79325,governance,UN A/RES/79/325 26 Aug 2025,experimental,,panel appointed 12 Feb 2026; not an on-box council
 constitution-v2,governance,essay GAIA 2.0 Constitution v1.0,prohibited,,no second constitution without #378
 city-index,urban,essay 5W AI City Index 2026,experimental,,scores are not a GAIA grade
 home-oura,home,essay Oura 84% illness prediction,experimental,,wearable lit; no device protocol
 personal-photo,personal,essay photo to GAIAN in 60s,prohibited,,infer_from_photo refused
 personal-l45,personal,essay autonomy L4-L5,prohibited,,default_level is 1; L4-L5 refused
 community-watch,community,essay always-on neighborhood sensors,prohibited,,cameras_default false; no default watch
+continental-mind,continental,essay continental consciousness network,prohibited,,subsidiarity; no skip-to-planet
+country-agent,national,essay national AI agent as GAIAN,experimental,,Diia/Doot language; not a product
+city-audit,urban,essay AUDiT agentic city twin,prohibited,,city twin is a record; no live write
+home-hive,home,essay sentient home as planet node,prohibited,,home is local contract; not a hive
+space-sbsp,space,essay space-based solar power product,experimental,,listed energy language; no SBSP actuator
+bio-wetware,biological,essay wet-neuromorphic / DishBrain,prohibited,,no wetware runtime this slice
