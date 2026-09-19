@@ -33,6 +33,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
 | ../sos/phase-0.md | SOS Phase 0 listed contracts (#465 / #191) |
+| ../sos/phase-1.md | SOS Phase 1 listed scheduler/MemOS/SFS (#467 / #192) |
 
 Refuse:
 - preference labels as soul or constitution
