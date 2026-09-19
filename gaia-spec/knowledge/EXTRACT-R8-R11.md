@@ -1,8 +1,9 @@
 # Extract R#8–R#11 — superpowers + magic, symbolic refuse
 
 Sources: R#8 human superpowers, R#9 AI superpowers, R#10 human magic, R#11 AI magic.
-Issue: #407 under META #404.
+Issue: #407 under META #404 (closed as symbolic refuse).
 Pair with `ELEMENTS.md` five-refuse.
+Named rows live in `universal-realms.csv` with `claim_class=symbolic`.
 
 ## Class
 
@@ -24,3 +25,4 @@ All four reports bind as `symbolic` names. `effects` stay empty. Never `establis
 - Catalog row as capability.
 - Autonomy 4–5 from a “superpower” name.
 - Medical, legal, money, or irreversible action from a magic row.
+- Consciousness runtime, RSI explosion, automated-corporation swarm.
