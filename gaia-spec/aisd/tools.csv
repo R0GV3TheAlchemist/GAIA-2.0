@@ -1,0 +1,2 @@
+id,name,kind,claim_class,effects,notes
+tool-graphcast,GraphCast,weather-forecast-tool,listed-only,,not an LLM card; no live ingest
