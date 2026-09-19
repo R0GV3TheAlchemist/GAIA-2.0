@@ -45,20 +45,21 @@ impl LiveTraceConfig {
     }
 }
 
-/// Row that would land on public.trace_events. Inputs/outputs stay empty objects.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// Row shaped like deployed `public.trace_events`.
+/// Inputs/outputs stay empty objects. `error` is a stable reason code only.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LiveTraceRow {
-    pub kind: String,
-    pub actor_id: String,
-    pub intent_id: String,
-    pub correlation_id: String,
-    pub outcome: String,
-    pub reason_code: String,
-    pub request_hash: String,
-    pub claim_class: String,
+    pub event: String,
+    pub gaian_id: Option<String>,
+    pub correlation_id: Option<String>,
+    pub canon_refs: Vec<String>,
+    pub started_at: Option<String>,
+    pub ended_at: Option<String>,
+    pub latency_ms: Option<u64>,
     pub inputs: serde_json::Value,
     pub outputs: serde_json::Value,
-    pub metadata: serde_json::Value,
+    pub error: Option<String>,
+    pub meta: serde_json::Value,
 }
 
 fn kind_label(k: TraceKind) -> &'static str {
@@ -81,22 +82,34 @@ fn class_label(c: ClaimClass) -> &'static str {
     }
 }
 
+fn error_field(kind: TraceKind, reason: &str) -> Option<String> {
+    match kind {
+        TraceKind::Allow => None,
+        _ => Some(reason.to_string()),
+    }
+}
+
 /// Allow-listed metadata only. No prompts, tokens, or raw errors.
 pub fn map_row(event: &TraceEvent) -> LiveTraceRow {
     LiveTraceRow {
-        kind: kind_label(event.kind).into(),
-        actor_id: event.actor_id.clone(),
-        intent_id: event.intent_id.clone(),
-        correlation_id: event.correlation_id.clone(),
-        outcome: event.outcome.clone(),
-        reason_code: event.reason.clone(),
-        request_hash: event.request_hash.clone(),
-        claim_class: class_label(event.claim_class).into(),
+        event: kind_label(event.kind).into(),
+        gaian_id: Some(event.actor_id.clone()),
+        correlation_id: Some(event.correlation_id.clone()),
+        canon_refs: Vec::new(),
+        started_at: None,
+        ended_at: None,
+        latency_ms: None,
         inputs: serde_json::json!({}),
         outputs: serde_json::json!({}),
-        metadata: serde_json::json!({
+        error: error_field(event.kind, event.reason.as_str()),
+        meta: serde_json::json!({
             "schema": "gaia.trace_events.v1",
-            "source": "local-acp"
+            "source": "local-acp",
+            "intent_id": event.intent_id,
+            "outcome": event.outcome,
+            "reason_code": event.reason,
+            "request_hash": event.request_hash,
+            "claim_class": class_label(event.claim_class)
         }),
     }
 }
