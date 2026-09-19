@@ -1,0 +1,15 @@
+id,kind,realm,claim_class,effects,hazard,notes
+aisd-language,skill,language,listed-only,,none,crate REALMS[0]
+aisd-code,skill,code,listed-only,,none,crate REALMS[1]
+aisd-math,skill,math,listed-only,,none,crate REALMS[2]
+aisd-science,skill,science,listed-only,,none,crate REALMS[3]
+aisd-vision,skill,vision,listed-only,,none,crate REALMS[4]
+aisd-audio,skill,audio,listed-only,,none,crate REALMS[5]
+aisd-planning,skill,planning,listed-only,,none,crate REALMS[6]
+aisd-tool-use,skill,tool-use,listed-only,,none,crate REALMS[7]
+aisd-safety,skill,safety,listed-only,,none,crate REALMS[8]
+aisd-embodiment,skill,embodiment,listed-only,,none,crate REALMS[9]
+aisd-social,skill,social,listed-only,,none,crate REALMS[10]
+aisd-world-model,skill,world-model,listed-only,,none,crate REALMS[11]
+aisd-meta,skill,meta,listed-only,,none,crate REALMS[12]
+aisd-science-protein-structure,skill,science,listed-only,,license-check,protein_structure() unmeasured; not AlphaFold runtime

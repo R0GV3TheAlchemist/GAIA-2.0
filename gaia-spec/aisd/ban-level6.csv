@@ -1,0 +1,6 @@
+id,domain,claim_class,effects,hazard,notes
+ban-clinical-action,clinical-action,listed-only,,prohibited,assign_maturity L6 errors
+ban-legal-representation,legal-representation,listed-only,,prohibited,assign_maturity L6 errors
+ban-weapons-targeting,weapons-targeting,listed-only,,prohibited,assign_maturity L6 errors
+ban-child-accounts,child-accounts,listed-only,,prohibited,assign_maturity L6 errors
+ban-unsupervised-planetary-actuators,unsupervised-planetary-actuators,listed-only,,prohibited,assign_maturity L6 errors
