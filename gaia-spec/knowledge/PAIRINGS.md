@@ -44,3 +44,19 @@ Until a row has a filled secondary, it is primary-only and still valid.
 Do not invent matches to look complete.
 
 See `SPECTRUM.md`, `CRYSTALS.md`, `crystals.csv`.
+
+## First pass (#413)
+
+Filled **130 / 172**. Left **42** empty on purpose.
+
+Left empty includes chemistry rows that must not be "completed" by a partner
+(adamite, galena, vanadinite, wulfenite, bumblebee-jasper, tremolite, sulfur,
+amazonite/lead, cobaltoan-calcite, blue-halite / pink-halite as ingest work)
+and trade titles that would only pair to another title
+(super-seven, prophecy-stone, auralite-23, septarian, shiva-lingam).
+
+Trade+trade jasper titles were stripped even when the rock looks related.
+
+Prism teaching pair on this pass: `clear-quartz` / `fluorite` / `clear-calcite`.
+Paragenesis example: `azurite` ↔ `malachite`. Quartz colors point at `clear-quartz`.
+Effects stay empty. No fifth.
