@@ -5,7 +5,7 @@ use gaia_sos::{
 };
 
 #[test]
-essay_sos_does_not_grant_a_kernel() {
+fn essay_sos_does_not_grant_a_kernel() {
     assert!(!second_kernel());
     assert!(!rsi());
     assert!(!sentience());
