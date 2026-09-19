@@ -3,6 +3,7 @@
 Sources: R#12 sentient infrastructure, R#13 sentient architecture, R#14 Super OS design, R#15 personal sentient infra, R#16 personal sentient arch.
 Issue: #408 under META #404.
 Also binds Documents/ SENTIENT * essays.
+Deep-research follow-up: `EXTRACT-ESSAYS-SI-SA-SOS.md` + `essay-sources.csv` (#449).
 
 ## Bind
 

@@ -16,6 +16,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | EXTRACT-R4-R7.md | knowledge/skills listed schema (#406) |
 | EXTRACT-R8-R11.md | superpowers/magic symbolic refuse (#407) |
 | EXTRACT-R12-R16.md | sentient infra/arch language (#408) |
+| EXTRACT-ESSAYS-SI-SA-SOS.md | six essays, verified dates (#449) |
 | EXTRACT-R2-R17.md | twin-as-record (#409) |
 | EXTRACT-R18-R27.md | scale ladder (#410) |
 | EXTRACT-R28-R31.md | ocean/space/bio/governance (#411) |
@@ -23,6 +24,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | knowledge-skills.csv | listed domain rows; effects empty |
 | universal-realms.csv | named realms from the essays; effects empty |
 | scale-layers.csv | one row per layer; R#20 prohibited |
+| essay-sources.csv | SI/SA/SOS/GAIAN citations; effects empty |
 
 Refuse:
 - preference labels as soul or constitution
