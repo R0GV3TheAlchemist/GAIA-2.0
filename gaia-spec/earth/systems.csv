@@ -1,0 +1,10 @@
+system,variables,sources,models,cadence,phase
+atmosphere,"temp, wind, precip",stations,GraphCast/AIFS,6-hourly,2
+ocean,"SST, AMOC",Argo/NDBC,NEMO-stub,hours,2
+land,"cover, fire",Landsat/Sentinel,TerraMind-stub,30m-1m,2
+biosphere,"species, biome",GBIF,biodiversity-stub,days,2
+cryosphere,"ice, snow",ICESat-2,mass-stub,days,1
+lithosphere,quake,USGS,catalog,minutes,1
+anthroposphere,"cities, emissions",OSM,inventory-stub,days,2
+technosphere,"energy, transport",public stats,inventory-stub,hours,2
+magnetosphere,"storm, aurora",SWPC,space-stub,minutes,1
