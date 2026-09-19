@@ -1,0 +1,16 @@
+name,domain,cadence,license,latency
+Sentinel-1,space,hours-to-days,CC-BY-4.0,hours
+Sentinel-2,space,hours-to-days,CC-BY-4.0,hours
+Sentinel-3,space,hours-to-days,CC-BY-4.0,hours
+Sentinel-5P,space,hours-to-days,CC-BY-4.0,hours
+Sentinel-6,space,hours-to-days,CC-BY-4.0,hours
+Terra,space,hours-to-days,CC-BY-4.0,hours
+Aqua,space,hours-to-days,CC-BY-4.0,hours
+Landsat,space,hours-to-days,CC-BY-4.0,hours
+GRACE-FO,space,hours-to-days,CC-BY-4.0,hours
+ICESat-2,space,hours-to-days,CC-BY-4.0,hours
+Argo,ocean-insitu,hours,CC0-1.0,hours
+NDBC,ocean-insitu,hours,CC0-1.0,hours
+USGS,seismic,minutes,CC0-1.0,minutes
+EMSC,seismic,minutes,CC0-1.0,minutes
+GeoNet,seismic,minutes,CC0-1.0,minutes
