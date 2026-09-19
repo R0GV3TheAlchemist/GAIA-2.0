@@ -1,0 +1,5 @@
+id,hook,claim_class,effects,notes
+sched-cfs,cfs,listed-only,,name only
+sched-vram,vram,listed-only,,name only; no driver
+sched-npu,npu,listed-only,,name only; no driver
+sched-carbon,carbon,listed-only,,name only; no planetary actuator
