@@ -1,0 +1,4 @@
+id,model,published,gaia_measured,claim_class,effects,notes
+bench-local,local-llama-fixture,false,false,listed-only,,measured_vs_published: none-yet
+bench-gpt-ref,gpt-fixture,true,false,listed-only,,ClosedScoreClaim if claimed measured
+bench-claude-ref,claude-fixture,true,false,listed-only,,ClosedScoreClaim if claimed measured

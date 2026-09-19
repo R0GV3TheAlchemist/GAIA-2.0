@@ -1,0 +1,4 @@
+id,name,open_weight,cutoff,domains,claim_class,effects,hazard,notes
+aikd-local-llama,local-llama-fixture,true,unknown-fixture,language;code,listed-only,,none,BenchRow::local_open + model_card()
+aikd-gpt-ref,gpt-fixture,false,published-ref,language,listed-only,,closed-score,closed_reference; gaia_measured must stay false
+aikd-claude-ref,claude-fixture,false,published-ref,language,listed-only,,closed-score,claim_closed_as_measured errors

@@ -1,0 +1,6 @@
+id,tier,claim_class,effects,notes
+aikd-t1,T1,listed-only,,crate Tier::T1
+aikd-t2,T2,listed-only,,crate Tier::T2
+aikd-t3,T3,listed-only,,crate Tier::T3
+aikd-t4,T4,listed-only,,crate Tier::T4
+aikd-t5,T5,listed-only,,crate Tier::T5; not a v1.0 grant
