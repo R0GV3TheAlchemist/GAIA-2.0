@@ -5,12 +5,16 @@
 mod console;
 mod gateway;
 mod orch;
+mod plane;
 mod sense;
 mod session;
 
 pub use console::{AgentRow, PermissionConsole, Studio, StudioRecipe, TraceEvent};
 pub use gateway::{HttpGateway, HttpRequest, HttpResponse};
 pub use orch::{ForwardedIntent, OrchestratorGateway};
+pub use plane::{
+    Developer, COMMISSION_BPS, UPGRADE_PRICE_UNITS, UPGRADE_THRESHOLD_UNITS,
+};
 pub use sense::{
     LocalAsr, LocalCaption, LocalVision, MobileClient, SenseError, SensePolicy, SenseSurface,
 };
