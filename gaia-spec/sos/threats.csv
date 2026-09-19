@@ -1,0 +1,6 @@
+id,threat,claim_class,effects,notes
+threat-prompt-injection,prompt-injection,listed-only,,threats()[0]
+threat-capability-escalation,capability-escalation,listed-only,,unsigned/no-cap already refused
+threat-memory-poison,memory-poison,listed-only,,no live memory product
+threat-mitm,mitm,listed-only,,no live HTTP in this slice
+threat-supply-chain,supply-chain,listed-only,,stay on this repo until TSC
