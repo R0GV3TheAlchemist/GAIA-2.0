@@ -1,0 +1,25 @@
+predecessor_verb,reason_code,wire,disposition
+confirm first,ConfirmRequired,GAIA_ACP_CONFIRM_REQUIRED,map
+cap autonomy,AutonomyCap,GAIA_ACP_AUTONOMY_CAP,map
+no vault dump,VaultDumpDenied,GAIA_ACP_VAULT_DUMP_DENIED,map
+life-safety hold,LifeSafetyDenied,GAIA_ACP_LIFE_SAFETY_DENIED,map
+policy no,DefaultDeny,GAIA_ACP_DEFAULT_DENY,map
+stop,EmergencyStop,GAIA_ACP_EMERGENCY_STOP,map
+untrusted grant,UntrustedAuthority,GAIA_ACP_UNTRUSTED_AUTHORITY,map
+not listed,ToolNotListed,GAIA_ACP_TOOL_NOT_LISTED,map
+path off list,PathDenied,GAIA_ACP_PATH_DENIED,map
+host off list,HostDenied,GAIA_ACP_HOST_DENIED,map
+egress,EgressDenied,GAIA_ACP_EGRESS_DENIED,map
+replayed blessing,ApprovalReplay,GAIA_ACP_APPROVAL_REPLAY,map
+expired blessing,ApprovalExpired,GAIA_ACP_APPROVAL_EXPIRED,map
+peer commands peer,CrossAgent,GAIA_ACP_CROSS_AGENT,map
+identity mint,IdentityCreateDenied,GAIA_ACP_IDENTITY_CREATE_DENIED,map
+secret ride-along,SecretDenied,GAIA_ACP_SECRET_DENIED,map
+tier 4-5 act,TierForbidden,GAIA_ACP_TIER_FORBIDDEN,map
+discernment protocol,,,refuse_as_code
+coexistence laws,,,refuse_as_code
+harmonic alignment,,,refuse_as_code
+dimensional OS,,,refuse_as_code
+schumann authority,,,refuse_as_code
+consciousness state,,,refuse_as_code
+twin-as-person,,,refuse_as_code
