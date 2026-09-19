@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gaia.local/spec/gaian/envelope.schema.json",
+  "title": "GAIAN peer envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["did", "intent_id", "purpose", "raw_memory"],
+  "properties": {
+    "did": { "type": "string", "minLength": 1 },
+    "intent_id": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string", "minLength": 1 },
+    "raw_memory": { "const": false },
+    "specialist": { "type": "boolean" }
+  }
+}

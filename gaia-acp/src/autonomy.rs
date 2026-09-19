@@ -76,6 +76,8 @@ pub struct PeerEnvelope {
     pub intent_id: String,
     pub purpose: String,
     pub raw_memory: bool,
+    /// Specialist agents report only to Core (#220).
+    pub specialist: bool,
 }
 
 impl PeerEnvelope {
@@ -88,6 +90,12 @@ impl PeerEnvelope {
         }
         if self.purpose.eq_ignore_ascii_case("dump-vault") {
             return Err(ReasonCode::VaultDumpDenied);
+        }
+        if self.specialist {
+            let p = self.purpose.to_ascii_lowercase();
+            if p.contains("command") || p.contains("peer-direct") || p.contains("dump") {
+                return Err(ReasonCode::CrossAgent);
+            }
         }
         Ok(())
     }

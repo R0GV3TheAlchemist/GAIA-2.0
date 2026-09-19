@@ -1,0 +1,7 @@
+{
+  "did": "did:gaia:peer-b",
+  "intent_id": "intent-x",
+  "purpose": "report-core",
+  "raw_memory": false,
+  "specialist": true
+}
