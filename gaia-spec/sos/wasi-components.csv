@@ -1,0 +1,6 @@
+id,component,claim_class,effects,notes
+wasi-agent,agent,listed-only,,name only; no live runtime
+wasi-tool,tool,listed-only,,name only
+wasi-sensor,sensor,listed-only,,name only
+wasi-knowledge,knowledge,listed-only,,name only
+wasi-gaian,GAIAN,listed-only,,twin-as-record; not a person
