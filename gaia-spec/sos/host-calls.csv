@@ -1,0 +1,9 @@
+id,call,claim_class,effects,notes
+host-intent,intent,listed-only,,submit_intent
+host-context,context,listed-only,,HOST_CALLS
+host-invoke,invoke,listed-only,,HOST_CALLS
+host-observe,observe,listed-only,,HOST_CALLS
+host-sign,sign,listed-only,,design-only crypto
+host-verify,verify,listed-only,,design-only crypto
+host-declare,declare,listed-only,,HOST_CALLS
+host-learn,learn,listed-only,,learn(true) WeightRewrite

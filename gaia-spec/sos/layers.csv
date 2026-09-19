@@ -1,0 +1,10 @@
+id,layer,claim_class,effects,hazard,notes
+sos-l1,physical,listed-only,,none,spec name only
+sos-l2,sensor,listed-only,,none,spec name only
+sos-l3,data,listed-only,,none,spec name only
+sos-l4,memory,listed-only,,none,not live MemOS
+sos-l5,orchestration,listed-only,,none,not live slurm
+sos-l6,agent,listed-only,,none,WASI name only
+sos-l7,interface,listed-only,,none,spec name only
+sos-l8,governance,listed-only,,none,spec name only
+sos-l9,planetary-consciousness,prohibited,,sentience,not a runtime
