@@ -34,6 +34,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../hspd/ | declare-only vault profile (#463 / #141) |
 | ../sos/phase-0.md | SOS Phase 0 listed contracts (#465 / #191) |
 | ../sos/phase-1.md | SOS Phase 1 listed scheduler/MemOS/SFS (#467 / #192) |
+| ../sos/phase-2.md | SOS Phase 2 listed EACN/ColonyOS (#469 / #193) |
 
 Refuse:
 - preference labels as soul or constitution
