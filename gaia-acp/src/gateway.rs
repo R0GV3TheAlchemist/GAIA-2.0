@@ -114,6 +114,19 @@ impl ControlPlane {
         );
     }
 
+    /// Owner mid-task pause. Next invoke is denied until resume. Not a kill.
+    pub fn pause(&mut self, agent_id: &str) -> Result<(), ReasonCode> {
+        self.transition(PlaneState::Stopped, agent_id)
+    }
+
+    /// Resume only from Stopped. Killed stays dead.
+    pub fn resume(&mut self, agent_id: &str) -> Result<(), ReasonCode> {
+        if self.emergency_stop || self.state == PlaneState::Killed {
+            return Err(ReasonCode::EmergencyStop);
+        }
+        self.transition(PlaneState::ManifestIssued, agent_id)
+    }
+
     pub fn kill(&mut self, agent_id: &str) {
         self.emergency_stop = true;
         let _ = self.transition(PlaneState::Killed, agent_id);
