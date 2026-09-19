@@ -19,6 +19,8 @@ pub struct SimJob {
     pub horizon_days: u32,
     pub ensemble_size: u32,
     pub scale: GridScale,
+    pub cadence_secs: u64,
+    pub last_tick: u64,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,6 +30,24 @@ pub struct SimRun {
 }
 
 impl SimJob {
+    pub fn demo_now(region: &str, now: u64) -> Self {
+        Self {
+            mode: SimMode::WhatNow,
+            region: region.into(),
+            horizon_days: 0,
+            ensemble_size: 1,
+            scale: GridScale::Urban100m,
+            cadence_secs: 3600,
+            last_tick: now,
+        }
+    }
+
+    pub fn tick(&mut self, now: u64) {
+        if now >= self.last_tick + self.cadence_secs {
+            self.last_tick = now;
+        }
+    }
+
     pub fn run(&self, observations: &[Observation]) -> Result<SimRun, TwinError> {
         if self.region.trim().is_empty() || self.ensemble_size == 0 {
             return Err(TwinError::UnlabeledPoint);
