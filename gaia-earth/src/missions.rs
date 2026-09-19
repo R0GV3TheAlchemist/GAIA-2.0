@@ -31,18 +31,47 @@ pub struct MissionCatalog {
 
 impl MissionCatalog {
     pub fn seed() -> Self {
-        let space = ["Sentinel-1","Sentinel-2","Sentinel-3","Sentinel-5P","Sentinel-6","Terra","Aqua","Landsat","GRACE-FO","ICESat-2"];
+        let space = [
+            "Sentinel-1",
+            "Sentinel-2",
+            "Sentinel-3",
+            "Sentinel-5P",
+            "Sentinel-6",
+            "Terra",
+            "Aqua",
+            "Landsat",
+            "GRACE-FO",
+            "ICESat-2",
+        ];
         let ocean = ["Argo", "NDBC"];
         let seismic = ["USGS", "EMSC", "GeoNet"];
         let mut missions = Vec::new();
         for name in space {
-            missions.push(mission(name, MissionDomain::Space, "hours-to-days", "CC-BY-4.0", "hours"));
+            missions.push(mission(
+                name,
+                MissionDomain::Space,
+                "hours-to-days",
+                "CC-BY-4.0",
+                "hours",
+            ));
         }
         for name in ocean {
-            missions.push(mission(name, MissionDomain::OceanInSitu, "hours", "CC0-1.0", "hours"));
+            missions.push(mission(
+                name,
+                MissionDomain::OceanInSitu,
+                "hours",
+                "CC0-1.0",
+                "hours",
+            ));
         }
         for name in seismic {
-            missions.push(mission(name, MissionDomain::Seismic, "minutes", "CC0-1.0", "minutes"));
+            missions.push(mission(
+                name,
+                MissionDomain::Seismic,
+                "minutes",
+                "CC0-1.0",
+                "minutes",
+            ));
         }
         Self { missions }
     }
@@ -50,10 +79,18 @@ impl MissionCatalog {
         &self.missions
     }
     pub fn gaps() -> [CoverageGap; 3] {
-        [CoverageGap::DeepOcean, CoverageGap::Poles, CoverageGap::LowIncomeRegions]
+        [
+            CoverageGap::DeepOcean,
+            CoverageGap::Poles,
+            CoverageGap::LowIncomeRegions,
+        ]
     }
     pub fn tick(&mut self, now: u64) {
-        for domain in [MissionDomain::Space, MissionDomain::OceanInSitu, MissionDomain::Seismic] {
+        for domain in [
+            MissionDomain::Space,
+            MissionDomain::OceanInSitu,
+            MissionDomain::Seismic,
+        ] {
             if let Some(mission) = self.missions.iter_mut().find(|m| m.domain == domain) {
                 mission.last_tick = now;
             }
@@ -61,7 +98,13 @@ impl MissionCatalog {
     }
 }
 
-fn mission(name: &str, domain: MissionDomain, cadence: &str, license: &str, latency: &str) -> Mission {
+fn mission(
+    name: &str,
+    domain: MissionDomain,
+    cadence: &str,
+    license: &str,
+    latency: &str,
+) -> Mission {
     Mission {
         name: name.into(),
         domain,

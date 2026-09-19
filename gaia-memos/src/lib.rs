@@ -108,7 +108,9 @@ pub struct MemOs {
 }
 
 impl MemOs {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn put(&mut self, cube: MemCube) -> Uuid {
         let id = cube.id;
@@ -127,7 +129,9 @@ impl MemOs {
     }
 
     pub fn archive_by_content(&mut self, text: &str) -> usize {
-        let ids: Vec<Uuid> = self.cubes.iter()
+        let ids: Vec<Uuid> = self
+            .cubes
+            .iter()
             .filter(|(_, c)| c.content == text && c.lifecycle == Lifecycle::Active)
             .map(|(id, _)| *id)
             .collect();
@@ -167,13 +171,16 @@ impl MemOs {
             .collect();
         scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
         scored.truncate(k.max(1));
-        scored.into_iter().filter_map(|(s, id)| {
-            self.cubes.get_mut(&id).map(|c| {
-                c.access_count += 1;
-                c.importance = (c.importance + 0.05).min(1.0);
-                (s, c.clone())
+        scored
+            .into_iter()
+            .filter_map(|(s, id)| {
+                self.cubes.get_mut(&id).map(|c| {
+                    c.access_count += 1;
+                    c.importance = (c.importance + 0.05).min(1.0);
+                    (s, c.clone())
+                })
             })
-        }).collect()
+            .collect()
     }
 
     pub fn decay(&mut self, factor: f32) -> usize {
@@ -190,7 +197,9 @@ impl MemOs {
     pub fn migrate(&mut self) -> usize {
         let mut n = 0;
         for c in self.cubes.values_mut() {
-            if c.lifecycle != Lifecycle::Active { continue; }
+            if c.lifecycle != Lifecycle::Active {
+                continue;
+            }
             if c.importance >= 0.85 && matches!(c.tier, Tier::Activation | Tier::Working) {
                 c.tier = Tier::Episodic;
                 c.cube_type = CubeType::Episodic;
@@ -203,14 +212,26 @@ impl MemOs {
     }
 
     pub fn consolidate(&mut self) -> Option<MemCube> {
-        let episodic: Vec<MemCube> = self.cubes.values()
+        let episodic: Vec<MemCube> = self
+            .cubes
+            .values()
             .filter(|c| c.cube_type == CubeType::Episodic && c.lifecycle == Lifecycle::Active)
-            .cloned().collect();
-        if episodic.is_empty() { return None; }
-        let joined = episodic.iter().map(|c| c.content.as_str()).collect::<Vec<_>>().join(" | ");
+            .cloned()
+            .collect();
+        if episodic.is_empty() {
+            return None;
+        }
+        let joined = episodic
+            .iter()
+            .map(|c| c.content.as_str())
+            .collect::<Vec<_>>()
+            .join(" | ");
         let mut summary = MemCube::new(CubeType::Semantic, joined, "consolidate");
         summary.associations = episodic.iter().map(|c| c.id).collect();
-        summary.importance = episodic.iter().map(|c| c.importance).fold(0.0f32, |a, b| a.max(b));
+        summary.importance = episodic
+            .iter()
+            .map(|c| c.importance)
+            .fold(0.0f32, |a, b| a.max(b));
         for src in &episodic {
             if let Some(c) = self.cubes.get_mut(&src.id) {
                 c.lifecycle = Lifecycle::Archived;
@@ -227,11 +248,17 @@ impl MemOs {
 }
 
 fn terms(text: &str) -> Vec<String> {
-    text.to_lowercase().split(|c: char| !c.is_ascii_alphanumeric()).filter(|t| t.len() > 1).map(|t| t.to_string()).collect()
+    text.to_lowercase()
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|t| t.len() > 1)
+        .map(|t| t.to_string())
+        .collect()
 }
 
 fn term_overlap(a: &[String], b: &[String]) -> f32 {
-    if a.is_empty() || b.is_empty() { return 0.0; }
+    if a.is_empty() || b.is_empty() {
+        return 0.0;
+    }
     a.iter().filter(|t| b.contains(t)).count() as f32 / a.len() as f32
 }
 
@@ -242,9 +269,21 @@ mod tests {
     #[test]
     fn create_recall_archive_tiers() {
         let mut mem = MemOs::new();
-        mem.put(MemCube::new(CubeType::Activation, "current context window texas", "t1"));
-        mem.put(MemCube::new(CubeType::Plaintext, "working notes on weather", "t2"));
-        let eid = mem.put(MemCube::new(CubeType::Episodic, "episodic: talked about texas weather", "t3"));
+        mem.put(MemCube::new(
+            CubeType::Activation,
+            "current context window texas",
+            "t1",
+        ));
+        mem.put(MemCube::new(
+            CubeType::Plaintext,
+            "working notes on weather",
+            "t2",
+        ));
+        let eid = mem.put(MemCube::new(
+            CubeType::Episodic,
+            "episodic: talked about texas weather",
+            "t3",
+        ));
         assert!(mem.count_tier(Tier::Activation) >= 1);
         assert!(mem.count_tier(Tier::Working) >= 1);
         assert!(mem.count_tier(Tier::Episodic) >= 1);
@@ -255,7 +294,11 @@ mod tests {
         assert_eq!(mem.get(eid).unwrap().lifecycle, Lifecycle::Archived);
         mem.decay(0.5);
         if mem.consolidate().is_none() {
-            mem.put(MemCube::new(CubeType::Episodic, "another texas storm memory", "t4"));
+            mem.put(MemCube::new(
+                CubeType::Episodic,
+                "another texas storm memory",
+                "t4",
+            ));
             assert!(mem.consolidate().is_some());
         }
     }
@@ -280,7 +323,11 @@ mod tests {
     #[test]
     fn harness_a_to_b_keeps_cube_uuid() {
         let mut a = MemOs::new();
-        let id = a.put(MemCube::new(CubeType::Plaintext, "alice identity", "fixture"));
+        let id = a.put(MemCube::new(
+            CubeType::Plaintext,
+            "alice identity",
+            "fixture",
+        ));
         let dump = a.export_all();
         let mut b = MemOs::new();
         assert_eq!(b.import(dump), 1);

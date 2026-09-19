@@ -1,7 +1,7 @@
 //! #86 realm subjects and sourced candidate edges.
 //! INDIGENOUS_PARALLEL stays empty until a community grant exists.
 
-use crate::{REALMS, UkdError};
+use crate::{UkdError, REALMS};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subject {

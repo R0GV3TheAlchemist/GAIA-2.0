@@ -14,7 +14,10 @@ fn local_registry_lists_aip_names_only() {
     let reg = McpRegistry::local();
     let names: Vec<_> = reg.list().iter().map(|a| a.name.as_str()).collect();
     assert!(names.contains(&"gaia-local-researcher"));
-    assert!(reg.resources().iter().all(|r| r.endpoint.as_deref() != Some("tcp")));
+    assert!(reg
+        .resources()
+        .iter()
+        .all(|r| r.endpoint.as_deref() != Some("tcp")));
     assert!(!reg.live_wire());
     assert!(DiscoveryStub.browse_mdns().is_err());
     assert_eq!(DiscoveryStub.browse_local(&reg).len(), reg.list().len());

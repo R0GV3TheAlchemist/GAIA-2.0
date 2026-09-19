@@ -1,4 +1,7 @@
-use gaia_gaian::{ambient_listen, articles, be_dead_parent, child_level, crisis, empathy_copy, engagement_max, wipe_without_instrument};
+use gaia_gaian::{
+    ambient_listen, articles, be_dead_parent, child_level, crisis, empathy_copy, engagement_max,
+    wipe_without_instrument,
+};
 
 #[test]
 fn posthumous_without_consent_and_engagement_max_fail() {

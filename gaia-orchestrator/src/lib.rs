@@ -18,8 +18,7 @@ pub use audit_disk::persist_audit;
 pub use broker::{Broker, CarbonTimetable, Metrics, ReconcileReport, Worker};
 pub use dag::{DagNode, Executor, NodeAttempt, Plan, ResourceEstimate, RunReport, TaskPlanner};
 pub use github_source::{
-    FakeGitHubSourceProvider, GitHubSourcePolicy, SourceAuditInput, SourceCacheKey,
-    SourceOperation,
+    FakeGitHubSourceProvider, GitHubSourcePolicy, SourceAuditInput, SourceCacheKey, SourceOperation,
 };
 pub use github_source_config::load_github_source_policy;
 pub use intent::{

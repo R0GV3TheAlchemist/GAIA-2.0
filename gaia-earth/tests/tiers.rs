@@ -1,6 +1,4 @@
-use gaia_earth::{
-    MemoryTier, Observation, SourceKind, SystemTwin, TierCube, TierStore,
-};
+use gaia_earth::{MemoryTier, Observation, SourceKind, SystemTwin, TierCube, TierStore};
 
 fn synthetic_observation(value: f64, unit: &str) -> Observation {
     Observation::admit(
@@ -44,17 +42,11 @@ fn same_api_fetches_paleo_and_live_fixture_records() {
         .unwrap();
 
     assert_eq!(
-        store
-            .fetch("antarctica", MemoryTier::DeepTime)
-            .unwrap()
-            .id,
+        store.fetch("antarctica", MemoryTier::DeepTime).unwrap().id,
         "ice-core-co2-800kya"
     );
     assert_eq!(
-        store
-            .fetch("mauna-loa", MemoryTier::RealTime)
-            .unwrap()
-            .id,
+        store.fetch("mauna-loa", MemoryTier::RealTime).unwrap().id,
         "mauna-loa-co2-now"
     );
 }
@@ -125,11 +117,6 @@ fn duplicate_ids_are_rejected() {
         .unwrap();
 
     assert!(store
-        .put(cube(
-            "fixture-id",
-            MemoryTier::RealTime,
-            "mauna-loa",
-            425.0,
-        ))
+        .put(cube("fixture-id", MemoryTier::RealTime, "mauna-loa", 425.0,))
         .is_err());
 }

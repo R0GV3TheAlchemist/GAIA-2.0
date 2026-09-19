@@ -92,7 +92,10 @@ impl PortProfile {
 
     pub fn documented_build(self) -> String {
         let fp = self.footprint();
-        format!("rustup target add {} && cargo build -p gaia-kernel --target {}", fp.rustc_target, fp.rustc_target)
+        format!(
+            "rustup target add {} && cargo build -p gaia-kernel --target {}",
+            fp.rustc_target, fp.rustc_target
+        )
     }
 }
 

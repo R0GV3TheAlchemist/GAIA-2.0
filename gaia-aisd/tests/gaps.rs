@@ -1,4 +1,4 @@
-use gaia_aisd::{gap_nodes, realm_stubs, REALM_COUNT, REALMS};
+use gaia_aisd::{gap_nodes, realm_stubs, REALMS, REALM_COUNT};
 
 #[test]
 fn thirteen_realms_and_gaps_are_queryable() {

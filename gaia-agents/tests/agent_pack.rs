@@ -29,9 +29,15 @@ fn pack_lists_system_and_cognitive_agents() {
 fn gaia_agent_deploy_works_for_system_and_cognitive() {
     let mut host = AgentHost::new();
     let system = host.exec(&["agent", "deploy", "memory-manager"]).unwrap();
-    assert_eq!(system, "deployed system agent memory-manager intent=memcube.consolidate");
+    assert_eq!(
+        system,
+        "deployed system agent memory-manager intent=memcube.consolidate"
+    );
     let cognitive = host.exec(&["agent", "deploy", "researcher"]).unwrap();
-    assert_eq!(cognitive, "deployed cognitive agent researcher intent=research.question");
+    assert_eq!(
+        cognitive,
+        "deployed cognitive agent researcher intent=research.question"
+    );
     assert_eq!(host.deployed().len(), 2);
 }
 

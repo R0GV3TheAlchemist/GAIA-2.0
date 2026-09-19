@@ -1,4 +1,7 @@
-use gaia_sa::{biophilia, carbon_claim, consult, ingest_site, lbc_certified, live_culture, neuro_claim, palette, publish_site, rhino_required, sa_v1_tagged, sacred, tools, Packet};
+use gaia_sa::{
+    biophilia, carbon_claim, consult, ingest_site, lbc_certified, live_culture, neuro_claim,
+    palette, publish_site, rhino_required, sa_v1_tagged, sacred, tools, Packet,
+};
 
 #[test]
 fn tek_veto_no_rhino_no_lbc_no_live_culture() {

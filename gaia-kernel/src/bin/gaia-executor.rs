@@ -13,7 +13,10 @@ async fn main() {
     let principal = Principal::generate(PrincipalKind::Node);
     let exec = Executor::new(&principal, Capabilities::default(), broker);
     println!("gaia-executor node={}", exec.node_id);
-    println!("caps cpu={} gpu={} cuda={} rocm={} opencl={}", exec.caps.cpu_cores, exec.caps.gpu, exec.caps.cuda, exec.caps.rocm, exec.caps.opencl);
+    println!(
+        "caps cpu={} gpu={} cuda={} rocm={} opencl={}",
+        exec.caps.cpu_cores, exec.caps.gpu, exec.caps.cuda, exec.caps.rocm, exec.caps.opencl
+    );
     if let Some(task) = exec.pull_one() {
         println!("{}", exec.run_task(&task));
     } else {

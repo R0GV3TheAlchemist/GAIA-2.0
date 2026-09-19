@@ -64,11 +64,5 @@ impl AuditLog {
 }
 
 fn hash_record(r: &AuditRecord) -> String {
-    sha256_hex(
-        format!(
-            "{}:{}:{}:{}",
-            r.seq, r.payload_hash, r.op, r.signature_hex
-        )
-        .as_bytes(),
-    )
+    sha256_hex(format!("{}:{}:{}:{}", r.seq, r.payload_hash, r.op, r.signature_hex).as_bytes())
 }

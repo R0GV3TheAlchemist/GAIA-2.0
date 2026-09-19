@@ -73,11 +73,8 @@ impl Federation {
             did: principal.did(),
             region: region.into(),
         };
-        self.audit.append(
-            &principal,
-            "instance.spawn",
-            &format!("region={region}"),
-        );
+        self.audit
+            .append(&principal, "instance.spawn", &format!("region={region}"));
         self.instances.push((principal, instance.clone()));
         instance
     }

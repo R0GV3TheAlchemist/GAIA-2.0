@@ -149,27 +149,40 @@ impl<'a> PermissionConsole<'a> {
             recipes.push_str(&escape(&recipe.intent));
             recipes.push_str("</li>");
         }
-        let mut page = String::from("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
+        let mut page =
+            String::from("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">");
         page.push_str("<title>GAIA permission console</title>");
-        page.push_str("<style>body{background:#111;color:#eee;font-family:sans-serif;line-height:1.5;}");
+        page.push_str(
+            "<style>body{background:#111;color:#eee;font-family:sans-serif;line-height:1.5;}",
+        );
         page.push_str("a:focus,button:focus{outline:3px solid #ffd166;}");
         page.push_str("button{background:#222;color:#fff;border:2px solid #eee;}");
-        page.push_str("table{border-collapse:collapse;}td,th{border:1px solid #666;padding:0.4rem 0.6rem;}");
+        page.push_str(
+            "table{border-collapse:collapse;}td,th{border:1px solid #666;padding:0.4rem 0.6rem;}",
+        );
         page.push_str("</style></head><body>");
         page.push_str("<a href=\"#main\">Skip to content</a><main id=\"main\">");
         page.push_str("<h1>GAIA permission console</h1>");
         page.push_str("<section aria-labelledby=\"agents-h\"><h2 id=\"agents-h\">Agents</h2>");
-        page.push_str("<table><thead><tr><th>Agent</th><th>State</th><th>Control</th></tr></thead><tbody>");
+        page.push_str(
+            "<table><thead><tr><th>Agent</th><th>State</th><th>Control</th></tr></thead><tbody>",
+        );
         page.push_str(&agents);
         page.push_str("</tbody></table></section>");
-        page.push_str("<section aria-labelledby=\"matrix-h\"><h2 id=\"matrix-h\">Permission matrix</h2>");
-        page.push_str("<table><thead><tr><th>Agent</th><th>Capability</th><th>Grant</th></tr></thead><tbody>");
+        page.push_str(
+            "<section aria-labelledby=\"matrix-h\"><h2 id=\"matrix-h\">Permission matrix</h2>",
+        );
+        page.push_str(
+            "<table><thead><tr><th>Agent</th><th>Capability</th><th>Grant</th></tr></thead><tbody>",
+        );
         page.push_str(&matrix);
         page.push_str("</tbody></table></section>");
         page.push_str("<section aria-labelledby=\"trace-h\" aria-live=\"polite\"><h2 id=\"trace-h\">Intent stream</h2><ol>");
         page.push_str(&events);
         page.push_str("</ol></section>");
-        page.push_str("<section aria-labelledby=\"studio-h\"><h2 id=\"studio-h\">Studio recipes</h2><ul>");
+        page.push_str(
+            "<section aria-labelledby=\"studio-h\"><h2 id=\"studio-h\">Studio recipes</h2><ul>",
+        );
         page.push_str(&recipes);
         page.push_str("</ul></section></main></body></html>");
         page

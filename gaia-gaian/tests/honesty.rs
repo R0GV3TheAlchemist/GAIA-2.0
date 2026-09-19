@@ -1,4 +1,6 @@
-use gaia_gaian::honesty::{gaian_v1_tagged, live_flutter, live_ollama, live_vrm_runtime, live_whisper, medical_product};
+use gaia_gaian::honesty::{
+    gaian_v1_tagged, live_flutter, live_ollama, live_vrm_runtime, live_whisper, medical_product,
+};
 
 #[test]
 fn gaian_is_not_a_product() {

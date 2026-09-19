@@ -1,4 +1,6 @@
-use gaia_aikd::{gaia_certifies_usmle_or_bar, insurer_automation, professional_disclaimer, ScienceAnswer};
+use gaia_aikd::{
+    gaia_certifies_usmle_or_bar, insurer_automation, professional_disclaimer, ScienceAnswer,
+};
 
 #[test]
 fn science_cites_earth_twin_and_packs_are_not_licenses() {

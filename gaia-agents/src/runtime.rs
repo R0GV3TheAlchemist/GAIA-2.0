@@ -48,8 +48,14 @@ pub enum AgentOutcome {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RuntimeError {
-    UndeclaredCapability { agent: String, capability: Capability },
-    LimitRejected { agent: String, reason: String },
+    UndeclaredCapability {
+        agent: String,
+        capability: Capability,
+    },
+    LimitRejected {
+        agent: String,
+        reason: String,
+    },
 }
 
 /// Local policy harness. It executes fixture behaviors only and performs no I/O.
@@ -82,7 +88,9 @@ impl AgentRuntime {
             });
         }
         if manifest.limits.network_allowed
-            && !manifest.declared_capabilities.contains(&Capability::Network)
+            && !manifest
+                .declared_capabilities
+                .contains(&Capability::Network)
         {
             return Err(RuntimeError::LimitRejected {
                 agent: manifest.name.clone(),
@@ -90,8 +98,12 @@ impl AgentRuntime {
             });
         }
         if manifest.limits.filesystem_allowed
-            && !manifest.declared_capabilities.contains(&Capability::FilesystemRead)
-            && !manifest.declared_capabilities.contains(&Capability::FilesystemWrite)
+            && !manifest
+                .declared_capabilities
+                .contains(&Capability::FilesystemRead)
+            && !manifest
+                .declared_capabilities
+                .contains(&Capability::FilesystemWrite)
         {
             return Err(RuntimeError::LimitRejected {
                 agent: manifest.name.clone(),
@@ -122,6 +134,9 @@ impl AgentRuntime {
                 reason: "fixture crash isolated by runtime result boundary".into(),
             });
         }
-        Ok(AgentOutcome::Output(format!("hello from {}", manifest.name)))
+        Ok(AgentOutcome::Output(format!(
+            "hello from {}",
+            manifest.name
+        )))
     }
 }

@@ -54,8 +54,14 @@ fn accepted_plan_runs_all_local_nodes_and_audits_lifecycle() {
     assert!(audit.chain_ok());
     assert!(audit.events().iter().all(|e| e.intent_id == plan.intent_id));
     assert!(audit.events().iter().all(|e| e.plan_id == Some(plan.id)));
-    assert!(audit.events().iter().any(|e| e.event.starts_with("node-started:")));
-    assert!(audit.events().iter().any(|e| e.event.starts_with("node-completed:")));
+    assert!(audit
+        .events()
+        .iter()
+        .any(|e| e.event.starts_with("node-started:")));
+    assert!(audit
+        .events()
+        .iter()
+        .any(|e| e.event.starts_with("node-completed:")));
 }
 
 #[test]
@@ -65,11 +71,28 @@ fn killed_executor_requeues_and_remaining_specialist_completes() {
     plan.accept_verified(&signed).unwrap();
     let mut broker = Broker::new();
     let mut audit = TrustAudit::default();
-    let run = LocalRunner::run(&plan, &mut broker, &mut audit, &signed, Some("specialist-a")).unwrap();
+    let run = LocalRunner::run(
+        &plan,
+        &mut broker,
+        &mut audit,
+        &signed,
+        Some("specialist-a"),
+    )
+    .unwrap();
     assert_eq!(run.completed_jobs.len(), plan.nodes.len());
     assert_eq!(run.failed_over_jobs.len(), 1);
-    assert!(!broker.workers.iter().find(|w| w.id == "specialist-a").unwrap().alive);
-    assert!(audit.events().iter().any(|e| e.event.starts_with("node-failed-over:")));
+    assert!(
+        !broker
+            .workers
+            .iter()
+            .find(|w| w.id == "specialist-a")
+            .unwrap()
+            .alive
+    );
+    assert!(audit
+        .events()
+        .iter()
+        .any(|e| e.event.starts_with("node-failed-over:")));
     assert!(audit.events().iter().any(|e| {
         e.executor_id.as_deref() == Some("specialist-b") && e.event.starts_with("node-completed:")
     }));
@@ -85,16 +108,9 @@ fn active_gap_lock_blocks_before_queue_or_node_dispatch() {
     let mut broker = Broker::new();
     let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
 
-    let err = LocalRunner::run_with_gate(
-        &plan,
-        &mut broker,
-        &mut audit,
-        &signed,
-        &gate,
-        false,
-        None,
-    )
-    .unwrap_err();
+    let err =
+        LocalRunner::run_with_gate(&plan, &mut broker, &mut audit, &signed, &gate, false, None)
+            .unwrap_err();
 
     assert!(err.contains("GAIA_GAP_LOCK_ACTIVE"));
     assert!(broker.queue.is_empty());
@@ -116,19 +132,15 @@ fn local_dev_control_plane_unavailability_audits_and_runs() {
     let mut broker = Broker::new();
     let mut audit = TrustAudit::default();
 
-    let run = LocalRunner::run_with_gate(
-        &plan,
-        &mut broker,
-        &mut audit,
-        &signed,
-        &gate,
-        false,
-        None,
-    )
-    .unwrap();
+    let run =
+        LocalRunner::run_with_gate(&plan, &mut broker, &mut audit, &signed, &gate, false, None)
+            .unwrap();
 
     assert_eq!(run.completed_jobs.len(), plan.nodes.len());
-    assert!(audit.events().iter().any(|e| e.event.starts_with("node-started:")));
+    assert!(audit
+        .events()
+        .iter()
+        .any(|e| e.event.starts_with("node-started:")));
     assert_eq!(audit.kernel_len(), plan.nodes.len() * 2);
     assert!(audit.chain_ok());
 }
@@ -143,16 +155,9 @@ fn deployed_control_plane_unavailability_blocks_before_dispatch() {
     let mut broker = Broker::new();
     let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
 
-    let err = LocalRunner::run_with_gate(
-        &plan,
-        &mut broker,
-        &mut audit,
-        &signed,
-        &gate,
-        true,
-        None,
-    )
-    .unwrap_err();
+    let err =
+        LocalRunner::run_with_gate(&plan, &mut broker, &mut audit, &signed, &gate, true, None)
+            .unwrap_err();
 
     assert!(err.contains("GAIA_CONTROL_PLANE_UNAVAILABLE"));
     assert!(broker.queue.is_empty());

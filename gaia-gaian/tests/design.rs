@@ -1,4 +1,7 @@
-use gaia_gaian::{default_level, dump_vault, forget, infer_from_photo, migrate, model_swap, pay_at_level, Identity};
+use gaia_gaian::{
+    default_level, dump_vault, forget, infer_from_photo, migrate, model_swap, pay_at_level,
+    Identity,
+};
 
 #[test]
 fn id_survives_swap_photo_not_inferred_default_l1() {

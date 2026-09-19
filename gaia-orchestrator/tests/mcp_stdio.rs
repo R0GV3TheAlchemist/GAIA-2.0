@@ -74,7 +74,11 @@ fn stdio_rejects_malformed_json_before_dispatch() {
 #[test]
 fn durable_session_file_roundtrip_keeps_signature_gate() {
     let mut reg = McpRegistry::local();
-    let unsigned = reg.handle(JsonRpcRequest::unsigned(3, "tools/call", "research.summarize"));
+    let unsigned = reg.handle(JsonRpcRequest::unsigned(
+        3,
+        "tools/call",
+        "research.summarize",
+    ));
     assert!(unsigned.error.as_ref().unwrap().contains("unsigned"));
 
     let signer = IntentSigner::generate();

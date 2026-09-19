@@ -56,7 +56,9 @@ impl WasmRuntime {
                         .declared_capabilities
                         .contains(&Capability::FilesystemWrite)),
             network: manifest.limits.network_allowed
-                && manifest.declared_capabilities.contains(&Capability::Network),
+                && manifest
+                    .declared_capabilities
+                    .contains(&Capability::Network),
         }
     }
 
@@ -107,10 +109,11 @@ impl WasmRuntime {
         manifest: &AgentManifest,
         wat: &str,
     ) -> Result<WasmOutcome, RuntimeError> {
-        let module = Module::new(&self.engine, wat).map_err(|error| RuntimeError::LimitRejected {
-            agent: manifest.name.clone(),
-            reason: format!("module rejected: {error}"),
-        })?;
+        let module =
+            Module::new(&self.engine, wat).map_err(|error| RuntimeError::LimitRejected {
+                agent: manifest.name.clone(),
+                reason: format!("module rejected: {error}"),
+            })?;
         self.enforce_wasi_grants(manifest, &module)?;
 
         let mut linker = Linker::new(&self.engine);
@@ -122,7 +125,8 @@ impl WasmRuntime {
                     if ptr < 0 || len < 0 {
                         return;
                     }
-                    let Some(memory) = caller.get_export("memory").and_then(|e| e.into_memory()) else {
+                    let Some(memory) = caller.get_export("memory").and_then(|e| e.into_memory())
+                    else {
                         return;
                     };
                     let data = memory.data(&caller);
@@ -158,10 +162,12 @@ impl WasmRuntime {
         );
         store.limiter(|state| &mut state.limits);
         let fuel = manifest.limits.cpu_millis.saturating_mul(10_000);
-        store.set_fuel(fuel).map_err(|error| RuntimeError::LimitRejected {
-            agent: manifest.name.clone(),
-            reason: format!("fuel rejected: {error}"),
-        })?;
+        store
+            .set_fuel(fuel)
+            .map_err(|error| RuntimeError::LimitRejected {
+                agent: manifest.name.clone(),
+                reason: format!("fuel rejected: {error}"),
+            })?;
 
         let instance = match linker.instantiate(&mut store, &module) {
             Ok(instance) => instance,

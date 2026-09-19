@@ -28,8 +28,13 @@ pub use live_trace::{
 pub use manifest::{CapabilityManifest, IdentityKind, PrincipalId, RevocationList};
 pub use policy::{PolicyDecision, PolicyEngine, POLICY_VERSION};
 pub use registry::{LocalAip, LocalRegistry};
-pub use sandbox::{classify_destination, classify_rebinding_host, classify_redirect, EgressClass, SandboxProfile};
-pub use trace::{execution_allowed, from_invoke, refuse_live_supabase, ClaimClass, GapLock, GateMode, MemoryTraceSink, TraceEvent, TraceKind, TraceSink};
+pub use sandbox::{
+    classify_destination, classify_rebinding_host, classify_redirect, EgressClass, SandboxProfile,
+};
+pub use trace::{
+    execution_allowed, from_invoke, refuse_live_supabase, ClaimClass, GapLock, GateMode,
+    MemoryTraceSink, TraceEvent, TraceKind, TraceSink,
+};
 pub use types::{
     ActionClass, ProposedAction, ReasonCode, RiskTier, SignedIntent, TrustedPolicy,
     UntrustedContent, UntrustedToolOutput,

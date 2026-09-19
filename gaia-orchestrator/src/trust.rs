@@ -171,19 +171,15 @@ impl TrustAudit {
         let detail = format!(
             "intent={} plan={} executor={} event={}",
             intent_id,
-            plan_id.map(|id| id.to_string()).unwrap_or_else(|| "-".into()),
+            plan_id
+                .map(|id| id.to_string())
+                .unwrap_or_else(|| "-".into()),
             executor_id.unwrap_or("-"),
             event
         );
         self.log.append(&self.principal, "orchestrator", &detail);
         self.events.push(entry.clone());
-        let trace = TraceEvent::classify(
-            &event,
-            intent_id,
-            plan_id,
-            executor_id,
-            entry.sequence,
-        );
+        let trace = TraceEvent::classify(&event, intent_id, plan_id, executor_id, entry.sequence);
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             self.sink.emit(trace);
         }));

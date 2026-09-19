@@ -3,7 +3,10 @@ use gaia_earth::*;
 #[test]
 fn same_scenario_from_api_and_ui() {
     let id = "net-zero by 2040";
-    assert_eq!(ScientistApi::scenario(id).unwrap(), PolicyUi::scenario(id).unwrap());
+    assert_eq!(
+        ScientistApi::scenario(id).unwrap(),
+        PolicyUi::scenario(id).unwrap()
+    );
 }
 
 #[test]

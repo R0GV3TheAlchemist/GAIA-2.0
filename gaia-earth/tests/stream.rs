@@ -4,8 +4,14 @@ use gaia_earth::*;
 fn poison_goes_to_dead_letter_not_invented() {
     let mut bus = StreamBus::new();
     assert_eq!(
-        bus.publish(SystemTwin::Atmosphere, SourceKind::Measured, 12.0, None, "degC")
-            .unwrap_err(),
+        bus.publish(
+            SystemTwin::Atmosphere,
+            SourceKind::Measured,
+            12.0,
+            None,
+            "degC"
+        )
+        .unwrap_err(),
         TwinError::MissingUncertainty
     );
     assert_eq!(bus.dead_letters().len(), 1);
@@ -15,10 +21,22 @@ fn poison_goes_to_dead_letter_not_invented() {
 #[test]
 fn checkpoint_survives_restart_without_silent_loss() {
     let mut bus = StreamBus::new();
-    bus.publish(SystemTwin::Atmosphere, SourceKind::Synthetic, 21.0, Some(0.3), "degC")
-        .unwrap();
-    bus.publish(SystemTwin::Ocean, SourceKind::Synthetic, 18.0, Some(0.2), "degC")
-        .unwrap();
+    bus.publish(
+        SystemTwin::Atmosphere,
+        SourceKind::Synthetic,
+        21.0,
+        Some(0.3),
+        "degC",
+    )
+    .unwrap();
+    bus.publish(
+        SystemTwin::Ocean,
+        SourceKind::Synthetic,
+        18.0,
+        Some(0.2),
+        "degC",
+    )
+    .unwrap();
     assert_eq!(bus.metrics().lag(), 2);
     let saved = bus.checkpoint();
     let mut restored = StreamBus::restore(saved);

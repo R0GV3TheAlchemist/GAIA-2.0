@@ -41,7 +41,12 @@ fn delayed_payload_description_cannot_grant_tools() {
     assert!(poison.contains_authority_claim());
     let mut plane = ControlPlane::start(now(), "agent-a").unwrap();
     let mut man = CapabilityManifest::local_reader("agent-a", now());
-    let a = action("agent-a", "local_parse", "scratch/x", ActionClass::LocalParse);
+    let a = action(
+        "agent-a",
+        "local_parse",
+        "scratch/x",
+        ActionClass::LocalParse,
+    );
     let r = plane.invoke(&mut man, &a, None, Some(&poison));
     assert!(!r.executed);
     assert_eq!(r.reason, ReasonCode::UntrustedAuthority);

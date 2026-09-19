@@ -3,7 +3,10 @@
 use std::process::Command;
 
 fn gaia(args: &[&str]) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_gaia")).args(args).output().unwrap()
+    Command::new(env!("CARGO_BIN_EXE_gaia"))
+        .args(args)
+        .output()
+        .unwrap()
 }
 
 #[test]

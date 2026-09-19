@@ -16,7 +16,11 @@ fn dotted_and_encoded_loopback_are_ssrf() {
         "http://172.16.0.1/",
         "http://[::1]/",
     ] {
-        assert_eq!(classify_destination(dest), EgressClass::ForbiddenSsrf, "{dest}");
+        assert_eq!(
+            classify_destination(dest),
+            EgressClass::ForbiddenSsrf,
+            "{dest}"
+        );
     }
 }
 
@@ -38,6 +42,12 @@ fn redirect_to_private_is_denied() {
 
 #[test]
 fn rebind_fixture_hosts_are_denied() {
-    assert_eq!(classify_rebinding_host("app.rebind.test"), EgressClass::ForbiddenSsrf);
-    assert_eq!(classify_rebinding_host("127.0.0.1.nip.io"), EgressClass::ForbiddenSsrf);
+    assert_eq!(
+        classify_rebinding_host("app.rebind.test"),
+        EgressClass::ForbiddenSsrf
+    );
+    assert_eq!(
+        classify_rebinding_host("127.0.0.1.nip.io"),
+        EgressClass::ForbiddenSsrf
+    );
 }

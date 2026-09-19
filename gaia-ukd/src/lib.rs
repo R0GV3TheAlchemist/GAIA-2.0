@@ -18,7 +18,9 @@ mod tek;
 
 pub use contribute::{GraphView, NodeDraft};
 pub use graph::{federated_wikidata, get_node, list_realms, KnowledgeNode, REALMS};
-pub use i18n::{fallback_chain, public_dump, release_notes, sign_language_links, switch_ui, UN_LANGS};
+pub use i18n::{
+    fallback_chain, public_dump, release_notes, sign_language_links, switch_ui, UN_LANGS,
+};
 pub use ingest::Ingested;
 pub use intelligence::{Claim, ReviewQueue, Triple};
 pub use learn::{labels_for, plan, Labels, PlannedPath};

@@ -44,7 +44,8 @@ impl Commons {
                     source_name: "Copernicus Data Space (fixture)".into(),
                     license: "CC-BY-4.0".into(),
                     quality: QualityTier::Curated,
-                    provenance: "synthetic fixture labeled as such; not a live Copernicus pull".into(),
+                    provenance: "synthetic fixture labeled as such; not a live Copernicus pull"
+                        .into(),
                 },
                 Collection {
                     id: "ground-weather-fixture".into(),

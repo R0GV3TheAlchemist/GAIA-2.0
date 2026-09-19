@@ -1,4 +1,6 @@
-use gaia_ukd::{public_dump, release_notes, sign_language_links, switch_ui, ukd_v1_tagged, UN_LANGS};
+use gaia_ukd::{
+    public_dump, release_notes, sign_language_links, switch_ui, ukd_v1_tagged, UN_LANGS,
+};
 
 #[test]
 fn six_un_languages_and_no_v1() {

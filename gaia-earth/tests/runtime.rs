@@ -24,7 +24,10 @@ fn what_next_writes_ensemble_members() {
     };
     let run = job.run(&[]).unwrap();
     assert_eq!(run.members.len(), 3);
-    assert!(run.members.iter().all(|m| m.source == SourceKind::Synthetic));
+    assert!(run
+        .members
+        .iter()
+        .all(|m| m.source == SourceKind::Synthetic));
 }
 
 #[test]

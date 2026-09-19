@@ -19,7 +19,8 @@ impl BenchRow {
     }
 
     pub fn closed_reference(name: &str) -> Result<Self, AikdError> {
-        if name.to_ascii_lowercase().contains("gpt") || name.to_ascii_lowercase().contains("claude") {
+        if name.to_ascii_lowercase().contains("gpt") || name.to_ascii_lowercase().contains("claude")
+        {
             return Ok(Self {
                 model: name.into(),
                 published: true,
@@ -34,7 +35,8 @@ impl BenchRow {
     }
 
     pub fn claim_closed_as_measured(name: &str) -> Result<Self, AikdError> {
-        if name.to_ascii_lowercase().contains("gpt") || name.to_ascii_lowercase().contains("claude") {
+        if name.to_ascii_lowercase().contains("gpt") || name.to_ascii_lowercase().contains("claude")
+        {
             return Err(AikdError::ClosedScoreClaim);
         }
         Err(AikdError::ClosedScoreClaim)

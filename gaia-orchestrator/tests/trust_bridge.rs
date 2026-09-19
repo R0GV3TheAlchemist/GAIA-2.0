@@ -46,8 +46,18 @@ fn audit_binds_intent_plan_and_executor_append_only() {
     let graph = intent();
     let plan = TaskPlanner::from_intent(&graph);
     let mut audit = TrustAudit::default();
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "node-started");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "node-completed");
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "node-started",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "node-completed",
+    );
     assert_eq!(audit.events().len(), 2);
     assert_eq!(audit.kernel_len(), 2);
     assert!(audit.chain_ok());
@@ -55,5 +65,8 @@ fn audit_binds_intent_plan_and_executor_append_only() {
     assert_eq!(audit.events()[1].sequence, 2);
     assert_eq!(audit.events()[0].intent_id, graph.id);
     assert_eq!(audit.events()[0].plan_id, Some(plan.id));
-    assert_eq!(audit.events()[0].executor_id.as_deref(), Some("specialist-a"));
+    assert_eq!(
+        audit.events()[0].executor_id.as_deref(),
+        Some("specialist-a")
+    );
 }

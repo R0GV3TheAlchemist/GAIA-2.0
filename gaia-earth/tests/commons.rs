@@ -37,9 +37,7 @@ fn every_collection_has_license_provenance_and_tier() {
 
 #[test]
 fn stac_item_is_shaped_and_not_a_live_catalog() {
-    let item = Commons::seed()
-        .stac_item("sentinel-2-l1c-fixture")
-        .unwrap();
+    let item = Commons::seed().stac_item("sentinel-2-l1c-fixture").unwrap();
     assert!(item.contains("stac_version"));
     assert!(item.contains("synthetic fixture"));
 }

@@ -11,7 +11,9 @@ mod session;
 pub use console::{AgentRow, PermissionConsole, Studio, StudioRecipe, TraceEvent};
 pub use gateway::{HttpGateway, HttpRequest, HttpResponse};
 pub use orch::{ForwardedIntent, OrchestratorGateway};
-pub use sense::{LocalAsr, LocalCaption, LocalVision, MobileClient, SenseError, SensePolicy, SenseSurface};
+pub use sense::{
+    LocalAsr, LocalCaption, LocalVision, MobileClient, SenseError, SensePolicy, SenseSurface,
+};
 pub use session::{
     AgentState, AuditLine, IntentRecord, MemoryNote, Permission, Profile, Session, SessionError,
 };

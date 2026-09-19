@@ -38,8 +38,8 @@ struct Audit {
 /// Validates a local source-policy document and returns the hardened,
 /// read-only policy used by the local fake source provider.
 pub fn load_github_source_policy(json: &str) -> Result<GitHubSourcePolicy, String> {
-    let config: SourcePolicyConfig =
-        serde_json::from_str(json).map_err(|error| format!("invalid source policy JSON: {error}"))?;
+    let config: SourcePolicyConfig = serde_json::from_str(json)
+        .map_err(|error| format!("invalid source policy JSON: {error}"))?;
 
     if config.schema_version != "1.0" {
         return Err("unsupported source policy schema version".into());

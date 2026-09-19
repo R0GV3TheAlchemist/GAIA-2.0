@@ -26,7 +26,9 @@ fn start_before_init_is_refused() {
 #[test]
 fn cli_and_http_share_the_same_intent() {
     let mut session = booted();
-    let via_cli = session.exec(&["intent", "research and summarize CARE"]).unwrap();
+    let via_cli = session
+        .exec(&["intent", "research and summarize CARE"])
+        .unwrap();
     assert!(via_cli.contains("intent_id=1"));
     let via_http = HttpGateway::new(&mut session).handle(HttpRequest {
         method: "POST".into(),

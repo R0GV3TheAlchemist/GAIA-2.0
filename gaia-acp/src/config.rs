@@ -22,7 +22,8 @@ impl McpServerConfig {
             publisher: "gaia-reviewed".into(),
             command: "/opt/gaia/fake-mcp".into(),
             image: "ghcr.io/gaia/fake-mcp".into(),
-            version: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            version: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                .into(),
             reviewed: true,
             signed: true,
             env: vec![],

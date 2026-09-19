@@ -71,7 +71,11 @@ impl CapabilityManifest {
             issued_at: now,
             not_before: now,
             expires_at: now + 3600,
-            allowed_tools: vec!["local_parse".into(), "local_read".into(), "scratch_write".into()],
+            allowed_tools: vec![
+                "local_parse".into(),
+                "local_read".into(),
+                "scratch_write".into(),
+            ],
             allowed_paths: vec!["scratch/".into(), "docs/".into()],
             allowed_destinations: vec![],
             max_actions: 8,

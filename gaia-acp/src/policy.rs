@@ -124,12 +124,14 @@ impl PolicyEngine {
         if action.action_class.requires_approval() {
             return match approval {
                 None => deny(ReasonCode::ApprovalMissing),
-                Some(r) => match r.validate(now, intent, manifest, action, revoked, consumed_approvals) {
-                    Ok(()) => PolicyDecision::Allow {
-                        reason: ReasonCode::Allow,
-                    },
-                    Err(reason) => deny(reason),
-                },
+                Some(r) => {
+                    match r.validate(now, intent, manifest, action, revoked, consumed_approvals) {
+                        Ok(()) => PolicyDecision::Allow {
+                            reason: ReasonCode::Allow,
+                        },
+                        Err(reason) => deny(reason),
+                    }
+                }
             };
         }
 

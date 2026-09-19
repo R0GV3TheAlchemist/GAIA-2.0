@@ -1,4 +1,8 @@
-use gaia_sos::{adopted_module_count, live_mcp, live_owm, map_concept, maturity, mcre_suite_restored, refuse_archive_exec, refuse_consciousness_runtime, second_kernel, sentience, virelai_736_claimed, Grade};
+use gaia_sos::{
+    adopted_module_count, live_mcp, live_owm, map_concept, maturity, mcre_suite_restored,
+    refuse_archive_exec, refuse_consciousness_runtime, second_kernel, sentience,
+    virelai_736_claimed, Grade,
+};
 
 #[test]
 fn transfer_is_evidence_not_a_kernel() {

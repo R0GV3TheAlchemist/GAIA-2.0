@@ -20,7 +20,10 @@ fn e2e_stub_bind_sign_run_failover_writes_audit_file() {
 
     let mut plan = TaskPlanner::from_intent(&graph);
     bind_plan_to_registry(&mut plan, &McpRegistry::local()).unwrap();
-    assert!(plan.nodes.iter().all(|n| n.agent == "gaia-local-researcher"));
+    assert!(plan
+        .nodes
+        .iter()
+        .all(|n| n.agent == "gaia-local-researcher"));
     plan.accept();
 
     let mut broker = Broker::new();

@@ -1,7 +1,13 @@
 use gaia_gaian::{age_other_person, compare, Consent, GaianError, Sketch};
 
 fn adult() -> Consent {
-    Consent { subject_is_self: true, age_years: 34, self_consent: true, parental_consent: false, health_opt_in: false }
+    Consent {
+        subject_is_self: true,
+        age_years: 34,
+        self_consent: true,
+        parental_consent: false,
+        health_opt_in: false,
+    }
 }
 
 #[test]

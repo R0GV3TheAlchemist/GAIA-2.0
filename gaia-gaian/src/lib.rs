@@ -19,13 +19,19 @@ mod vault;
 mod voice;
 mod wardrobe;
 
-pub use agency::{ScopedAgent, Scope};
+pub use agency::{Scope, ScopedAgent};
 pub use agent::{gaian_release_checklist, Agent, AgentAct, Grant};
 pub use capture::{equity_eval_labels, server_face_store, CaptureSession};
 pub use channel::{Channel, ChannelCap, Envelope};
 pub use cognition::{g2g_send, DigitalMe, MemoryTier, Persona, PersonalMemory};
-pub use constitution::{ambient_listen, articles, be_dead_parent, child_level, crisis, empathy_copy, engagement_max, wipe_without_instrument, CharterError};
-pub use design::{default_level, dump_vault, forget, infer_from_photo, migrate, model_swap, pay_at_level, Identity};
+pub use constitution::{
+    ambient_listen, articles, be_dead_parent, child_level, crisis, empathy_copy, engagement_max,
+    wipe_without_instrument, CharterError,
+};
+pub use design::{
+    default_level, dump_vault, forget, infer_from_photo, migrate, model_swap, pay_at_level,
+    Identity,
+};
 pub use digital::{DigitalVault, KnowKind};
 pub use future::{age_other_person, compare, Sketch};
 pub use health::{age_progress_own, future_self, HealthMetric, HealthTwin};
@@ -106,7 +112,9 @@ impl std::fmt::Display for GaianError {
             Self::NotSelf => write!(f, "reconstruction is self-only"),
             Self::HealthNotOptIn => write!(f, "health is opt-in only"),
             Self::ThirdPartyLikeness => write!(f, "no third-party likeness"),
-            Self::BehavioralLearningBlocked => write!(f, "child path cannot enable behavioral learning"),
+            Self::BehavioralLearningBlocked => {
+                write!(f, "child path cannot enable behavioral learning")
+            }
             Self::HealthDefaultOff => write!(f, "health twin defaults off"),
             Self::ExportForbidden => write!(f, "insurer/employer export is forbidden"),
             Self::NotMedicalAdvice => write!(f, "future self is advisory, not medical advice"),

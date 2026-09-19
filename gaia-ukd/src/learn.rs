@@ -61,7 +61,11 @@ pub fn plan(goal: &str, known: &[&str]) -> Result<PlannedPath, UkdError> {
         eta = eta.saturating_add(hours);
         steps.push(PathNode {
             id: (*id).into(),
-            bloom: if i == 0 { "understand".into() } else { "apply".into() },
+            bloom: if i == 0 {
+                "understand".into()
+            } else {
+                "apply".into()
+            },
             difficulty: (i as u8) + 2,
             eta_hours: hours,
             resource: Resource {

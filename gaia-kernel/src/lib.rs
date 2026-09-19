@@ -51,13 +51,19 @@ mod tests {
         assert_eq!(intent.state, "admitted");
 
         let obj = host
-            .store_file("docs/note.txt", b"gaia semantic file about texas weather", "keep notes")
+            .store_file(
+                "docs/note.txt",
+                b"gaia semantic file about texas weather",
+                "keep notes",
+            )
             .unwrap();
         assert_eq!(obj.cid.len(), 64);
         let hits = host.sfs.search("texas weather", 2);
         assert!(!hits.is_empty());
 
-        let cube = host.write_cube("episodic: talked about texas weather").unwrap();
+        let cube = host
+            .write_cube("episodic: talked about texas weather")
+            .unwrap();
         let recalled = host.context("texas weather").unwrap();
         assert!(!recalled.content.is_empty());
         let _ = cube;

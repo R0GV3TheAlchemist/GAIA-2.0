@@ -41,7 +41,9 @@ fn sim_six_proofs() {
     )
     .unwrap();
     assert!(
-        c.ask_history("CARE").iter().any(|e| e.text.contains("CARE")),
+        c.ask_history("CARE")
+            .iter()
+            .any(|e| e.text.contains("CARE")),
         "P2 fts"
     );
     assert!(!mem.recall("CARE", 3).is_empty(), "P2 cube");
@@ -53,7 +55,11 @@ fn sim_six_proofs() {
 
     // P4 A→B same UUID
     let mut a = MemOs::new();
-    let id = a.put(MemCube::new(CubeType::Plaintext, "alice identity", "fixture"));
+    let id = a.put(MemCube::new(
+        CubeType::Plaintext,
+        "alice identity",
+        "fixture",
+    ));
     let mut b = MemOs::new();
     assert_eq!(b.import(a.export_all()), 1, "P4 import");
     let restored = b.get(id).unwrap();

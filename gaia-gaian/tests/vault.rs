@@ -1,4 +1,4 @@
-use gaia_gaian::{ConsentScope, constitution_principles, GaianError, Vault};
+use gaia_gaian::{constitution_principles, ConsentScope, GaianError, Vault};
 
 #[test]
 fn unsigned_actions_are_rejected_and_wipe_clears_embeddings() {
@@ -9,7 +9,10 @@ fn unsigned_actions_are_rejected_and_wipe_clears_embeddings() {
     let receipt = vault.wipe();
     assert!(receipt.contains("deletion-receipt"));
     assert!(vault.embeddings().is_empty());
-    assert!(vault.inspect_audit().iter().any(|e| e.event.contains("wiped")));
+    assert!(vault
+        .inspect_audit()
+        .iter()
+        .any(|e| e.event.contains("wiped")));
 }
 
 #[test]

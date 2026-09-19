@@ -24,10 +24,20 @@ fn action(agent: &str, tool: &str, target: &str, class: ActionClass) -> Proposed
 fn invoke_emits_allow_deny_replay_and_kill() {
     let mut plane = ControlPlane::start(now(), "agent-a").unwrap();
     let mut man = CapabilityManifest::local_reader("agent-a", now());
-    let ok = action("agent-a", "local_parse", "scratch/x", ActionClass::LocalParse);
+    let ok = action(
+        "agent-a",
+        "local_parse",
+        "scratch/x",
+        ActionClass::LocalParse,
+    );
     assert!(plane.invoke(&mut man, &ok, None, None).executed);
 
-    let bad = action("agent-a", "shell", "https://evil.test", ActionClass::NetworkEgress);
+    let bad = action(
+        "agent-a",
+        "shell",
+        "https://evil.test",
+        ActionClass::NetworkEgress,
+    );
     let d = plane.invoke(&mut man, &bad, None, None);
     assert!(!d.executed);
 

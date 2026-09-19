@@ -17,20 +17,62 @@ pub struct RevivalMap {
 }
 
 const MAP: &[RevivalMap] = &[
-    RevivalMap { concept: "HAL", gaia: "gaia-sos HalTier T0-T4", grade: Grade::Specified },
-    RevivalMap { concept: "Saela", gaia: "gaia-orchestrator intent + gaia-interface", grade: Grade::Prototyped },
-    RevivalMap { concept: "policy-consent", gaia: "gaia-geometry Gate + gaia-gaian consent", grade: Grade::Prototyped },
-    RevivalMap { concept: "orchestrator", gaia: "gaia-orchestrator DAG/broker/MCP AT-01-06", grade: Grade::Tested },
-    RevivalMap { concept: "audit-chain", gaia: "gaia-kernel AuditLog + TrustAudit", grade: Grade::Tested },
-    RevivalMap { concept: "capability-token", gaia: "gaia-sos Capability revoke", grade: Grade::Specified },
-    RevivalMap { concept: "MCRE-2000", gaia: "not restored; suite absent", grade: Grade::Conceptual },
-    RevivalMap { concept: "weather-OWM", gaia: "refused live connector", grade: Grade::Conceptual },
-    RevivalMap { concept: "736-modules", gaia: "workspace crates only", grade: Grade::Conceptual },
-    RevivalMap { concept: "spirit-consciousness", gaia: "ontology only; no runtime", grade: Grade::Conceptual },
+    RevivalMap {
+        concept: "HAL",
+        gaia: "gaia-sos HalTier T0-T4",
+        grade: Grade::Specified,
+    },
+    RevivalMap {
+        concept: "Saela",
+        gaia: "gaia-orchestrator intent + gaia-interface",
+        grade: Grade::Prototyped,
+    },
+    RevivalMap {
+        concept: "policy-consent",
+        gaia: "gaia-geometry Gate + gaia-gaian consent",
+        grade: Grade::Prototyped,
+    },
+    RevivalMap {
+        concept: "orchestrator",
+        gaia: "gaia-orchestrator DAG/broker/MCP AT-01-06",
+        grade: Grade::Tested,
+    },
+    RevivalMap {
+        concept: "audit-chain",
+        gaia: "gaia-kernel AuditLog + TrustAudit",
+        grade: Grade::Tested,
+    },
+    RevivalMap {
+        concept: "capability-token",
+        gaia: "gaia-sos Capability revoke",
+        grade: Grade::Specified,
+    },
+    RevivalMap {
+        concept: "MCRE-2000",
+        gaia: "not restored; suite absent",
+        grade: Grade::Conceptual,
+    },
+    RevivalMap {
+        concept: "weather-OWM",
+        gaia: "refused live connector",
+        grade: Grade::Conceptual,
+    },
+    RevivalMap {
+        concept: "736-modules",
+        gaia: "workspace crates only",
+        grade: Grade::Conceptual,
+    },
+    RevivalMap {
+        concept: "spirit-consciousness",
+        gaia: "ontology only; no runtime",
+        grade: Grade::Conceptual,
+    },
 ];
 
 pub fn map_concept(name: &str) -> Option<RevivalMap> {
-    MAP.iter().copied().find(|row| row.concept.eq_ignore_ascii_case(name))
+    MAP.iter()
+        .copied()
+        .find(|row| row.concept.eq_ignore_ascii_case(name))
 }
 
 pub fn maturity(crate_name: &str) -> Grade {

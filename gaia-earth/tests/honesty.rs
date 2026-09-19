@@ -1,4 +1,6 @@
-use gaia_earth::honesty::{live_cesium, live_ews_network, live_graphcast, live_iceberg, twin_v1_tagged};
+use gaia_earth::honesty::{
+    live_cesium, live_ews_network, live_graphcast, live_iceberg, twin_v1_tagged,
+};
 
 #[test]
 fn twin_is_not_a_product() {

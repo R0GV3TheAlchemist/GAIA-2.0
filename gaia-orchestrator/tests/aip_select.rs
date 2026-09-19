@@ -1,5 +1,7 @@
 use gaia_memos::MemOs;
-use gaia_orchestrator::{bind_plan_to_registry, pick_agent, IntentEngine, McpRegistry, TaskPlanner};
+use gaia_orchestrator::{
+    bind_plan_to_registry, pick_agent, IntentEngine, McpRegistry, TaskPlanner,
+};
 
 #[test]
 fn research_goal_selects_registered_researcher() {
@@ -24,6 +26,9 @@ fn bind_replaces_stub_role_labels() {
     let mut plan = TaskPlanner::from_intent(&g);
     let reg = McpRegistry::local();
     bind_plan_to_registry(&mut plan, &reg).unwrap();
-    assert!(plan.nodes.iter().all(|n| n.agent == "gaia-local-researcher"));
+    assert!(plan
+        .nodes
+        .iter()
+        .all(|n| n.agent == "gaia-local-researcher"));
     assert!(plan.inspect().contains("gaia-local-researcher"));
 }

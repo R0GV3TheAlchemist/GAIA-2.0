@@ -7,6 +7,9 @@ fn professional_packs_need_cite_and_are_not_licenses() {
         Adapter::MedicalRef.answer(false, true).unwrap_err(),
         AikdError::MissingCitation
     );
-    assert!(Adapter::MedicalRef.answer(true, true).unwrap().contains("not medical"));
+    assert!(Adapter::MedicalRef
+        .answer(true, true)
+        .unwrap()
+        .contains("not medical"));
     assert!(!Adapter::Math.eval_slice().is_empty());
 }

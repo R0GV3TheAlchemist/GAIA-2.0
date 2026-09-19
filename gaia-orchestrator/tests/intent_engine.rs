@@ -7,7 +7,9 @@ use gaia_orchestrator::{IntentBackend, IntentEngine, IntentSigner, Privacy};
 fn text_intent_produces_valid_graph() {
     let mut mem = MemOs::new();
     let engine = IntentEngine::local_stub();
-    let g = engine.parse("research and summarize CARE", &mut mem).unwrap();
+    let g = engine
+        .parse("research and summarize CARE", &mut mem)
+        .unwrap();
     assert_eq!(g.goal, "research and summarize CARE");
     assert_eq!(g.sub_intents.len(), 3);
     assert!(g.sub_intents[1].depends_on.contains(&g.sub_intents[0].id));

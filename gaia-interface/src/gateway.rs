@@ -40,7 +40,8 @@ impl<'a> HttpGateway<'a> {
     fn dispatch(&mut self, req: &HttpRequest) -> Result<Value, SessionError> {
         match (req.method.as_str(), req.path.as_str()) {
             ("POST", "/init") => {
-                let profile = json_string(&req.body, "profile").unwrap_or_else(|| "developer".into());
+                let profile =
+                    json_string(&req.body, "profile").unwrap_or_else(|| "developer".into());
                 let profile = self.session.init(&profile)?;
                 Ok(json!(profile))
             }

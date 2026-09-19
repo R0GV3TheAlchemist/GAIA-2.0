@@ -6,5 +6,8 @@ fn signed_session_writes_cube_and_breakout_fails_closed() {
     assert_eq!(sandbox_breakout(true).unwrap_err(), AikdError::NeedVerify);
     sandbox_breakout(false).unwrap();
     assert!(!embodied_enabled());
-    assert_eq!(ToolCube::record("x", "face mesh", true).unwrap_err(), AikdError::CannotKnow);
+    assert_eq!(
+        ToolCube::record("x", "face mesh", true).unwrap_err(),
+        AikdError::CannotKnow
+    );
 }

@@ -45,8 +45,12 @@ fn permission_matrix_is_inspectable() {
     let studio = Studio::default();
     let console = PermissionConsole::new(&session, &studio);
     let matrix = console.matrix();
-    assert!(matrix.iter().any(|p| p.capability == "MemoryRead" && p.granted));
-    assert!(matrix.iter().any(|p| p.capability == "Network" && !p.granted));
+    assert!(matrix
+        .iter()
+        .any(|p| p.capability == "MemoryRead" && p.granted));
+    assert!(matrix
+        .iter()
+        .any(|p| p.capability == "Network" && !p.granted));
     let html = console.render_html();
     assert!(html.contains("Permission matrix"));
     assert!(html.contains("denied"));

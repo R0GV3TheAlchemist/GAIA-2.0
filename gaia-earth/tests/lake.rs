@@ -3,7 +3,14 @@ use gaia_earth::*;
 #[test]
 fn raw_is_immutable_and_curated_exists() {
     let mut lake = Lake::new();
-    let obs = Observation::admit(SystemTwin::Land, SourceKind::Synthetic, 0.4, Some(0.1), "ndvi").unwrap();
+    let obs = Observation::admit(
+        SystemTwin::Land,
+        SourceKind::Synthetic,
+        0.4,
+        Some(0.1),
+        "ndvi",
+    )
+    .unwrap();
     lake.write_raw("stac-demo", obs.clone()).unwrap();
     assert_eq!(
         lake.write_raw("stac-demo", obs).unwrap_err(),

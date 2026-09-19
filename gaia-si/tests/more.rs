@@ -1,4 +1,7 @@
-use gaia_si::{admit, admit_occupancy, advise, aggregate, face_field, hvac_write, life_safety, nature_first, pathogen_protocol, review_field, si_v1_tagged, Prefs, Twin};
+use gaia_si::{
+    admit, admit_occupancy, advise, aggregate, face_field, hvac_write, life_safety, nature_first,
+    pathogen_protocol, review_field, si_v1_tagged, Prefs, Twin,
+};
 
 #[test]
 fn purpose_required_no_faces_no_hvac_no_pathogen() {
