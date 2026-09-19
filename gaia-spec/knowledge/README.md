@@ -28,6 +28,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | scale-sources.csv | scale-doc citations; effects empty |
 | essay-sources.csv | SI/SA/SOS/GAIAN citations; effects empty |
 | ../aisd/ | AISD taxonomy + L6 ban list as data (#455 / #126) |
+| ../aikd/ | open-model registry + benches as data (#457 / #100) |
 
 Refuse:
 - preference labels as soul or constitution
