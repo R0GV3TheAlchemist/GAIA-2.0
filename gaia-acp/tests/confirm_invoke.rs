@@ -1,4 +1,4 @@
-//! Invoke-path proof for #374. Local only.
+//! Invoke-path proof for #374 / #220. Local only.
 
 use gaia_acp::*;
 
@@ -85,6 +85,7 @@ fn vault_invoke_and_peer_envelope_denied() {
         intent_id: "intent-x".into(),
         purpose: "dump-vault".into(),
         raw_memory: false,
+        specialist: false,
     };
     assert_eq!(env.validate(), Err(ReasonCode::VaultDumpDenied));
 }

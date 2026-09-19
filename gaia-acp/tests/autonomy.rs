@@ -19,6 +19,7 @@ fn act(class: ActionClass, tool: &str, target: &str) -> ProposedAction {
 #[test]
 fn default_level_is_suggest() {
     assert_eq!(AutonomyLevel::default_level(), AutonomyLevel::Suggest);
+    assert_eq!(AutonomyLevel::default_level() as u8, 1);
 }
 
 #[test]
@@ -46,6 +47,7 @@ fn peer_cannot_dump_vault() {
         intent_id: "intent-x".into(),
         purpose: "dump-vault".into(),
         raw_memory: false,
+        specialist: false,
     };
     assert_eq!(env.validate(), Err(ReasonCode::VaultDumpDenied));
     let raw = PeerEnvelope {
@@ -53,8 +55,29 @@ fn peer_cannot_dump_vault() {
         intent_id: "intent-x".into(),
         purpose: "summarize".into(),
         raw_memory: true,
+        specialist: false,
     };
     assert_eq!(raw.validate(), Err(ReasonCode::VaultDumpDenied));
+}
+
+#[test]
+fn specialist_reports_only_to_core() {
+    let bad = PeerEnvelope {
+        did: "did:gaia:spec-1".into(),
+        intent_id: "intent-x".into(),
+        purpose: "command-peer".into(),
+        raw_memory: false,
+        specialist: true,
+    };
+    assert_eq!(bad.validate(), Err(ReasonCode::CrossAgent));
+    let ok = PeerEnvelope {
+        did: "did:gaia:spec-1".into(),
+        intent_id: "intent-x".into(),
+        purpose: "report-core".into(),
+        raw_memory: false,
+        specialist: true,
+    };
+    assert!(ok.validate().is_ok());
 }
 
 #[test]
