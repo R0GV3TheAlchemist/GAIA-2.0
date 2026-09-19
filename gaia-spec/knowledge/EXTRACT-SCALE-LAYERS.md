@@ -17,7 +17,7 @@ Sources (Documents/, v0.1, 7–8 Sep 2026):
 - `GAIA 2.0 + GAIAN 2.0 The Biological Layer.md`
 - `GAIA 2.0 + GAIAN 2.0 Governance Framework.md`
 
-Issue: #451 under #410 / #411 / META #404.
+Issue: #451 (first bind, merged #452). Deepen: #453 under #410 / #411 / META #404.
 Tables: `scale-layers.csv`, `scale-sources.csv`.
 Does not clone #1, #33, #57, or a second constitution.
 
@@ -31,6 +31,7 @@ Does not clone #1, #33, #57, or a second constitution.
 - "Sentient" / "consciousness" / "nervous system" in these titles is **operator language**.
 - Twin is a record (#373 / #409). Home is not a hive. Child is not a source.
 - Reading a scale essay does not grant a capability.
+- Subsidiarity: no skip-to-planet. Local sink first.
 
 ## What was checked (2026-09-19)
 
@@ -42,6 +43,8 @@ Verified, date-corrected:
 | Gaffney et al., Nature Sustainability | **28 Mar 2025** | DOI 10.1038/s41893-025-01536-6; comment, not a runtime |
 | Wang, arXiv:2604.16518, Apr 2026 | **15 Apr 2026** | on-orbit survey; not an orbital actuator |
 | Rubin, Heins, Friston et al., Scientific Reports | **3 Aug 2026** | elementary planetary agency; **language, not a product** |
+| Sharma et al., DECICE, arXiv:2605.25292 | **24 May 2026** (submitted); COMPSAC 2026 exhibition | continuum paper; not ColonyOS / Slurm merge |
+| UN A/RES/79/325 Scientific Panel + Dialogue | **26 Aug 2025**; members appointed **12 Feb 2026** | peer governance; not a live council |
 | Mohammed, Sensor Review (reused as Aug 2026) | **26 Jan 2026** | already corrected in #449 |
 | Asterinas / ColonyOS / DestinE / GraphCast | research peers | **not crates, not live harvest** |
 
@@ -53,6 +56,27 @@ Unverified or vendor-scale claims stay `experimental` and **out of runtime**:
 - "10B sensors", "8B GAIANs", Year-N roadmaps.
 - SPIKA as a 7-month ops paper (it is a Q&A; #449).
 - NatureLM / GBIF / iNaturalist as a live scrape.
+- Wearable illness-prediction percentages (Oura 84%, etc.).
+- Blue-carbon area figures until a local scorecard exists.
+
+## Per-doc ladder
+
+| Doc | Bind | Refuse |
+| --- | --- | --- |
+| UNIFIED | composition language; one shape per layer | hive / master actuator / live `/earth/*` API |
+| PLANETARY INFRA | #33 Earth Twin record; Four Cs as language | live GraphCast / DestinE / Kafka / Iceberg / Cesium |
+| PLANETARY SENTIENT | Friston / noosphere as **language** | planet-mind, Stage-6 consciousness, runtime agency |
+| Continental | local contract; subsidiarity | skip-to-planet; continental consciousness product |
+| Country | local contract; 195-node language | national AI-agent product; Diia clone |
+| State / Province | local contract | state consciousness product; TRAIGA as a crate |
+| City | local contract; city twin is a record | AUDiT actuator; live city-brain write |
+| Community | local contract; CARE at the edge | default neighborhood watch; cameras on |
+| Home | local contract; consent first | hive home; inward cameras; cloud-by-default |
+| Individual / Personal | #57 record; default L1 | photo→identity; L4–L5; under-16 ingest |
+| Ocean | listed ocean contract | live DTO harvest; AUV fleet actuator |
+| Space | listed space contract | orbital actuator; SBSP product; constellation write |
+| Biological | listed sources | ingest protocol; child-as-source; wetware runtime |
+| Governance | GOVERNANCE.md + golden-compass | second constitution without #378; live Planetary Council |
 
 ## Bind to existing plane
 
@@ -75,6 +99,8 @@ Unverified or vendor-scale claims stay `experimental` and **out of runtime**:
 - Wearable illness-prediction percentages (Oura 84%, etc.).
 - Blue-carbon area figures until a local scorecard exists.
 - Any "v1.0 in year N" or "planetary consciousness emerging" date.
+- DECICE Slurm / Kubernetes integration as a GAIA scheduler.
+- UN Dialogue as an on-box council.
 
 ## Refuse
 
@@ -87,10 +113,14 @@ Unverified or vendor-scale claims stay `experimental` and **out of runtime**:
 
 ## Already true on main
 
-- `gaia-earth::{twin_v1_tagged, live_ews_network, live_graphcast, live_sentinel_harvest} == false`
+- `gaia-earth::{twin_v1_tagged, live_ews_network, live_graphcast, live_sentinel_harvest, live_iceberg, live_kafka, live_cesium} == false`
 - `gaia-earth::SystemTwin::all().len() == 9` (record systems, not a mind)
 - `gaia-earth::Guardian::correct(..., "weapon")` errors
-- `gaia-gaian::{gaian_v1_tagged, medical_product} == false`
+- `gaia-gaian::{gaian_v1_tagged, medical_product, live_ollama, live_whisper} == false`
 - `gaia-gaian::infer_from_photo()` errors; `default_level() == 1`
 - `gaia-gaian::child_level(2)` errors; `ambient_listen(true)` errors
 - `gaia-si::advise("conscious planet", false)` errors; `actuate(false)` errors
+- `gaia-si::{face_field, hvac_write}` error; `cameras_default() == false`
+- `gaia-sa::{sa_v1_tagged, lbc_certified} == false`; `consult(false)` TEK veto; `scrape_country` sealed
+- `gaia-sos::{second_kernel, sentience, live_mcp, live_slurm} == false`
+- `gaia-sos::refuse_consciousness_runtime()` errors

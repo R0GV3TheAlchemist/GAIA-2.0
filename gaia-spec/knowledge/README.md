@@ -20,7 +20,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | EXTRACT-R2-R17.md | twin-as-record (#409) |
 | EXTRACT-R18-R27.md | scale ladder (#410) |
 | EXTRACT-R28-R31.md | ocean/space/bio/governance (#411) |
-| EXTRACT-SCALE-LAYERS.md | 14 scale docs, verified dates (#451) |
+| EXTRACT-SCALE-LAYERS.md | 14 scale docs, verified dates (#451 / #453) |
 | UNIVERSAL-DBS.md | v0.1 Universal DB bind law (#115) |
 | knowledge-skills.csv | listed domain rows; effects empty |
 | universal-realms.csv | named realms from the essays; effects empty |

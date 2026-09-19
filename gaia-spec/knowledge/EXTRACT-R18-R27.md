@@ -3,7 +3,7 @@
 Sources: R#18 unified planetary through R#27 personal systems.
 Issue: #410 under META #404.
 R#20 planetary sentience is language, not a product.
-Deep-research follow-up: `EXTRACT-SCALE-LAYERS.md` + `scale-sources.csv` (#451).
+Deep-research follow-up: `EXTRACT-SCALE-LAYERS.md` + `scale-sources.csv` (#451, deepen #453).
 
 ## Contract shape (all layers)
 
