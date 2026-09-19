@@ -28,6 +28,7 @@ impl PlaneState {
                 | (ManifestIssued, Killed)
                 | (SessionStarted, Stopped)
                 | (SessionStarted, Killed)
+                | (Stopped, ManifestIssued)
                 | (Stopped, Killed)
                 | (_, Killed)
         )
