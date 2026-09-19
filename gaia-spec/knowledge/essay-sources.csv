@@ -1,0 +1,17 @@
+id,essay,source,claim_class,effects,notes
+si-mohammed,GAIA-SI,Sensor Review 10.1108/SR-10-2025-0822,experimental,,essay said Aug 2026; published 26 Jan 2026; not a crate
+si-carbonell,GAIA-SI,Trends Biotech 10.1016/j.tibtech.2026.05.015,experimental,,opinion 4 Jun 2026; metabolic-organism is language
+si-spika,GAIA-SI,Comm Biol 10.1038/s42003-026-09795-5,experimental,,Q&A 14 Mar 2026; Triennale prototype; no ops numbers in runtime
+si-layer9,GAIA-SI,essay L9 planetary consciousness,prohibited,,advise only; NeedsTicket
+sa-couceiro,GAIA-SA,essay symbiotic 85/62,experimental,,not a GAIA scorecard
+sa-tek,GAIA-SA,essay indigenous ontologies,symbolic,,consultation; sealed place stays sealed
+sa-lbc,GAIA-SA,essay Living Building Challenge,experimental,,sa_v1 and lbc_certified stay false
+sos-agenticos,GAIA-SOS,arXiv:2606.21129,experimental,,intent-filter paper; not a kernel fork
+sos-asterinas,GAIA-SOS,arXiv:2506.03876 ATC 2025,experimental,,listed research; not a crate
+sos-hostcalls,GAIA-SOS,essay gaia.* names,experimental,,names already in HOST_CALLS; unsigned refuse
+sos-fivenines,GAIA-SOS,essay 99.999,prohibited,,five_nines_claimed is false
+gs-wearable,GAIAN-SI,essay closed-loop wearables,experimental,,no raw biometric blob; no device protocol
+gs-bci,GAIAN-SI,essay Neuralink counts,experimental,,optional literature; not an implant product
+ga-biometric-room,GAIAN-SA,essay biometric-responsive space,experimental,,prefs record; face_field unsupported
+gc-twin-person,GAIAN-DESIGN,essay Digital Me / twin-as-you,prohibited,,record not person; #373 #409
+gc-autonomy45,GAIAN-DESIGN,essay autonomy L4-L5,prohibited,,default Suggest; L4-L5 refused in software
