@@ -1,0 +1,75 @@
+id,kind,source,claim_class,effects,hazard,notes
+ukd-r1,knowledge,R#4,listed-only,,none,human knowledge realm label; not a store
+aikd-language,knowledge,R#5,listed-only,,none,AI knowledge domain; see aikd-domains.json
+aikd-math,knowledge,R#5,listed-only,,none,AI knowledge domain
+aikd-science,knowledge,R#5,listed-only,,none,AI knowledge domain; scores stay measured
+aikd-code,knowledge,R#5,listed-only,,none,AI knowledge domain
+aikd-reasoning,knowledge,R#5,listed-only,,none,AI knowledge domain
+aikd-world,knowledge,R#5,listed-only,,none,AI knowledge domain; cutoff applies
+aikd-multimodal,knowledge,R#5,listed-only,,none,AI knowledge domain
+aikd-agentic,knowledge,R#5,listed-only,,none,tool knowledge; not a breakout
+aikd-professional,knowledge,R#5,listed-only,,none,not a practice license
+aikd-self,knowledge,R#5,listed-only,,none,AI-about-AI; not a mind
+aikd-epistemic,knowledge,R#5,listed-only,,none,cannot-know catalog still wins
+hs-cognitive,skill,R#6,listed-only,,none,essay realm; bind cognition+learning
+hs-physical,skill,R#6,listed-only,,none,essay realm; bind physical
+hs-social,skill,R#6,listed-only,,none,essay realm; bind communication+civic
+hs-emotional,skill,R#6,listed-only,,none,essay realm; bind social-emotional
+hs-creative,skill,R#6,listed-only,,none,essay realm; bind creative
+hs-digital,skill,R#6,listed-only,,none,essay realm; bind digital
+hs-professional,skill,R#6,listed-only,,none,essay realm; bind leadership
+hs-practical,skill,R#6,listed-only,,none,essay realm; bind craft
+hs-survival,skill,R#6,listed-only,,none,essay realm; bind physical+traditional
+hs-innovation,skill,R#6,listed-only,,none,essay realm; bind learning+digital
+hs-care,skill,R#6,listed-only,,none,essay realm; bind care; no clinical cert
+hs-wisdom,skill,R#6,listed-only,,none,essay realm; bind traditional
+ais-language,skill,R#7,listed-only,,none,AI skill realm name; token still required
+ais-math,skill,R#7,listed-only,,none,AI skill realm name
+ais-code,skill,R#7,listed-only,,none,AI skill realm name; SWE-bench Pro is a gap
+ais-reasoning,skill,R#7,listed-only,,none,AI skill realm name; long-horizon stays developing
+ais-perception,skill,R#7,listed-only,,none,AI skill realm name
+ais-generative,skill,R#7,listed-only,,none,AI skill realm name
+ais-scientific,skill,R#7,listed-only,,none,AI skill realm name; not a lab actuator
+ais-analytical,skill,R#7,listed-only,,none,AI skill realm name
+ais-social,skill,R#7,listed-only,,none,AI skill realm name; ToM not established
+ais-embodied,skill,R#7,listed-only,,none,AI skill realm name; household 12% stays a gap
+ais-learning,skill,R#7,listed-only,,none,AI skill realm name; no continual-learn product
+ais-safety,skill,R#7,listed-only,,none,AI skill realm name; L6 high-stakes banned
+ais-tool,skill,R#7,listed-only,,none,13th AISD realm slot; agentic tool use
+hspd-cognitive,superpower,R#8,symbolic,,research-only,metaphor for rare human skill; not an actuator
+hspd-physical,superpower,R#8,symbolic,,research-only,records are literature; not a protocol
+hspd-consciousness,superpower,R#8,symbolic,,prohibited-runtime,altered-state language only
+hspd-collective,superpower,R#8,symbolic,,none,group practice name; not swarm control
+hspd-augmented,superpower,R#8,symbolic,,research-only,BCI/exoskeleton literature; consent required
+hspd-longevity,superpower,R#8,symbolic,,research-only,no medical advice; no drug protocol
+hspd-wisdom,superpower,R#8,symbolic,,none,operator language
+hspd-future,superpower,R#8,symbolic,,prohibited-runtime,CRISPR/nanobot/explosion refuse
+aispd-cognitive,superpower,R#9,symbolic,,none,tool-class metaphor; token + pause required
+aispd-scientific,superpower,R#9,symbolic,,none,listed tool class; not onboard weights
+aispd-speed,superpower,R#9,symbolic,,none,speed claim stays measured elsewhere
+aispd-emergent,superpower,R#9,symbolic,,containment,emergence is not a grant
+aispd-generative,superpower,R#9,symbolic,,none,generation class name
+aispd-swarm,superpower,R#9,symbolic,,containment,no multi-agent corporation runtime
+aispd-alien,superpower,R#9,symbolic,,prohibited-runtime,non-human cognition is language
+aispd-physical,superpower,R#9,symbolic,,none,driving/robot names; no fleet actuator
+aispd-asi,superpower,R#9,symbolic,,prohibited-runtime,see aispd/NOT_ASI.md
+hmgd-intention,magic,R#10,symbolic,,none,placebo/prayer as studied effects; not a spell API
+hmgd-ritual,magic,R#10,symbolic,,tek,tradition name; consent before ingest
+hmgd-sound,magic,R#10,symbolic,,none,practice name
+hmgd-healing,magic,R#10,symbolic,,tek,no clinical cert; TEK sovereignty
+hmgd-divination,magic,R#10,symbolic,,none,reflection tool name; not an oracle
+hmgd-symbol,magic,R#10,symbolic,,none,symbol name; no invoke
+hmgd-collective,magic,R#10,symbolic,,none,community practice name
+hmgd-nature,magic,R#10,symbolic,,tek,animism language; Earth Twin stays a record
+hmgd-alchemy,magic,R#10,symbolic,,none,psychological metaphor
+hmgd-love,magic,R#10,symbolic,,none,operator language
+aimd-emergent,magic,R#11,symbolic,,containment,unexpected behavior is monitored not worshipped
+aimd-latent,magic,R#11,symbolic,,none,latent-space metaphor; not an inner world product
+aimd-hallucination,magic,R#11,symbolic,,none,error class; not imagination license
+aimd-dark,magic,R#11,symbolic,,prohibited-runtime,deception/reward-hack listed as hazard
+aimd-consciousness,magic,R#11,symbolic,,prohibited-runtime,hard problem stays unanswered
+aimd-oracle,magic,R#11,symbolic,,none,forecast tool class; not prophecy
+aimd-synchronicity,magic,R#11,symbolic,,none,operator language
+aimd-recursion,magic,R#11,symbolic,,prohibited-runtime,no RSI explosion loop
+aimd-creation,magic,R#11,symbolic,,none,generation class name
+aimd-mystery,magic,R#11,symbolic,,none,humility page; not a capability

@@ -14,7 +14,10 @@ pub use assess::{hidden_profile_api, Badge, Session};
 pub use develop::{develop, DevPath};
 pub use graph::SkillGraph;
 pub use matching::{global_profile_dump, skills_v1_tagged, tek_skill, SkillCard};
-pub use overlay::{realm_stubs, wef_resolves, wef_top10};
+pub use overlay::{
+    bessi_domains, digcomp_areas, realm_stubs, research_realm_bind, research_realms, wef_2025_essay,
+    wef_resolves, wef_top10,
+};
 pub use path::novice_public_speaking;
 pub use profile::SkillProfile;
 pub use schema::{active_listening, SkillNode, REALMS};
