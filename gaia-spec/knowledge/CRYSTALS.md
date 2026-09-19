@@ -5,8 +5,7 @@ Rows are names. They are not capabilities.
 A row must never grant tools, memory, Autonomy 4–5, medical protocol, or network.
 
 **Required law:** `SPECTRUM.md` then `PAIRINGS.md`.
-Pairings wait until this first list is merged. `secondary_id` stays empty until then.
+`secondary_id` stays empty until the pairing pass.
 
-First absorbed list is closed on this branch (A through zincite, plus spelling twins).
-Human-safety: chemistry notes are warnings, not work instructions.
-Source rule: evoke the law of the name; do not take folklore as authority.
+First absorbed list: `crystals.csv` (A–pyrite) plus `crystals-rz.csv` (rainbow moonstone–zincite).
+Treat those two files as one catalog until they are concatenated on this branch.
