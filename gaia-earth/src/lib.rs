@@ -34,6 +34,7 @@ pub use ensemble::{ModelProduct, RegisteredModel};
 pub use ews::{BoundaryMonitor, WatchItem, WatchState};
 pub use feeds::{Connector, FeedBus, FeedRecord, RateLimit};
 pub use guardian::{Boundary, BoundaryState, BoundaryStatus, Correction, CorrectionStep, Guardian};
+pub use honesty::{live_ews_network, twin_v1_tagged};
 pub use iface::{AccessTier, CitizenCredit, EarthInterface, PlaceState};
 pub use lake::{Lake, LakeRow, LakeZone};
 pub use library::{CascadeEdge, Dist, ScenarioLibrary, ScenarioSpec};
