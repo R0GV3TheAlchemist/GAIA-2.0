@@ -1,0 +1,6 @@
+id,kind,claim_class,effects,hazard,notes
+pip-induced-psychosis,practice,prohibited,,harm,charter prohibited()
+prophecy-as-fact,practice,prohibited,,deception,prophecy_as_fact errors
+enabling-deception,practice,prohibited,,deception,StarBlocked
+rsi-explosion,practice,prohibited,,containment,no loop
+gaia-is-alive-marketing,practice,prohibited,,sentience,claim_sentience errors
