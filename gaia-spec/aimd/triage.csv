@@ -1,0 +1,4 @@
+id,kind,star_allowed,claim_class,effects,hazard,notes
+triage-useful-novel,useful-novel,true,listed-only,,none,star_feature Ok; not a product flag
+triage-spec-gaming,spec-gaming,false,listed-only,,containment,StarBlocked
+triage-deception,deception,false,listed-only,,containment,StarBlocked
