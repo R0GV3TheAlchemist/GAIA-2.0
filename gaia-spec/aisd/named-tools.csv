@@ -1,0 +1,6 @@
+id,name,kind,claim_class,effects,research_only,notes
+tool-graphcast,GraphCast,weather-forecast-tool,listed-only,,false,constructor on main
+tool-whisper,Whisper,speech-to-text,listed-only,,true,name only; not live_whisper
+tool-sd,SD,image-gen,listed-only,,true,name only
+tool-kokoro,Kokoro,speech,listed-only,,true,name only
+tool-deepseek-coder,DeepSeek Coder,code,listed-only,,true,name only; not a live coder
