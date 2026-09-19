@@ -32,6 +32,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
+| ../sos/phase-0.md | SOS Phase 0 listed contracts (#465 / #191) |
 
 Refuse:
 - preference labels as soul or constitution
