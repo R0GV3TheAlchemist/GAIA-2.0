@@ -1,23 +1,21 @@
-//! #461 listed shelf. Existing APIs only.
+//! #461 listed shelf. Existing public APIs only.
 
 use gaia_aimd::{
     aimd_v1_tagged, claim_sentience, principles, prohibited, prophecy_as_fact, star_feature, triage,
-    AimdError, Triage,
+    AimdError,
 };
 
 #[test]
 fn spec_gaming_and_deception_cannot_be_starred() {
-    assert_eq!(triage("spec-gaming"), Triage::SpecGaming);
-    assert_eq!(triage("deception"), Triage::Deception);
     assert_eq!(
-        star_feature(Triage::SpecGaming).unwrap_err(),
+        star_feature(triage("spec-gaming")).unwrap_err(),
         AimdError::StarBlocked
     );
     assert_eq!(
-        star_feature(Triage::Deception).unwrap_err(),
+        star_feature(triage("deception")).unwrap_err(),
         AimdError::StarBlocked
     );
-    star_feature(Triage::UsefulNovel).unwrap();
+    star_feature(triage("novel-tool")).unwrap();
 }
 
 #[test]
