@@ -55,13 +55,7 @@ impl ControlPlane {
         Ok(plane)
     }
 
-    fn emit(
-        &mut self,
-        kind: TraceKind,
-        agent_id: &str,
-        reason: ReasonCode,
-        request_hash: &str,
-    ) {
+    fn emit(&mut self, kind: TraceKind, agent_id: &str, reason: ReasonCode, request_hash: &str) {
         let ev = from_invoke(
             kind,
             self.now,

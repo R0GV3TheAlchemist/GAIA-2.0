@@ -59,7 +59,10 @@ impl Sfs {
         fs::create_dir_all(root.join("posix"))?;
         fs::create_dir_all(root.join("objects"))?;
         fs::create_dir_all(root.join("meta"))?;
-        let mut sfs = Self { root, index: HashMap::new() };
+        let mut sfs = Self {
+            root,
+            index: HashMap::new(),
+        };
         sfs.reload()?;
         Ok(sfs)
     }
@@ -87,7 +90,10 @@ impl Sfs {
         }
         fs::write(&posix, data)?;
         fs::write(self.root.join("objects").join(&cid), data)?;
-        fs::write(self.root.join("meta").join(format!("{cid}.json")), serde_json::to_vec_pretty(&obj)?)?;
+        fs::write(
+            self.root.join("meta").join(format!("{cid}.json")),
+            serde_json::to_vec_pretty(&obj)?,
+        )?;
         self.write_lineage(&rel, &obj)?;
         self.index.insert(rel, obj.clone());
         Ok(obj)
@@ -95,7 +101,10 @@ impl Sfs {
 
     pub fn get(&self, path: &str) -> Result<SfsObject> {
         let rel = normalize_path(path)?;
-        self.index.get(&rel).cloned().ok_or_else(|| SfsError::NotFound(rel))
+        self.index
+            .get(&rel)
+            .cloned()
+            .ok_or_else(|| SfsError::NotFound(rel))
     }
 
     pub fn read(&self, path: &str) -> Result<Vec<u8>> {
@@ -115,7 +124,9 @@ impl Sfs {
                 None => None,
             };
             guard += 1;
-            if guard > 10_000 { break; }
+            if guard > 10_000 {
+                break;
+            }
         }
         Ok(out)
     }
@@ -134,24 +145,44 @@ impl Sfs {
     }
 
     fn by_cid(&self, cid: &str) -> Option<SfsObject> {
-        self.index.values().find(|o| o.cid == cid).cloned().or_else(|| {
-            let p = self.root.join("meta").join(format!("{cid}.json"));
-            fs::read(&p).ok().and_then(|b| serde_json::from_slice(&b).ok())
-        })
+        self.index
+            .values()
+            .find(|o| o.cid == cid)
+            .cloned()
+            .or_else(|| {
+                let p = self.root.join("meta").join(format!("{cid}.json"));
+                fs::read(&p)
+                    .ok()
+                    .and_then(|b| serde_json::from_slice(&b).ok())
+            })
     }
 
     fn write_lineage(&self, rel: &str, obj: &SfsObject) -> Result<()> {
-        let mut f = fs::OpenOptions::new().create(true).append(true).open(self.root.join("lineage.log"))?;
-        writeln!(f, "{} {} {} parent={}", obj.cid, rel, obj.meta.who, obj.parent_cid.as_deref().unwrap_or("genesis"))?;
+        let mut f = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(self.root.join("lineage.log"))?;
+        writeln!(
+            f,
+            "{} {} {} parent={}",
+            obj.cid,
+            rel,
+            obj.meta.who,
+            obj.parent_cid.as_deref().unwrap_or("genesis")
+        )?;
         Ok(())
     }
 
     fn reload(&mut self) -> Result<()> {
         let meta_dir = self.root.join("meta");
-        if !meta_dir.exists() { return Ok(()); }
+        if !meta_dir.exists() {
+            return Ok(());
+        }
         for entry in fs::read_dir(meta_dir)? {
             let entry = entry?;
-            if entry.path().extension().and_then(|s| s.to_str()) != Some("json") { continue; }
+            if entry.path().extension().and_then(|s| s.to_str()) != Some("json") {
+                continue;
+            }
             let obj: SfsObject = serde_json::from_slice(&fs::read(entry.path())?)?;
             self.index.insert(obj.path.clone(), obj);
         }
@@ -182,7 +213,9 @@ pub fn embed(text: &str) -> Vec<f32> {
     }
     let norm = v.iter().map(|x| x * x).sum::<f32>().sqrt();
     if norm > 0.0 {
-        for x in &mut v { *x /= norm; }
+        for x in &mut v {
+            *x /= norm;
+        }
     }
     v
 }
@@ -205,20 +238,40 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn tmp() -> PathBuf {
-        let n = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let n = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
         std::env::temp_dir().join(format!("gaia-sfs-{n}"))
     }
 
     fn meta() -> SemanticMeta {
-        SemanticMeta { who: "did:key:gaia:test".into(), when_unix: 1, context: "test".into(), intent: "store".into() }
+        SemanticMeta {
+            who: "did:key:gaia:test".into(),
+            when_unix: 1,
+            context: "test".into(),
+            intent: "store".into(),
+        }
     }
 
     #[test]
     fn put_get_search_lineage_posix() {
         let mut sfs = Sfs::open(tmp()).unwrap();
-        let a = sfs.put("docs/note.txt", b"gaia semantic file about texas weather", meta()).unwrap();
+        let a = sfs
+            .put(
+                "docs/note.txt",
+                b"gaia semantic file about texas weather",
+                meta(),
+            )
+            .unwrap();
         assert_eq!(a.cid.len(), 64);
-        let b = sfs.put("docs/note.txt", b"updated notes on texas weather and rain", meta()).unwrap();
+        let b = sfs
+            .put(
+                "docs/note.txt",
+                b"updated notes on texas weather and rain",
+                meta(),
+            )
+            .unwrap();
         assert_eq!(b.parent_cid.as_deref(), Some(a.cid.as_str()));
         assert!(sfs.lineage("docs/note.txt").unwrap().len() >= 2);
         assert!(!sfs.search("texas weather", 3).is_empty());

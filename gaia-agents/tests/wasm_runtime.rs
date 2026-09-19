@@ -20,7 +20,10 @@ fn embedded_hello_guest_runs_without_wasi_resources() {
     match output {
         WasmOutcome::Output { text, chunks } => {
             assert_eq!(text, "hello from wasmstreamed");
-            assert_eq!(chunks, vec!["hello from wasm".to_string(), "streamed".to_string()]);
+            assert_eq!(
+                chunks,
+                vec!["hello from wasm".to_string(), "streamed".to_string()]
+            );
         }
         other => panic!("unexpected {other:?}"),
     }
@@ -92,7 +95,9 @@ fn wasi_net_import_is_denied_without_grant() {
 #[test]
 fn wasi_grant_does_not_install_a_host() {
     let mut granted = manifest();
-    granted.declared_capabilities.push(Capability::FilesystemRead);
+    granted
+        .declared_capabilities
+        .push(Capability::FilesystemRead);
     granted.limits.filesystem_allowed = true;
     assert_eq!(
         WasmRuntime::grants(&granted),
@@ -118,7 +123,9 @@ fn guest_trap_is_isolated_and_next_guest_runs() {
     let trapped = runtime.invoke_fixture(&manifest(), "trap", None).unwrap();
     assert!(matches!(trapped, WasmOutcome::Trapped { agent, .. } if agent == "wasm-hello"));
     let next = runtime.invoke_fixture(&manifest(), "hello", None).unwrap();
-    assert!(matches!(next, WasmOutcome::Output { ref text, .. } if text.starts_with("hello from wasm")));
+    assert!(
+        matches!(next, WasmOutcome::Output { ref text, .. } if text.starts_with("hello from wasm"))
+    );
 }
 
 #[test]

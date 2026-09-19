@@ -96,7 +96,11 @@ impl EarthInterface {
     }
 
     pub fn access_tiers() -> [AccessTier; 3] {
-        [AccessTier::BasicFree, AccessTier::Scientist, AccessTier::Minister]
+        [
+            AccessTier::BasicFree,
+            AccessTier::Scientist,
+            AccessTier::Minister,
+        ]
     }
 
     fn get(&self, place: &str) -> Result<&PlaceState, TwinError> {

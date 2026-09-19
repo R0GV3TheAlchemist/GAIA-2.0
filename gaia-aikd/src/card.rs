@@ -1,18 +1,8 @@
 //! #94 model card + tiers. Published closed scores are reference only.
 
 pub const DOMAINS: [&str; 12] = [
-    "language",
-    "math",
-    "code",
-    "science",
-    "earth",
-    "health",
-    "law",
-    "tools",
-    "vision",
-    "audio",
-    "agency",
-    "meta",
+    "language", "math", "code", "science", "earth", "health", "law", "tools", "vision", "audio",
+    "agency", "meta",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

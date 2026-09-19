@@ -24,7 +24,15 @@ impl LocalRunner {
         kill_after_first_pull: Option<&str>,
     ) -> Result<LocalRun, String> {
         let gate = InMemoryGate::clear();
-        Self::run_with_gate(plan, broker, audit, signed, &gate, false, kill_after_first_pull)
+        Self::run_with_gate(
+            plan,
+            broker,
+            audit,
+            signed,
+            &gate,
+            false,
+            kill_after_first_pull,
+        )
     }
 
     /// Runs an accepted, signed plan only after the local execution gate permits it.

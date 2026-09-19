@@ -109,10 +109,7 @@ impl InMemorySink {
     }
 
     pub fn events(&self) -> Vec<TraceEvent> {
-        self.events
-            .lock()
-            .map(|g| g.clone())
-            .unwrap_or_default()
+        self.events.lock().map(|g| g.clone()).unwrap_or_default()
     }
 }
 
@@ -241,7 +238,11 @@ fn classify_event(raw: &str) -> (TraceEventKind, String, String) {
         return (TraceEventKind::Deny, "GAIA_DENY".into(), "deny".into());
     }
     if token == "GAIA_REPLAY" {
-        return (TraceEventKind::Replay, "GAIA_REPLAY".into(), "replay".into());
+        return (
+            TraceEventKind::Replay,
+            "GAIA_REPLAY".into(),
+            "replay".into(),
+        );
     }
     if token == "GAIA_EXECUTION_FAILURE" {
         return (
@@ -320,11 +321,7 @@ fn classify_event(raw: &str) -> (TraceEventKind, String, String) {
             "execution_failure".into(),
         );
     }
-    (
-        TraceEventKind::Other,
-        "GAIA_OTHER".into(),
-        "other".into(),
-    )
+    (TraceEventKind::Other, "GAIA_OTHER".into(), "other".into())
 }
 
 fn firewall_rule(raw: &str) -> Option<String> {

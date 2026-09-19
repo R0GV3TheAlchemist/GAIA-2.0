@@ -1,4 +1,7 @@
-use gaia_sos::{discover, five_nines_claimed, formal_verify_done, god_coordinator, kernel_inference, revoke_mode, sfs_v1, sos_v1_tagged, t0_kernel_kloc, threats};
+use gaia_sos::{
+    discover, five_nines_claimed, formal_verify_done, god_coordinator, kernel_inference,
+    revoke_mode, sfs_v1, sos_v1_tagged, t0_kernel_kloc, threats,
+};
 
 #[test]
 fn contracts_are_honest() {

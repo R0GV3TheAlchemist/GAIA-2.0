@@ -31,7 +31,11 @@ impl AiSkill {
     }
 }
 
-pub fn assign_maturity(domain: &str, level: Maturity, measured: bool) -> Result<Maturity, AisdError> {
+pub fn assign_maturity(
+    domain: &str,
+    level: Maturity,
+    measured: bool,
+) -> Result<Maturity, AisdError> {
     if !measured && level >= Maturity::L5 {
         return Err(AisdError::Unmeasured);
     }
@@ -46,6 +50,9 @@ pub fn protein_structure() -> AiSkill {
         id: "aisd:science:protein-structure-prediction".into(),
         measured: false,
         maturity: None,
-        limitations: vec!["license-check", "unmeasured"].into_iter().map(str::to_string).collect(),
+        limitations: vec!["license-check", "unmeasured"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
     }
 }

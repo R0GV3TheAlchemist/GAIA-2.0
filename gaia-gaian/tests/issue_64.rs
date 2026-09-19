@@ -2,7 +2,13 @@
 //! Author: Kyle Steen / R0GV3 the Alchemist (immutable attribution).
 
 const SCOPES: [&str; 7] = [
-    "face", "body", "voice", "health", "memory", "agent", "earth_twin_share",
+    "face",
+    "body",
+    "voice",
+    "health",
+    "memory",
+    "agent",
+    "earth_twin_share",
 ];
 
 const PRINCIPLES: [&str; 10] = [
@@ -79,9 +85,18 @@ fn ten_principles_and_seven_scopes() {
 
 #[test]
 fn under_16_needs_verifiable_guardian_consent() {
-    let child = Subject { age: 15, guardian_consent: false };
-    let ok_child = Subject { age: 15, guardian_consent: true };
-    let adult = Subject { age: 16, guardian_consent: false };
+    let child = Subject {
+        age: 15,
+        guardian_consent: false,
+    };
+    let ok_child = Subject {
+        age: 15,
+        guardian_consent: true,
+    };
+    let adult = Subject {
+        age: 16,
+        guardian_consent: false,
+    };
     let none = Enable {
         phase3_personality_learning: false,
         behavioral_profiling: false,
@@ -90,14 +105,20 @@ fn under_16_needs_verifiable_guardian_consent() {
         hidden_copy: false,
         insurer_or_employer_export: false,
     };
-    assert_eq!(decide(&child, &none), Decision::Refuse("guardian_consent_required"));
+    assert_eq!(
+        decide(&child, &none),
+        Decision::Refuse("guardian_consent_required")
+    );
     assert_eq!(decide(&ok_child, &none), Decision::Allow);
     assert_eq!(decide(&adult, &none), Decision::Allow);
 }
 
 #[test]
 fn child_path_cannot_enable_phase3_personality_learning() {
-    let child = Subject { age: 12, guardian_consent: true };
+    let child = Subject {
+        age: 12,
+        guardian_consent: true,
+    };
     let e = Enable {
         phase3_personality_learning: true,
         behavioral_profiling: false,
@@ -106,12 +127,18 @@ fn child_path_cannot_enable_phase3_personality_learning() {
         hidden_copy: false,
         insurer_or_employer_export: false,
     };
-    assert_eq!(decide(&child, &e), Decision::Refuse("child_phase3_personality_learning"));
+    assert_eq!(
+        decide(&child, &e),
+        Decision::Refuse("child_phase3_personality_learning")
+    );
 }
 
 #[test]
 fn child_blocks_profiling_and_health_twin_learning() {
-    let child = Subject { age: 10, guardian_consent: true };
+    let child = Subject {
+        age: 10,
+        guardian_consent: true,
+    };
     let profile = Enable {
         phase3_personality_learning: false,
         behavioral_profiling: true,
@@ -128,13 +155,22 @@ fn child_blocks_profiling_and_health_twin_learning() {
         hidden_copy: false,
         insurer_or_employer_export: false,
     };
-    assert_eq!(decide(&child, &profile), Decision::Refuse("child_behavioral_profiling"));
-    assert_eq!(decide(&child, &health), Decision::Refuse("child_health_twin_learning"));
+    assert_eq!(
+        decide(&child, &profile),
+        Decision::Refuse("child_behavioral_profiling")
+    );
+    assert_eq!(
+        decide(&child, &health),
+        Decision::Refuse("child_health_twin_learning")
+    );
 }
 
 #[test]
 fn forbids_likeness_hidden_copies_and_health_export() {
-    let adult = Subject { age: 40, guardian_consent: false };
+    let adult = Subject {
+        age: 40,
+        guardian_consent: false,
+    };
     let likeness = Enable {
         phase3_personality_learning: false,
         behavioral_profiling: false,
@@ -159,7 +195,13 @@ fn forbids_likeness_hidden_copies_and_health_export() {
         hidden_copy: false,
         insurer_or_employer_export: true,
     };
-    assert_eq!(decide(&adult, &likeness), Decision::Refuse("third_party_likeness"));
+    assert_eq!(
+        decide(&adult, &likeness),
+        Decision::Refuse("third_party_likeness")
+    );
     assert_eq!(decide(&adult, &hidden), Decision::Refuse("hidden_copies"));
-    assert_eq!(decide(&adult, &export), Decision::Refuse("insurer_employer_health_export"));
+    assert_eq!(
+        decide(&adult, &export),
+        Decision::Refuse("insurer_employer_health_export")
+    );
 }

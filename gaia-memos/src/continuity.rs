@@ -89,8 +89,16 @@ impl Continuity {
         Ok(())
     }
 
-    pub fn ingest_episode(&mut self, episode: Episode, memos: &mut MemOs) -> Result<Uuid, &'static str> {
-        let cube = MemCube::new(CubeType::Plaintext, episode.text.clone(), episode.modality.clone());
+    pub fn ingest_episode(
+        &mut self,
+        episode: Episode,
+        memos: &mut MemOs,
+    ) -> Result<Uuid, &'static str> {
+        let cube = MemCube::new(
+            CubeType::Plaintext,
+            episode.text.clone(),
+            episode.modality.clone(),
+        );
         self.remember_life(episode)?;
         Ok(memos.put(cube))
     }
@@ -135,7 +143,9 @@ impl Continuity {
             }
         }
         if let Some(store) = &self.store {
-            return store.correct(old_text, new_text).map_err(|_| "sqlite correct failed");
+            return store
+                .correct(old_text, new_text)
+                .map_err(|_| "sqlite correct failed");
         }
         Ok(0)
     }
@@ -185,9 +195,11 @@ impl Continuity {
                 });
             }
         }
-        self.snapshots.iter().rev().find(|s| {
-            s.id == prompt || s.label == prompt || prompt.contains(&s.label)
-        }).cloned()
+        self.snapshots
+            .iter()
+            .rev()
+            .find(|s| s.id == prompt || s.label == prompt || prompt.contains(&s.label))
+            .cloned()
     }
 }
 

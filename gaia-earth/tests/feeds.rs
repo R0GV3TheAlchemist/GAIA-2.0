@@ -9,8 +9,14 @@ fn five_connectors_ingest_bounded_samples() {
         assert_eq!(bus.pull_live(c).unwrap_err(), TwinError::FeedUnavailable);
     }
     assert_eq!(lake.curated().len(), 5);
-    assert!(lake.curated().iter().all(|r| r.observation.source == SourceKind::Synthetic));
-    assert!(lake.curated().iter().all(|r| r.observation.uncertainty > 0.0));
+    assert!(lake
+        .curated()
+        .iter()
+        .all(|r| r.observation.source == SourceKind::Synthetic));
+    assert!(lake
+        .curated()
+        .iter()
+        .all(|r| r.observation.uncertainty > 0.0));
 }
 
 #[test]

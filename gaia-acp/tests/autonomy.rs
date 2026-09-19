@@ -87,7 +87,11 @@ fn money_legal_medical_irreversible_outbound_need_receipt() {
         (ActionClass::ExternalWrite, "contract", "legal/file"),
         (ActionClass::ExternalWrite, "note", "/phi/record"),
         (ActionClass::MergeDeployPublish, "ship", "main"),
-        (ActionClass::ExternalWrite, "public_comment", "https://example.invalid/1"),
+        (
+            ActionClass::ExternalWrite,
+            "public_comment",
+            "https://example.invalid/1",
+        ),
     ] {
         let a = act(class, tool, target);
         assert_eq!(

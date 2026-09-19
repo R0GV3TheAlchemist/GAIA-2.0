@@ -46,7 +46,10 @@ fn signed_package_installs_and_forged_tag_fails() {
         payload: "wat-v0".into(),
         signature: Some("ed25519:00:00".into()),
     };
-    assert_eq!(market.install(&forged).unwrap_err(), MarketError::BadSignature);
+    assert_eq!(
+        market.install(&forged).unwrap_err(),
+        MarketError::BadSignature
+    );
 }
 
 #[test]

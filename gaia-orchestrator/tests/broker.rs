@@ -44,7 +44,10 @@ fn metrics_queue_and_health() {
     b.enqueue_plan(&plan);
     let m = b.metrics();
     assert_eq!(m.queue_depth, plan.nodes.len());
-    assert!(m.executor_health.iter().any(|(id, ok)| id == "specialist-a" && *ok));
+    assert!(m
+        .executor_health
+        .iter()
+        .any(|(id, ok)| id == "specialist-a" && *ok));
 }
 
 #[test]
@@ -82,7 +85,10 @@ fn carbon_timetable_blocks_peak_hours() {
     let mut b = Broker::new();
     b.enqueue_plan(&accepted_plan());
     b.set_hour_utc(17);
-    assert!(b.pull("specialist-a").unwrap_err().contains("carbon window"));
+    assert!(b
+        .pull("specialist-a")
+        .unwrap_err()
+        .contains("carbon window"));
     b.set_hour_utc(12);
     assert!(b.pull("specialist-a").unwrap().is_some());
 }

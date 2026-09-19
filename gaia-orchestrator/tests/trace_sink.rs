@@ -37,14 +37,54 @@ fn with_sink_receives_typed_events_after_append() {
     let plan = TaskPlanner::from_intent(&graph);
     let sink = InMemorySink::new();
     let mut audit = TrustAudit::with_sink(Box::new(sink.clone()));
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "node-started:alpha");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "GAIA_REPLAY_REJECTED");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "GAIA_SIGNATURE_INVALID");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "GAIA_UNAUTHENTICATED");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "GAIA_CAPABILITY_DENIED");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "GAIA_FW_RATE_LIMIT");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "node-completed:alpha");
-    audit.append(graph.id, Some(plan.id), Some("specialist-a"), "node-failed-over:alpha");
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "node-started:alpha",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "GAIA_REPLAY_REJECTED",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "GAIA_SIGNATURE_INVALID",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "GAIA_UNAUTHENTICATED",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "GAIA_CAPABILITY_DENIED",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "GAIA_FW_RATE_LIMIT",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "node-completed:alpha",
+    );
+    audit.append(
+        graph.id,
+        Some(plan.id),
+        Some("specialist-a"),
+        "node-failed-over:alpha",
+    );
     audit.append(
         graph.id,
         Some(plan.id),

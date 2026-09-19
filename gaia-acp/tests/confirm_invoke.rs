@@ -45,7 +45,11 @@ fn money_legal_medical_irreversible_outbound_invoke_need_receipt() {
         (ActionClass::ExternalWrite, "contract", "legal/file"),
         (ActionClass::ExternalWrite, "note", "/phi/record"),
         (ActionClass::MergeDeployPublish, "ship", "main"),
-        (ActionClass::ExternalWrite, "public_comment", "https://example.invalid/1"),
+        (
+            ActionClass::ExternalWrite,
+            "public_comment",
+            "https://example.invalid/1",
+        ),
     ];
     for (class, tool, target) in cases {
         let (mut p, mut m) = plane();

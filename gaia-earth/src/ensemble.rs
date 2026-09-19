@@ -21,13 +21,8 @@ pub struct ModelProduct {
 
 impl ModelProduct {
     pub fn infer(model: RegisteredModel, system: SystemTwin) -> Result<Self, TwinError> {
-        let observation = Observation::admit(
-            system,
-            SourceKind::Synthetic,
-            0.0,
-            Some(1.0),
-            "fixture",
-        )?;
+        let observation =
+            Observation::admit(system, SourceKind::Synthetic, 0.0, Some(1.0), "fixture")?;
         Ok(Self {
             model,
             version: "fixture-0".into(),

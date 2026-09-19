@@ -19,7 +19,10 @@ fn hello_fixture_runs_with_declared_capability() {
     let outcome = runtime
         .invoke(&hello_manifest(), "hello", Some(Capability::MemoryRead))
         .unwrap();
-    assert_eq!(outcome, AgentOutcome::Output("hello from hello-agent".into()));
+    assert_eq!(
+        outcome,
+        AgentOutcome::Output("hello from hello-agent".into())
+    );
 }
 
 #[test]
@@ -42,7 +45,10 @@ fn excessive_resource_request_is_rejected_at_admission() {
     let runtime = AgentRuntime::default();
     let mut manifest = hello_manifest();
     manifest.limits.memory_mib = 513;
-    assert!(matches!(runtime.admit(&manifest), Err(RuntimeError::LimitRejected { .. })));
+    assert!(matches!(
+        runtime.admit(&manifest),
+        Err(RuntimeError::LimitRejected { .. })
+    ));
 }
 
 #[test]

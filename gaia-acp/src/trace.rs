@@ -103,7 +103,8 @@ pub fn from_invoke(
     request_hash: &str,
     claim_class: ClaimClass,
 ) -> TraceEvent {
-    let kind = if matches!(kind, TraceKind::Allow) && matches!(claim_class, ClaimClass::Prohibited) {
+    let kind = if matches!(kind, TraceKind::Allow) && matches!(claim_class, ClaimClass::Prohibited)
+    {
         TraceKind::Deny
     } else {
         kind

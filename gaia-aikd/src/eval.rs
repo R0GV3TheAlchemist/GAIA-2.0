@@ -3,10 +3,7 @@
 use crate::meta::aikd_v1_tagged;
 
 pub fn measured_vs_published() -> [&'static str; 2] {
-    [
-        "published: reference-only",
-        "gaia_measured: none-yet",
-    ]
+    ["published: reference-only", "gaia_measured: none-yet"]
 }
 
 pub fn overconfident_fixture_dropped(phase1_flagged: bool) -> bool {

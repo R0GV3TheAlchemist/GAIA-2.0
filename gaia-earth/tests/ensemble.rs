@@ -11,5 +11,8 @@ fn two_models_write_synthetic_dated_products() {
     a.into_lake(&mut lake).unwrap();
     b.into_lake(&mut lake).unwrap();
     assert_eq!(lake.curated().len(), 2);
-    assert!(lake.curated().iter().all(|r| r.observation.source == SourceKind::Synthetic));
+    assert!(lake
+        .curated()
+        .iter()
+        .all(|r| r.observation.source == SourceKind::Synthetic));
 }

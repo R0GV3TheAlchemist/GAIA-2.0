@@ -7,7 +7,7 @@ mod diamond;
 mod primitive;
 mod registry;
 
-pub use compass::{Compass, Cardinal};
+pub use compass::{Cardinal, Compass};
 pub use diamond::{Alignment, Gate};
 pub use primitive::{Circle, Point, Vesica};
 pub use registry::{

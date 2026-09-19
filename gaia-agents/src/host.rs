@@ -87,12 +87,7 @@ impl AgentHost {
     }
 
     /// Host-local critic review. Not the #26 A2A protocol.
-    pub fn review(
-        &self,
-        critic: &str,
-        subject: &str,
-        output: &str,
-    ) -> Result<Review, HostError> {
+    pub fn review(&self, critic: &str, subject: &str, output: &str) -> Result<Review, HostError> {
         let critic_entry = self.require(critic)?;
         if critic_entry.name != "critic" || !critic_entry.handles("review.output") {
             return Err(HostError::Usage(format!(
@@ -116,9 +111,10 @@ impl AgentHost {
         };
         match args.first().copied() {
             Some("deploy") => {
-                let name = args.get(1).copied().ok_or_else(|| {
-                    HostError::Usage("usage: gaia agent deploy <name>".into())
-                })?;
+                let name = args
+                    .get(1)
+                    .copied()
+                    .ok_or_else(|| HostError::Usage("usage: gaia agent deploy <name>".into()))?;
                 let entry = self.deploy(name)?;
                 Ok(format!(
                     "deployed {} agent {} intent={}",

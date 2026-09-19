@@ -74,7 +74,11 @@ impl Plan {
         while !remaining.is_empty() {
             let ready: Vec<Uuid> = remaining
                 .iter()
-                .filter(|n| n.depends_on.iter().all(|d| ordered.contains(d) || !ids.contains(d)))
+                .filter(|n| {
+                    n.depends_on
+                        .iter()
+                        .all(|d| ordered.contains(d) || !ids.contains(d))
+                })
                 .map(|n| n.id)
                 .collect();
             let ready: Vec<Uuid> = ready
@@ -228,7 +232,11 @@ impl Executor {
             cube_id: None,
         };
         let result_json = serde_json::to_string(&report).map_err(|e| e.to_string())?;
-        let cube_id = mem.put(MemCube::new(CubeType::Plaintext, result_json, "dag-plan-result"));
+        let cube_id = mem.put(MemCube::new(
+            CubeType::Plaintext,
+            result_json,
+            "dag-plan-result",
+        ));
         Ok(RunReport {
             cube_id: Some(cube_id),
             ..report

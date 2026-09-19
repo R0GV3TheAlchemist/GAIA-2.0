@@ -92,20 +92,19 @@ impl LocalVision {
         if self.policy.video_leaves_device {
             return Err(SenseError::CloudDenied);
         }
-        let meta = std::fs::metadata(path).map_err(|_| {
-            SenseError::MissingLocalFile(path.display().to_string())
-        })?;
+        let meta = std::fs::metadata(path)
+            .map_err(|_| SenseError::MissingLocalFile(path.display().to_string()))?;
         if !meta.is_file() {
             return Err(SenseError::MissingLocalFile(path.display().to_string()));
         }
-        let name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("image");
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("image");
         Ok(LocalCaption {
             path: path.display().to_string(),
             bytes: meta.len(),
-            text: format!("local image {name} bytes={} (on-device, no cloud)", meta.len()),
+            text: format!(
+                "local image {name} bytes={} (on-device, no cloud)",
+                meta.len()
+            ),
             left_device: false,
         })
     }

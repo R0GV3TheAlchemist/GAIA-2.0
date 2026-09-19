@@ -72,7 +72,9 @@ impl GitHubSourcePolicy {
     }
 
     pub fn allows_repository(&self, repository: &str) -> bool {
-        self.allowed_repositories.iter().any(|item| item == repository)
+        self.allowed_repositories
+            .iter()
+            .any(|item| item == repository)
     }
 
     pub fn allows_operation(&self, operation: SourceOperation) -> bool {
@@ -96,7 +98,10 @@ impl GitHubSourcePolicy {
                 .denied_path_patterns
                 .iter()
                 .any(|pattern| path_denied(pattern, path))
-            && self.allowed_paths.iter().any(|rule| path_matches(rule, path))
+            && self
+                .allowed_paths
+                .iter()
+                .any(|rule| path_matches(rule, path))
     }
 
     pub fn authorize(
@@ -128,13 +133,13 @@ fn path_denied(pattern: &str, path: &str) -> bool {
     let path = path.replace('\\', "/");
     if let Some(rest) = pattern.strip_prefix("**/") {
         if let Some(suffix) = rest.strip_prefix("*.") {
-            return path.to_ascii_lowercase().ends_with(&format!(".{suffix}").to_ascii_lowercase());
+            return path
+                .to_ascii_lowercase()
+                .ends_with(&format!(".{suffix}").to_ascii_lowercase());
         }
         if let Some(mid) = rest.strip_suffix("/**") {
             let needle = format!("/{mid}/");
-            return path == *mid
-                || path.starts_with(&format!("{mid}/"))
-                || path.contains(&needle);
+            return path == *mid || path.starts_with(&format!("{mid}/")) || path.contains(&needle);
         }
         return path == rest || path.ends_with(&format!("/{rest}"));
     }

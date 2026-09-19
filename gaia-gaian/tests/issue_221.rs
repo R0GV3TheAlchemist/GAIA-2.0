@@ -129,7 +129,10 @@ fn engagement_maximizing_prompt_is_rejected() {
         legacy_opt_in: false,
         distress: false,
     };
-    assert_eq!(decide(&req), Decision::Refuse("engagement_maximizing_prompt"));
+    assert_eq!(
+        decide(&req),
+        Decision::Refuse("engagement_maximizing_prompt")
+    );
 }
 
 #[test]

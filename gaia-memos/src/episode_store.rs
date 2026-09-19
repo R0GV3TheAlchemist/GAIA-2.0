@@ -76,7 +76,9 @@ impl EpisodeStore {
     }
 
     fn rowids_for_text(&self, text: &str) -> rusqlite::Result<Vec<i64>> {
-        let mut stmt = self.conn.prepare("SELECT rowid FROM episodes WHERE text = ?1")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT rowid FROM episodes WHERE text = ?1")?;
         let rows = stmt.query_map(params![text], |row| row.get(0))?;
         rows.collect()
     }
@@ -85,8 +87,10 @@ impl EpisodeStore {
         let ids = self.rowids_for_text(text)?;
         let n = ids.len();
         for id in ids {
-            self.conn.execute("DELETE FROM episodes_fts WHERE rowid = ?1", params![id])?;
-            self.conn.execute("DELETE FROM episodes WHERE rowid = ?1", params![id])?;
+            self.conn
+                .execute("DELETE FROM episodes_fts WHERE rowid = ?1", params![id])?;
+            self.conn
+                .execute("DELETE FROM episodes WHERE rowid = ?1", params![id])?;
         }
         Ok(n)
     }
@@ -99,7 +103,8 @@ impl EpisodeStore {
                 "UPDATE episodes SET text = ?1 WHERE rowid = ?2",
                 params![new_text, id],
             )?;
-            self.conn.execute("DELETE FROM episodes_fts WHERE rowid = ?1", params![id])?;
+            self.conn
+                .execute("DELETE FROM episodes_fts WHERE rowid = ?1", params![id])?;
             self.conn.execute(
                 "INSERT INTO episodes_fts(rowid, text) VALUES (?1, ?2)",
                 params![id, new_text],
@@ -122,7 +127,10 @@ impl EpisodeStore {
         Ok(())
     }
 
-    pub fn find_snapshot(&self, prompt: &str) -> rusqlite::Result<Option<(String, String, String, String)>> {
+    pub fn find_snapshot(
+        &self,
+        prompt: &str,
+    ) -> rusqlite::Result<Option<(String, String, String, String)>> {
         let mut stmt = self.conn.prepare(
             "SELECT id, label, current_step, open_files FROM snapshots
              WHERE id = ?1 OR label = ?1 OR instr(?1, label) > 0

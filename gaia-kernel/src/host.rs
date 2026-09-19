@@ -76,7 +76,9 @@ impl KernelHost {
 
     pub fn intent(&mut self, goal: &str) -> Result<TaskHandle> {
         if goal.trim().is_empty() {
-            return Err(KernelError::InvalidArgument("goal must not be empty".into()));
+            return Err(KernelError::InvalidArgument(
+                "goal must not be empty".into(),
+            ));
         }
         let handle = TaskHandle {
             intent_id: Uuid::new_v4(),
@@ -92,7 +94,9 @@ impl KernelHost {
 
     pub fn context(&mut self, query: &str) -> Result<MemCube> {
         if query.trim().is_empty() {
-            return Err(KernelError::InvalidArgument("query must not be empty".into()));
+            return Err(KernelError::InvalidArgument(
+                "query must not be empty".into(),
+            ));
         }
         if let Some((_, cube)) = self.memos.recall(query, 1).into_iter().next() {
             self.audit
@@ -101,7 +105,8 @@ impl KernelHost {
         }
         let cube = MemCube::new(CubeType::Plaintext, query, "context.miss");
         let id = self.memos.put(cube.clone());
-        self.audit.append(&self.principal, "context", &id.to_string());
+        self.audit
+            .append(&self.principal, "context", &id.to_string());
         Ok(cube)
     }
 
@@ -149,7 +154,9 @@ impl KernelHost {
 
     pub fn declare(&mut self, name: &str, kind: &str) -> Result<ResourceHandle> {
         if name.is_empty() {
-            return Err(KernelError::InvalidArgument("resource name required".into()));
+            return Err(KernelError::InvalidArgument(
+                "resource name required".into(),
+            ));
         }
         let handle = ResourceHandle {
             id: Uuid::new_v4(),
@@ -193,7 +200,9 @@ impl KernelHost {
             return Ok(());
         }
         let Some(blob) = provided_sig else {
-            return Err(KernelError::Denied("unsigned operations are rejected".into()));
+            return Err(KernelError::Denied(
+                "unsigned operations are rejected".into(),
+            ));
         };
         if !self.verify(payload, blob)? {
             return Err(KernelError::Denied("bad signature".into()));

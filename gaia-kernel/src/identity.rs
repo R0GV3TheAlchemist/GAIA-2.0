@@ -20,7 +20,10 @@ pub struct Principal {
 impl Principal {
     pub fn generate(kind: PrincipalKind) -> Self {
         let mut rng = OsRng {};
-        Self { kind, keypair: Keypair::generate(&mut rng) }
+        Self {
+            kind,
+            keypair: Keypair::generate(&mut rng),
+        }
     }
 
     pub fn public_hex(&self) -> String {
@@ -37,9 +40,15 @@ impl Principal {
 }
 
 pub fn verify(public_hex: &str, payload: &[u8], signature: &[u8]) -> bool {
-    let Ok(pk_bytes) = hex::decode(public_hex) else { return false; };
-    let Ok(pk) = PublicKey::from_bytes(&pk_bytes) else { return false; };
-    let Ok(sig) = Signature::from_bytes(signature) else { return false; };
+    let Ok(pk_bytes) = hex::decode(public_hex) else {
+        return false;
+    };
+    let Ok(pk) = PublicKey::from_bytes(&pk_bytes) else {
+        return false;
+    };
+    let Ok(sig) = Signature::from_bytes(signature) else {
+        return false;
+    };
     pk.verify(payload, &sig).is_ok()
 }
 

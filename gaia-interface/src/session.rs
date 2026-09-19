@@ -299,7 +299,9 @@ impl Session {
             match agent.state {
                 AgentState::Revoked => return Err(SessionError::AlreadyRevoked(agent_id.into())),
                 AgentState::Running => {
-                    return Err(SessionError::Usage(format!("{agent_id} is already running")))
+                    return Err(SessionError::Usage(format!(
+                        "{agent_id} is already running"
+                    )))
                 }
                 AgentState::Created => {
                     return Err(SessionError::Usage(format!("{agent_id} is not deployed")))
@@ -353,23 +355,25 @@ impl Session {
                 self.start()?;
                 Ok("started local session".into())
             }
-            Some("agent") => match args.get(1).copied() {
-                Some("create") => {
-                    let id = args.get(2).copied().ok_or_else(|| {
-                        SessionError::Usage("usage: agent create <name>".into())
-                    })?;
-                    let agent = self.create_agent(id)?;
-                    Ok(format!("created agent {} state=Created", agent.id))
+            Some("agent") => {
+                match args.get(1).copied() {
+                    Some("create") => {
+                        let id = args.get(2).copied().ok_or_else(|| {
+                            SessionError::Usage("usage: agent create <name>".into())
+                        })?;
+                        let agent = self.create_agent(id)?;
+                        Ok(format!("created agent {} state=Created", agent.id))
+                    }
+                    Some("deploy") => {
+                        let id = args.get(2).copied().ok_or_else(|| {
+                            SessionError::Usage("usage: agent deploy <name>".into())
+                        })?;
+                        let agent = self.deploy_agent(id)?;
+                        Ok(format!("deployed agent {} state=Running", agent.id))
+                    }
+                    _ => Err(SessionError::Usage("usage: agent <create|deploy>".into())),
                 }
-                Some("deploy") => {
-                    let id = args.get(2).copied().ok_or_else(|| {
-                        SessionError::Usage("usage: agent deploy <name>".into())
-                    })?;
-                    let agent = self.deploy_agent(id)?;
-                    Ok(format!("deployed agent {} state=Running", agent.id))
-                }
-                _ => Err(SessionError::Usage("usage: agent <create|deploy>".into())),
-            },
+            }
             Some("intent") => {
                 let text = args.get(1..).unwrap_or(&[]).join(" ");
                 let record = self.declare_intent(&text)?;
@@ -392,23 +396,26 @@ impl Session {
             }
             Some("audit") => Ok(format!("audit_events={}", self.audit.len())),
             Some("pause") => {
-                let id = args.get(1).copied().ok_or_else(|| {
-                    SessionError::Usage("usage: pause <agent>".into())
-                })?;
+                let id = args
+                    .get(1)
+                    .copied()
+                    .ok_or_else(|| SessionError::Usage("usage: pause <agent>".into()))?;
                 let agent = self.pause(id)?;
                 Ok(format!("paused {}", agent.id))
             }
             Some("resume") => {
-                let id = args.get(1).copied().ok_or_else(|| {
-                    SessionError::Usage("usage: resume <agent>".into())
-                })?;
+                let id = args
+                    .get(1)
+                    .copied()
+                    .ok_or_else(|| SessionError::Usage("usage: resume <agent>".into()))?;
                 let agent = self.resume(id)?;
                 Ok(format!("resumed {}", agent.id))
             }
             Some("revoke") => {
-                let id = args.get(1).copied().ok_or_else(|| {
-                    SessionError::Usage("usage: revoke <agent>".into())
-                })?;
+                let id = args
+                    .get(1)
+                    .copied()
+                    .ok_or_else(|| SessionError::Usage("usage: revoke <agent>".into()))?;
                 let agent = self.revoke(id)?;
                 Ok(format!("revoked {}", agent.id))
             }

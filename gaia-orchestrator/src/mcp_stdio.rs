@@ -38,8 +38,8 @@ pub fn serve_once<R: BufRead, W: Write>(
     let request_json = decode_line(&line)?;
     let request: JsonRpcRequest =
         serde_json::from_str(&request_json).map_err(|e| format!("stdio request: {e}"))?;
-    let response_json =
-        serde_json::to_string(&registry.handle(request)).map_err(|e| format!("stdio response: {e}"))?;
+    let response_json = serde_json::to_string(&registry.handle(request))
+        .map_err(|e| format!("stdio response: {e}"))?;
     let response_line = encode_line(&response_json)?;
 
     writer

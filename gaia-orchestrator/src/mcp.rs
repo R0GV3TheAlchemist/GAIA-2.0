@@ -216,7 +216,10 @@ impl McpRegistry {
     }
 
     pub fn resources(&self) -> Vec<&McpResource> {
-        self.agents.iter().flat_map(|a| a.resources.iter()).collect()
+        self.agents
+            .iter()
+            .flat_map(|a| a.resources.iter())
+            .collect()
     }
 
     pub fn admit(&mut self, msg: &McpMessage) -> Result<(), String> {

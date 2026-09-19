@@ -1,7 +1,6 @@
 use gaia_orchestrator::{load_github_source_policy, SourceOperation};
 
-const DEFAULT_POLICY: &str =
-    include_str!("../../gaia-spec/policies/github-source.default.json");
+const DEFAULT_POLICY: &str = include_str!("../../gaia-spec/policies/github-source.default.json");
 const DEFAULT_REPO: &str = "R0GV3TheAlchemist/GAIA-2.0";
 
 fn with_replaced(from: &str, to: &str) -> String {
@@ -48,7 +47,11 @@ fn loaded_document_controls_path_allowlist() {
         .authorize(DEFAULT_REPO, "README.md", SourceOperation::FileRead)
         .is_ok());
     assert!(policy
-        .authorize(DEFAULT_REPO, "gaia-spec/intent-graph.md", SourceOperation::FileRead)
+        .authorize(
+            DEFAULT_REPO,
+            "gaia-spec/intent-graph.md",
+            SourceOperation::FileRead
+        )
         .is_err());
 }
 
@@ -63,7 +66,11 @@ fn document_cannot_weaken_hard_sensitive_path_denials() {
         .authorize(DEFAULT_REPO, ".env", SourceOperation::FileRead)
         .is_err());
     assert!(policy
-        .authorize(DEFAULT_REPO, "gaia-spec/secrets/token", SourceOperation::FileRead)
+        .authorize(
+            DEFAULT_REPO,
+            "gaia-spec/secrets/token",
+            SourceOperation::FileRead
+        )
         .is_err());
 }
 
@@ -113,7 +120,10 @@ fn empty_allowed_paths_are_rejected() {
 fn limits_above_local_safety_caps_are_rejected() {
     for (from, to) in [
         ("\"max_file_bytes\": 1048576", "\"max_file_bytes\": 1048577"),
-        ("\"max_response_bytes\": 1048576", "\"max_response_bytes\": 1048577"),
+        (
+            "\"max_response_bytes\": 1048576",
+            "\"max_response_bytes\": 1048577",
+        ),
         ("\"max_results\": 50", "\"max_results\": 51"),
         ("\"requests_per_minute\": 60", "\"requests_per_minute\": 61"),
     ] {

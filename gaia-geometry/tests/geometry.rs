@@ -30,7 +30,10 @@ fn registered_symbols_have_first_law_fields() {
     assert!(!diamond.steward.is_empty());
     assert!(diamond.non_claim.contains("Not"));
     assert!(operational("gaia.compass.navigate").is_ok());
-    assert_eq!(operational("gaia.flower.of.life"), Err(GeoError::IncompleteContract));
+    assert_eq!(
+        operational("gaia.flower.of.life"),
+        Err(GeoError::IncompleteContract)
+    );
 }
 
 #[test]

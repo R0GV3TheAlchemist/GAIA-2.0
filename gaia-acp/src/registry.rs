@@ -30,7 +30,9 @@ fn path_is_local(path: &str) -> bool {
 
 impl LocalRegistry {
     pub fn new() -> Self {
-        Self { entries: Vec::new() }
+        Self {
+            entries: Vec::new(),
+        }
     }
 
     pub fn register_local(&mut self, name: &str, manifest_path: &str) -> Result<(), ReasonCode> {

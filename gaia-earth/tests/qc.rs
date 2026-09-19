@@ -7,15 +7,35 @@ fn obs(source: SourceKind, value: f64, u: f64) -> Observation {
 #[test]
 fn curated_record_refuses_missing_method_or_range() {
     let ok = obs(SourceKind::Measured, 15.0, 0.2);
-    CuratedRecord::ship(ok.clone(), "station-mean", "fixture:local", 1, QualityClass::Operational)
-        .unwrap();
+    CuratedRecord::ship(
+        ok.clone(),
+        "station-mean",
+        "fixture:local",
+        1,
+        QualityClass::Operational,
+    )
+    .unwrap();
     assert_eq!(
         CuratedRecord::ship(ok, "", "fixture:local", 1, QualityClass::Operational).unwrap_err(),
         TwinError::UnlabeledPoint
     );
-    let hot = Observation::admit(SystemTwin::Atmosphere, SourceKind::Measured, 99.0, Some(0.1), "degC").unwrap();
+    let hot = Observation::admit(
+        SystemTwin::Atmosphere,
+        SourceKind::Measured,
+        99.0,
+        Some(0.1),
+        "degC",
+    )
+    .unwrap();
     assert_eq!(
-        CuratedRecord::ship(hot, "station-mean", "fixture:local", 1, QualityClass::Caution).unwrap_err(),
+        CuratedRecord::ship(
+            hot,
+            "station-mean",
+            "fixture:local",
+            1,
+            QualityClass::Caution
+        )
+        .unwrap_err(),
         TwinError::UnlabeledPoint
     );
 }
@@ -23,7 +43,14 @@ fn curated_record_refuses_missing_method_or_range() {
 #[test]
 fn admit_without_uncertainty_cannot_become_curated() {
     assert_eq!(
-        Observation::admit(SystemTwin::Atmosphere, SourceKind::Measured, 12.0, None, "degC").unwrap_err(),
+        Observation::admit(
+            SystemTwin::Atmosphere,
+            SourceKind::Measured,
+            12.0,
+            None,
+            "degC"
+        )
+        .unwrap_err(),
         TwinError::MissingUncertainty
     );
 }
@@ -42,5 +69,8 @@ fn assimilate_blends_and_labels_synthetic() {
 fn assimilate_refuses_zero_uncertainty() {
     let model = obs(SourceKind::Synthetic, 10.0, 0.0);
     let seen = obs(SourceKind::Measured, 14.0, 1.0);
-    assert_eq!(assimilate(model, seen).unwrap_err(), TwinError::MissingUncertainty);
+    assert_eq!(
+        assimilate(model, seen).unwrap_err(),
+        TwinError::MissingUncertainty
+    );
 }

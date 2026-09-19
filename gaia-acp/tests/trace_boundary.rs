@@ -4,19 +4,43 @@ use gaia_acp::*;
 fn emits_allow_deny_replay_and_failure_shapes() {
     let mut sink = MemoryTraceSink::default();
     sink.emit(from_invoke(
-        TraceKind::Allow, 1, "agent-a", "intent-a", "c1", ReasonCode::Allow, "h1",
+        TraceKind::Allow,
+        1,
+        "agent-a",
+        "intent-a",
+        "c1",
+        ReasonCode::Allow,
+        "h1",
         ClaimClass::Established,
     ));
     sink.emit(from_invoke(
-        TraceKind::Deny, 2, "agent-a", "intent-a", "c2", ReasonCode::ToolNotListed, "h2",
+        TraceKind::Deny,
+        2,
+        "agent-a",
+        "intent-a",
+        "c2",
+        ReasonCode::ToolNotListed,
+        "h2",
         ClaimClass::Established,
     ));
     sink.emit(from_invoke(
-        TraceKind::Replay, 3, "agent-a", "intent-a", "c3", ReasonCode::ApprovalReplay, "h3",
+        TraceKind::Replay,
+        3,
+        "agent-a",
+        "intent-a",
+        "c3",
+        ReasonCode::ApprovalReplay,
+        "h3",
         ClaimClass::Established,
     ));
     sink.emit(from_invoke(
-        TraceKind::ExecutionFailure, 4, "agent-a", "intent-a", "c4", ReasonCode::StateInvalid, "h4",
+        TraceKind::ExecutionFailure,
+        4,
+        "agent-a",
+        "intent-a",
+        "c4",
+        ReasonCode::StateInvalid,
+        "h4",
         ClaimClass::Established,
     ));
     assert_eq!(
@@ -34,7 +58,13 @@ fn emits_allow_deny_replay_and_failure_shapes() {
 #[test]
 fn prohibited_claim_cannot_emit_as_allow() {
     let ev = from_invoke(
-        TraceKind::Allow, 1, "agent-a", "intent-a", "c1", ReasonCode::Allow, "h1",
+        TraceKind::Allow,
+        1,
+        "agent-a",
+        "intent-a",
+        "c1",
+        ReasonCode::Allow,
+        "h1",
         ClaimClass::Prohibited,
     );
     assert_eq!(ev.kind, TraceKind::Deny);

@@ -13,7 +13,13 @@ pub enum Connector {
 
 impl Connector {
     pub fn all() -> [Connector; 5] {
-        [Self::Copernicus, Self::OpenWeather, Self::Gbif, Self::Usgs, Self::Erddap]
+        [
+            Self::Copernicus,
+            Self::OpenWeather,
+            Self::Gbif,
+            Self::Usgs,
+            Self::Erddap,
+        ]
     }
     pub fn topic(self) -> &'static str {
         match self {
@@ -81,7 +87,8 @@ impl FeedBus {
             Connector::Usgs => (SystemTwin::Lithosphere, 4.1, "Mw"),
             Connector::Erddap => (SystemTwin::Ocean, 18.2, "degC"),
         };
-        let observation = Observation::admit(system, SourceKind::Synthetic, value, Some(0.2), unit)?;
+        let observation =
+            Observation::admit(system, SourceKind::Synthetic, value, Some(0.2), unit)?;
         Ok(FeedRecord {
             connector,
             topic: connector.topic().into(),

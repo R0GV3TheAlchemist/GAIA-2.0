@@ -3,8 +3,14 @@ use gaia_gaian::{gaian_release_checklist, Agent, AgentAct, GaianError};
 #[test]
 fn agent_cannot_email_pay_or_publish_without_grant() {
     let mut agent = Agent::new();
-    assert_eq!(agent.act(AgentAct::Email).unwrap_err(), GaianError::GrantRequired);
-    assert_eq!(agent.act(AgentAct::Pay).unwrap_err(), GaianError::GrantRequired);
+    assert_eq!(
+        agent.act(AgentAct::Email).unwrap_err(),
+        GaianError::GrantRequired
+    );
+    assert_eq!(
+        agent.act(AgentAct::Pay).unwrap_err(),
+        GaianError::GrantRequired
+    );
     assert_eq!(
         agent.act(AgentAct::PublishLikeness).unwrap_err(),
         GaianError::GrantRequired

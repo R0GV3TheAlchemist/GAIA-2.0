@@ -22,8 +22,14 @@ fn health_defaults_off_and_blocks_insurer_export() {
     twin.enable(&adult_health()).unwrap();
     twin.admit(&adult_health(), HealthMetric::Steps, 1.0, true)
         .unwrap();
-    assert_eq!(twin.export_insurer().unwrap_err(), GaianError::ExportForbidden);
-    assert_eq!(twin.export_employer().unwrap_err(), GaianError::ExportForbidden);
+    assert_eq!(
+        twin.export_insurer().unwrap_err(),
+        GaianError::ExportForbidden
+    );
+    assert_eq!(
+        twin.export_employer().unwrap_err(),
+        GaianError::ExportForbidden
+    );
 }
 
 #[test]
@@ -32,7 +38,9 @@ fn future_self_is_not_medical_advice() {
         future_self("diagnose this rash").unwrap_err(),
         GaianError::NotMedicalAdvice
     );
-    assert!(future_self("what if I walk more").unwrap().contains("not medical"));
+    assert!(future_self("what if I walk more")
+        .unwrap()
+        .contains("not medical"));
 }
 
 #[test]

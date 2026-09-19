@@ -4,7 +4,10 @@ use gaia_ukd::{publish_tek, GaianKnowledge, TekStore, UkdError};
 fn tek_stays_empty_without_agreement() {
     let store = TekStore::new();
     assert!(store.is_empty());
-    assert_eq!(publish_tek(false, "story").unwrap_err(), UkdError::NoAgreement);
+    assert_eq!(
+        publish_tek(false, "story").unwrap_err(),
+        UkdError::NoAgreement
+    );
 }
 
 #[test]

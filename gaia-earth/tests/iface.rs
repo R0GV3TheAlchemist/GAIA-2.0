@@ -4,7 +4,14 @@ use gaia_earth::{AccessTier, EarthInterface, SourceKind, SystemTwin};
 fn dashboard_api_and_locale_ask_share_state() {
     let mut earth = EarthInterface::new();
     earth
-        .publish("Nairobi", SystemTwin::Atmosphere, SourceKind::Measured, 24.0, 0.6, "degC")
+        .publish(
+            "Nairobi",
+            SystemTwin::Atmosphere,
+            SourceKind::Measured,
+            24.0,
+            0.6,
+            "degC",
+        )
         .unwrap();
     assert_eq!(
         earth.dashboard("Nairobi").unwrap().observation.value,

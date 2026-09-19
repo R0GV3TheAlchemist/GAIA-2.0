@@ -16,7 +16,11 @@ fn ev(kind: TraceKind, reason: ReasonCode) -> TraceEvent {
 #[test]
 fn default_mode_does_not_forward() {
     let mut t = RecordingLiveTransport::default();
-    let err = try_forward(&LiveTraceConfig::off(), &mut t, &ev(TraceKind::Allow, ReasonCode::Allow));
+    let err = try_forward(
+        &LiveTraceConfig::off(),
+        &mut t,
+        &ev(TraceKind::Allow, ReasonCode::Allow),
+    );
     assert_eq!(err, Err(LiveSendError::Disabled));
     assert!(t.rows.is_empty());
     assert!(refuse_live_supabase().is_err());
@@ -31,9 +35,15 @@ fn mapped_row_matches_deployed_columns() {
     assert!(row.canon_refs.is_empty());
     assert_eq!(row.inputs, serde_json::json!({}));
     assert_eq!(row.outputs, serde_json::json!({}));
-    assert_eq!(row.error.as_deref(), Some(ReasonCode::ConfirmRequired.as_str()));
+    assert_eq!(
+        row.error.as_deref(),
+        Some(ReasonCode::ConfirmRequired.as_str())
+    );
     assert_eq!(row.meta["schema"], "gaia.trace_events.v1");
-    assert_eq!(row.meta["reason_code"], ReasonCode::ConfirmRequired.as_str());
+    assert_eq!(
+        row.meta["reason_code"],
+        ReasonCode::ConfirmRequired.as_str()
+    );
 }
 
 #[test]
