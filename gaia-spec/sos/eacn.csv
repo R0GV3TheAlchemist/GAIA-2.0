@@ -1,0 +1,4 @@
+id,step,claim_class,effects,notes
+eacn-discover,discover,listed-only,,discover(from_intent) already on main
+eacn-negotiate,negotiate,listed-only,,name only; not an API
+eacn-adjudicate,adjudicate,listed-only,,name only; not an API
