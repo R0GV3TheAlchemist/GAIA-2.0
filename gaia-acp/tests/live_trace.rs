@@ -23,13 +23,26 @@ fn default_mode_does_not_forward() {
 }
 
 #[test]
-fn mapped_row_has_empty_io_and_stable_reason() {
+fn mapped_row_matches_deployed_columns() {
     let row = map_row(&ev(TraceKind::Deny, ReasonCode::ConfirmRequired));
+    assert_eq!(row.event, "deny");
+    assert_eq!(row.gaian_id.as_deref(), Some("agent-a"));
+    assert_eq!(row.correlation_id.as_deref(), Some("corr-a"));
+    assert!(row.canon_refs.is_empty());
     assert_eq!(row.inputs, serde_json::json!({}));
     assert_eq!(row.outputs, serde_json::json!({}));
-    assert_eq!(row.reason_code, ReasonCode::ConfirmRequired.as_str());
-    assert_eq!(row.metadata["schema"], "gaia.trace_events.v1");
-    assert!(!row.reason_code.contains(' '));
+    assert_eq!(row.error.as_deref(), Some(ReasonCode::ConfirmRequired.as_str()));
+    assert_eq!(row.meta["schema"], "gaia.trace_events.v1");
+    assert_eq!(row.meta["reason_code"], ReasonCode::ConfirmRequired.as_str());
+}
+
+#[test]
+fn allow_row_has_empty_error() {
+    let row = map_row(&ev(TraceKind::Allow, ReasonCode::Allow));
+    assert_eq!(row.event, "allow");
+    assert!(row.error.is_none());
+    assert_eq!(row.inputs, serde_json::json!({}));
+    assert_eq!(row.outputs, serde_json::json!({}));
 }
 
 #[test]
@@ -57,7 +70,7 @@ fn test_boundary_accepts_mapped_row() {
     )
     .unwrap();
     assert_eq!(t.rows.len(), 1);
-    assert_eq!(t.rows[0].kind, "allow");
+    assert_eq!(t.rows[0].event, "allow");
 }
 
 #[test]

@@ -1,8 +1,8 @@
-# Trace events — Phase 1 local seam (#335)
+# Trace events — local seam + mapped row (#335)
 
-Status: **local adapter only**. This document does not claim live writes to Supabase `trace_events`.
+Status: **local adapter verified**. Live HTTP writes to Supabase `trace_events` are **not** implemented and **not** claimed.
 
-Deployed schema exists. Verified runtime integration does **not**.
+Deployed schema exists in project `gaia-2-0`. Verified runtime integration does **not**.
 
 ## Authority order
 
@@ -25,29 +25,31 @@ Allow-listed `SafeTraceMeta` only: audit sequence, plan ID, pseudonymous executo
 
 Classification uses the first whitespace-separated token only. Known codes must match exactly or use a controlled prefix (`GAIA_FW_*`, `node-started*`). Unknown strings map to `TraceEventKind::Other` with reason `GAIA_OTHER`. The raw string is **not** copied into the trace event.
 
-## Execution gate (local contract)
+## Execution gate (wired locally)
 
-`permit_execution` is the specified runner check. It does not call Supabase.
+`permit_execution` is the runner check. It does not call Supabase.
 
 - Active gap lock → `Deny` + `ExecutionBlockedByGapLock` / `GAIA_GAP_LOCK_ACTIVE`. Fail-closed in every mode.
 - Control plane unreachable + deployed → `Deny` + `ControlPlaneUnavailable`.
 - Control plane unreachable + local-dev → `Allow` with telemetry; do not block the kernel audit path.
 
-`LocalRunner` is not yet wired to this gate. Wiring is a later, still-local change.
+`LocalRunner::run` uses a clear `InMemoryGate` (no network).
+`LocalRunner::run_with_gate` is the testable wiring. Covered in `tests/approved_run.rs`.
 
-## Future Supabase mapping (not implemented)
+## Mapped live row (still no HTTP)
 
-Deployed `public.trace_events` columns: `event`, `gaian_id`, `correlation_id`, `canon_refs`, `started_at`, `ended_at`, `latency_ms`, `inputs`, `outputs`, `error`, `meta`.
+`gaia-acp` `LiveTraceRow` now uses deployed column names:
 
-A future feature-gated sink must:
+`event`, `gaian_id`, `correlation_id`, `canon_refs`, `started_at`, `ended_at`, `latency_ms`, `inputs`, `outputs`, `error`, `meta`.
 
-- map to those names exactly
-- write empty `{}` for `inputs` and `outputs` in v1
-- use a least-privilege server role + RLS
-- never `Debug`-print a service-role key
-- never silently drop undelivered events without a local buffer policy
+Rules:
 
-Phase 1 does **not** export `SupabaseSink`.
+- `inputs` and `outputs` are always `{}`
+- `canon_refs` is empty unless an explicit safe ref is later added
+- `error` is a stable reason code, never a chain
+- allow-listed extras live only in `meta`
+- default mode is `Off`; `MappedOnly` + `TestBoundary` records in memory only
+- no `SupabaseSink` export; no credentials in this workspace
 
 ## RLS / key custody (prerequisite for live writes)
 
