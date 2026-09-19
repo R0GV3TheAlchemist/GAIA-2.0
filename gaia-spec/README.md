@@ -18,6 +18,9 @@ This directory contains the in-repo interoperability contract for GAIA 2.0.
 - [MemCube](memcube.md) — governed memory unit.
 - [AIP Manifest](aip-manifest.md) — agent package declaration.
 - [GAIA primitives](syscalls.md) — host primitive vocabulary.
+- [Earth Twin commons](earth/COMMONS.md) — licenses, ethics, ingest ticket (#40).
+- [Earth Twin lake](earth/LAKE.md) — in-process Raw/Curated + STAC stub (#41).
+- [Earth Twin models](earth/MODELS.md) — listed ensemble, synthetic only (#48).
 - [Schemas](schemas/) — machine-readable validation schemas.
 - [Examples](examples/) — example documents.
 - [Open RFCs](rfcs.md) — unresolved design questions.
