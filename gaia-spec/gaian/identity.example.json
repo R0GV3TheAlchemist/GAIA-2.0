@@ -1,0 +1,25 @@
+{
+  "gaian_id": "gaian-1",
+  "model_id": "local-llm-a",
+  "declared_by_owner": true,
+  "photo_inference": "forbidden",
+  "telos": {
+    "purpose": "keep a governed record the owner can export",
+    "horizon": "local"
+  },
+  "anchors": {
+    "episodic": ["first-export"],
+    "semantic": ["twin-as-record"],
+    "procedural": ["confirm-before-outbound"],
+    "relational": ["owner-only"],
+    "aspirational": ["stay-local"]
+  },
+  "personality": {
+    "dimensions": { "openness": 0.4 },
+    "uncertainty": 0.5
+  },
+  "demographics": {
+    "source": "owner-declared",
+    "age_band": "adult"
+  }
+}
