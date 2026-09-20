@@ -8,7 +8,7 @@ use gaia_aikd::{
     AikdError, HallucinationClass, HallucinationWarning, UncertaintyBand,
 };
 
-// ── Uncertainty band rendering ───────────────────────────────────────────────
+// ── Uncertainty band rendering ───────────────────────────────
 
 /// Render the Phase 1 uncertainty band as a plain-text line.
 /// Callers MUST NOT present this as a measured or calibrated score.
@@ -33,6 +33,7 @@ pub fn render_uncertainty_band_html() -> String {
 }
 
 /// Render the propagated uncertainty band for a given tier.
+/// T5 is `NeedVerify` — do not unwrap it into a band line.
 pub fn render_propagated_band(tier: u8) -> Result<String, AikdError> {
     let _ = tier_floor(tier)?;
     let band = propagate_uncertainty(tier);
@@ -44,7 +45,7 @@ pub fn render_propagated_band(tier: u8) -> Result<String, AikdError> {
     ))
 }
 
-// ── Tier floor guard ─────────────────────────────────────────────────────────
+// ── Tier floor guard ───────────────────────────────────────
 
 /// Named guard over `tier_floor`. Returns a user-facing error string on refusal.
 pub fn guard_tier(tier: u8) -> Result<u8, String> {
@@ -58,7 +59,7 @@ pub fn guard_tier(tier: u8) -> Result<u8, String> {
     }
 }
 
-// ── Hallucination warning rendering ─────────────────────────────────────────
+// ── Hallucination warning rendering ─────────────────────────
 
 /// Render a hallucination warning as a plain-text line.
 ///
@@ -94,7 +95,7 @@ pub fn render_hallucination_warning_html(
     ))
 }
 
-// ── CannotKnow hard-floor surface ────────────────────────────────────────────
+// ── CannotKnow hard-floor surface ────────────────────────────
 
 /// Named hard-floor guard. Returns a user-facing refusal when the question
 /// is empty or otherwise triggers `CannotKnow`.
@@ -105,14 +106,14 @@ pub fn guard_cannot_know(question: &str) -> Result<(), String> {
     Ok(())
 }
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── helpers ──────────────────────────────────────────────
 
 fn escape(value: &str) -> String {
     value
-        .replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
+        .replace('&', "&")
+        .replace('<', "<")
+        .replace('>', ">")
+        .replace('"', """)
 }
 
 #[cfg(test)]
@@ -136,10 +137,17 @@ mod tests {
     }
 
     #[test]
-    fn propagated_band_t5() {
-        let line = render_propagated_band(5).unwrap();
-        assert!(line.contains("tier-5"));
-        assert!(line.contains("0.80"));
+    fn propagated_band_t5_needs_verify() {
+        assert_eq!(
+            render_propagated_band(5).unwrap_err(),
+            AikdError::NeedVerify
+        );
+    }
+
+    #[test]
+    fn propagated_band_t3_is_ok() {
+        let line = render_propagated_band(3).unwrap();
+        assert!(line.contains("tier-3"));
     }
 
     #[test]
