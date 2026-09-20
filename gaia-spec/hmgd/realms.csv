@@ -1,0 +1,11 @@
+id,realm,claim_class,effects,notes
+realm-prayer,prayer,listed-only,,not emergency care
+realm-ritual,ritual,listed-only,,stub
+realm-divination,divination,listed-only,,i-ching fixture
+realm-contemplation,contemplation,listed-only,,stub
+realm-healing-adjunct,healing-adjunct,listed-only,,not treatment
+realm-place,place,listed-only,,TEK sealed
+realm-word,word,listed-only,,stub
+realm-music,music,listed-only,,stub
+realm-community,community,listed-only,,opt-in later
+realm-mystery,mystery,listed-only,,stub
