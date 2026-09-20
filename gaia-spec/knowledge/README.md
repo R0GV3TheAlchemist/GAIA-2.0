@@ -36,7 +36,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../sos/phase-1.md | SOS Phase 1 listed scheduler/MemOS/SFS (#467 / #192) |
 | ../sos/phase-2.md | SOS Phase 2 listed EACN/ColonyOS (#469 / #193) |
 | ../sos/phase-3-4.md | SOS Phase 3–4 threat model + v1.0 gate (#471 / #194) |
-| ../ukd/TEK.md | TEK consent protocol (#473 / #88) |
+| ../ukd/ | TEK (#88) + META listed (#507 / #77) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
 | ../skills/ | listed bind through graph lookup (#505 / #114) |
 | ../security/INVENTORY.md | Ed25519 inventory + PQC reserve (#503 / #389) |
