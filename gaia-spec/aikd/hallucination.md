@@ -62,7 +62,7 @@ All other T5 answers also propagate `NeedVerify` (see `tier_floor`).
 `propagate_uncertainty(tier)` maps tier to an `UncertaintyBand`:
 
 | Tier | `lower` | `upper` | Meaning |
-|---|---|---|
+|---|---|---|---|
 | T1 | 0.0 | 0.2 | High confidence, cited |
 | T2 | 0.1 | 0.4 | Cited, minor gaps |
 | T3 | 0.3 | 0.7 | Temporal risk |
@@ -118,9 +118,10 @@ The integration tests in `gaia-aikd/tests/hallucination.rs` assert:
 ## 8. Cross-references
 
 - Hallucination module: `gaia-aikd/src/hallucination.rs`
-- Answer envelope: `gaia-spec/aikd/PHASE-1.md`
+- Answer envelope: `gaia-spec/aikd/PHASE-1.md` (#101)
+- Retrieval stack: `gaia-spec/aikd/RETRIEVAL-STACK.md` (#101)
 - Execute/verify: `gaia-spec/aikd/EXECUTE.md`
 - Packs (CannotKnow gate): `gaia-spec/aikd/packs.md`
 - Agentic (biometric gate): `gaia-spec/aikd/agentic.md`
-- Issue #102 (parent: #94 AIKD Phase 0 epic)
+- Issues: #94 (epic), #102 (this slice), #101 (foundation + retrieval stack)
 - Eval spec: `gaia-spec/aikd/eval.md` (#106)
