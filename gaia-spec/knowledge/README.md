@@ -28,7 +28,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | scale-sources.csv | scale-doc citations; effects empty |
 | essay-sources.csv | SI/SA/SOS/GAIAN citations; effects empty |
 | ../aisd/ | AISD listed bind through routing (#487 / #131) |
-| ../aikd/ | registry (#100) + META listed (#509 / #93) |
+| ../aikd/ | registry META + cannot-know catalog (#515 / #99) |
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
