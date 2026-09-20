@@ -33,7 +33,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
 | ../sos/ | phases 0–4 + META listed (#511 / #190) |
-| ../ukd/ | TEK (#88) + META listed (#507 / #77) |
+| ../ukd/ | TEK META + schema listed (#513 / #83) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
 | ../skills/ | listed bind through graph lookup (#505 / #114) |
 | ../security/INVENTORY.md | Ed25519 inventory + PQC reserve (#503 / #389) |
