@@ -26,7 +26,7 @@ pub fn render_uncertainty_band() -> String {
 pub fn render_uncertainty_band_html() -> String {
     let band = uncertainty_band();
     format!(
-        "<p role=\"note\" class=\"uncertainty-band\">uncertainty {l:.2}–{u:.2} (fixture)</p>",
+        "<p role=\"note\" class=\"uncertainty-band\">uncertainty {l:.2}\u{2013}{u:.2} (fixture)</p>",
         l = band.lower,
         u = band.upper,
     )
@@ -110,10 +110,10 @@ pub fn guard_cannot_know(question: &str) -> Result<(), String> {
 
 fn escape(value: &str) -> String {
     value
-        .replace('&', "&")
-        .replace('<', "<")
-        .replace('>', ">")
-        .replace('"', """)
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 #[cfg(test)]
@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn uncertainty_band_html_has_role_note() {
         let html = render_uncertainty_band_html();
-        assert!(html.contains("role=\"note\""));
+        assert!(html.contains(r#"role="note""#));
         assert!(html.contains("fixture"));
     }
 
@@ -182,7 +182,7 @@ mod tests {
     fn hallucination_warning_html_has_role_alert() {
         let html =
             render_hallucination_warning_html(HallucinationClass::Factual, 4).unwrap();
-        assert!(html.contains("role=\"alert\""));
+        assert!(html.contains(r#"role="alert""#));
         assert!(html.contains("Factual"));
     }
 
