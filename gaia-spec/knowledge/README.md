@@ -30,7 +30,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../aisd/ | AISD listed bind through routing (#487 / #131) |
 | ../aikd/ | registry META + cannot-know catalog (#515 / #99) |
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
-| ../aimd/ | Phase 0–1 listed (#519 / #168) |
+| ../aimd/ | Phase 0–2 listed (#521 / #169) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
 | ../sos/ | phases 0–4 + META listed (#511 / #190) |
 | ../ukd/ | TEK META + schema listed (#513 / #83) |
