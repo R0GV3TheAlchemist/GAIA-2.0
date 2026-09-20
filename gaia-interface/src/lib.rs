@@ -5,6 +5,7 @@
 mod console;
 mod gateway;
 mod orch;
+mod packs;
 mod plane;
 mod sense;
 mod session;
@@ -12,6 +13,10 @@ mod session;
 pub use console::{AgentRow, PermissionConsole, Studio, StudioRecipe, TraceEvent};
 pub use gateway::{HttpGateway, HttpRequest, HttpResponse};
 pub use orch::{ForwardedIntent, OrchestratorGateway};
+pub use packs::{
+    guard_no_exam_cert, render_professional_pack, render_professional_pack_html,
+    render_science_card, render_science_card_html, try_insurer_automation,
+};
 pub use plane::{
     Developer, COMMISSION_BPS, UPGRADE_PRICE_UNITS, UPGRADE_THRESHOLD_UNITS,
 };
