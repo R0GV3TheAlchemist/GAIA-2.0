@@ -32,10 +32,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
-| ../sos/phase-0.md | SOS Phase 0 listed contracts (#465 / #191) |
-| ../sos/phase-1.md | SOS Phase 1 listed scheduler/MemOS/SFS (#467 / #192) |
-| ../sos/phase-2.md | SOS Phase 2 listed EACN/ColonyOS (#469 / #193) |
-| ../sos/phase-3-4.md | SOS Phase 3–4 threat model + v1.0 gate (#471 / #194) |
+| ../sos/ | phases 0–4 + META listed (#511 / #190) |
 | ../ukd/ | TEK (#88) + META listed (#507 / #77) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
 | ../skills/ | listed bind through graph lookup (#505 / #114) |
