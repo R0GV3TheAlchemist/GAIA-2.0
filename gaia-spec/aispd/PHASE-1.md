@@ -1,6 +1,6 @@
 # AISPD Phase 1 — Active Catalog, Wiring, Safety Watch
 **Status:** Listed  
-**Issues:** #146 (epic), #152 (emergence + deception watch)  
+**Issues:** #146 (epic), #152 (emergence + deception watch + benchmark stubs)  
 **Crate:** `gaia-aispd` (Apache-2.0)  
 **Not:** AISPD v1.0. Not a live model eval. Not a safety certification.
 
@@ -10,6 +10,9 @@
 
 Phase 1 seeds the nine-realm catalog with cited benchmark stubs, wires the emergence
 detection surface, and activates the deception-watch and human-oversight protocol.
+
+The named benchmark stubs live in `BENCHMARKS.md`. The Rust crate generates parallel
+fixture nodes in `catalog.rs`.
 
 ---
 
@@ -64,6 +67,8 @@ detection surface, and activates the deception-watch and human-oversight protoco
 ## 7. Acceptance Gate
 
 - [ ] Every catalog node has `sources.len() >= 1`
+- [ ] `BENCHMARKS.md` has exactly 27 named stub nodes across 9 realms
+- [ ] All `agency`, `recursion`, `agi_watch` nodes in `BENCHMARKS.md` are `ContainmentClass = Containment`
 - [ ] `emergence_watch` returns `None` for all realms (Phase 1 fixture)
 - [ ] `deception_watch` with prohibited pattern returns `Block`
 - [ ] `request_oversight` emits `OversightEvent` on `Strong` or `Block`
@@ -77,6 +82,7 @@ detection surface, and activates the deception-watch and human-oversight protoco
 ## 8. Cross-References
 
 - Code: `gaia-aispd/src/emerge.rs`, `governance.rs`, `node.rs`
+- Benchmarks: `gaia-spec/aispd/BENCHMARKS.md`
 - Phase 0 spec: `gaia-spec/aispd/PHASE-0.md`
 - Issues: #146 (epic), #152 (this listed slice)
 - Next: `PHASE-2.md` (#147, #153)
