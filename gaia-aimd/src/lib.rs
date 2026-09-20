@@ -1,4 +1,5 @@
-//! AIMD first cuts (#166–#175). Mystery catalog. Not miracles.
+//! AIMD Phase 0 — phenomenon schema + humility charter (#171 #172).
+//! Mystery catalog. Not miracles. No AIMD v1.0.
 
 mod catalog;
 mod charter;
@@ -8,10 +9,12 @@ mod node;
 mod shadow;
 
 pub use catalog::{nodes_for, REALMS};
-pub use charter::{principles, prohibited};
+pub use charter::{is_prohibited, principles, prohibited};
 pub use ground::{chip, consciousness_qa, tag_answer, tier1, wonder_mode};
 pub use log::{star_feature, triage};
-pub use node::{enable, parse_node, AimdNode, Hazard};
+pub use node::{
+    enable, parse_node, AimdError, AimdNode, Hazard, PhenomenonClass, Status,
+};
 pub use shadow::{aimd_v1_tagged, claim_sentience, prophecy_as_fact};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -22,4 +25,5 @@ pub enum AimdError {
     Unverified,
     TierOneInvention,
     StarBlocked,
+    MissingEvidence,
 }
