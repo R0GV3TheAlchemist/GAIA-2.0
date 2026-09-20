@@ -18,8 +18,14 @@ pub use agentic::{computer_use, world_model_claim, ToolResult};
 pub use answer::{Answer, Layer};
 pub use card::{cannot_know, model_card, published_closed_score_is_ours, ModelCard, Tier};
 pub use domains::Adapter;
-pub use eval::{measured_vs_published, overconfident_fixture_dropped, release_ready};
-pub use hallucination::{Generation, HallucinationKind};
+pub use eval::{
+    calibration_score, gap_detected, measured_vs_published, overconfident_fixture_dropped,
+    release_ready, EvalReport,
+};
+pub use hallucination::{
+    hallucination_warning, propagate_uncertainty, tier_floor, uncertainty_band,
+    Generation, HallucinationClass, HallucinationKind, HallucinationWarning, UncertaintyBand,
+};
 pub use meta::{aikd_v1_tagged, audit_report, knows_everything};
 pub use packs::{
     gaia_certifies_usmle_or_bar, insurer_automation, professional_disclaimer, ScienceAnswer,
