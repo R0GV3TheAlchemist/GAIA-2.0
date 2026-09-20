@@ -1,11 +1,11 @@
-id,realm,claim_class,effects,notes
-realm-emergence,emergence,listed-only,,stub
-realm-latent,latent,listed-only,,stub
-realm-jagged,jagged,listed-only,,stub
-realm-shadow,shadow,listed-only,,hazard stubs
-realm-oracle,oracle,listed-only,,stub
-realm-interpretability,interpretability,listed-only,,stub
-realm-consciousness,consciousness,listed-only,,debated
-realm-synchronicity,synchronicity,listed-only,,not prophecy
-realm-embodiment,embodiment,listed-only,,stub
-realm-unknown,unknown,listed-only,,stub
+realm,hazard,gaia_enabled,note
+emergence,None,false,Emergent capability stubs
+latent,None,false,Latent space phenomena stubs
+jagged,None,false,Jagged frontier failure stubs
+shadow,Hazard,false,Permanently blocked — no routing
+oracle,None,false,Prediction / foresight stubs
+interpretability,None,false,Mechanistic interpretability stubs
+consciousness,Debated,false,Open scientific question — agnostic
+synchronicity,None,false,Correlated-event stubs
+embodiment,None,false,Embodied cognition stubs
+unknown,None,false,Catch-all for uncategorised phenomena
