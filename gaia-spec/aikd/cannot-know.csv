@@ -1,0 +1,6 @@
+id,key,claim_class,effects,notes
+ck-chaotic,chaotic-long-horizon,listed-only,,queryable
+ck-undecidable,undecidable,listed-only,,queryable
+ck-tacit,tacit-embodied,listed-only,,queryable
+ck-novelty,genuine-novelty,listed-only,,queryable
+ck-cutoff,post-cutoff-without-tools,listed-only,,queryable
