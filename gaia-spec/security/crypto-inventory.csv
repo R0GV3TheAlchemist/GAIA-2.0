@@ -1,0 +1,7 @@
+id,site,algorithm,claim_class,effects,notes
+inv-ed25519,intent-mcp,Ed25519,established,,current required tag; not post-quantum
+inv-sha256,audit-chain,SHA-256,established,,integrity hash; not a signature
+inv-ml-dsa,dual-sign-reserve,ML-DSA-65,experimental,,design only #392; no crate
+inv-ml-kem,kem-reserve,ML-KEM,experimental,,FIPS 203 name only
+inv-qpu,runtime,none,prohibited,,no QPU / no gaia-quantum
+inv-consciousness,runtime,none,prohibited,,quantum-consciousness never binds
