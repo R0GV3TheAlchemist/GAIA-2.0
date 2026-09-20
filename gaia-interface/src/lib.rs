@@ -4,7 +4,9 @@
 
 mod agentic;
 mod console;
+mod eval;
 mod gateway;
+mod hallucination;
 mod orch;
 mod packs;
 mod plane;
@@ -17,7 +19,15 @@ pub use agentic::{
     try_computer_use, try_computer_use_host_escape,
 };
 pub use console::{AgentRow, PermissionConsole, Studio, StudioRecipe, TraceEvent};
+pub use eval::{
+    guard_does_not_know_everything, guard_not_v1, render_audit_report, render_audit_report_html,
+    render_calibration, render_eval_report, render_gap,
+};
 pub use gateway::{HttpGateway, HttpRequest, HttpResponse};
+pub use hallucination::{
+    guard_cannot_know, guard_tier, render_hallucination_warning, render_hallucination_warning_html,
+    render_propagated_band, render_uncertainty_band, render_uncertainty_band_html,
+};
 pub use orch::{ForwardedIntent, OrchestratorGateway};
 pub use packs::{
     guard_no_exam_cert, render_professional_pack, render_professional_pack_html,
