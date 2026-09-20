@@ -2,6 +2,7 @@
 //! Local session, permission console, orchestrator gateway, local sense surface.
 //! Not Ratatui, Axum, React, Vite, gRPC, Whisper, LLaVA, or Flutter.
 
+mod agentic;
 mod console;
 mod gateway;
 mod orch;
@@ -10,6 +11,11 @@ mod plane;
 mod sense;
 mod session;
 
+pub use agentic::{
+    guard_embodiment_off, render_tool_event, render_tool_event_html, render_tool_result,
+    render_world_model_claim, render_world_model_claim_html, sandbox_status,
+    try_computer_use, try_computer_use_host_escape,
+};
 pub use console::{AgentRow, PermissionConsole, Studio, StudioRecipe, TraceEvent};
 pub use gateway::{HttpGateway, HttpRequest, HttpResponse};
 pub use orch::{ForwardedIntent, OrchestratorGateway};
