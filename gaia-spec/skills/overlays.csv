@@ -1,0 +1,5 @@
+id,overlay,count,claim_class,effects,notes
+overlay-wef-top10,wef_top10,10,listed-only,,tag list
+overlay-wef-2025,wef_2025_essay,10,listed-only,,tag list
+overlay-digcomp,digcomp_areas,5,listed-only,,tag list
+overlay-bessi,bessi_domains,5,listed-only,,tag list
