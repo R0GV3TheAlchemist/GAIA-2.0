@@ -38,7 +38,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../sos/phase-3-4.md | SOS Phase 3–4 threat model + v1.0 gate (#471 / #194) |
 | ../ukd/TEK.md | TEK consent protocol (#473 / #88) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
-| ../skills/META.md | Human Skills META listed (#489 / #107) |
+| ../skills/META.md | Human Skills META (#489 / #107) + schema (#491 / #113) |
 
 Refuse:
 - preference labels as soul or constitution

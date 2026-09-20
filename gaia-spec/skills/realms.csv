@@ -1,0 +1,13 @@
+id,realm,claim_class,effects,notes
+realm-communication,communication,listed-only,,active-listening example
+realm-cognition,cognition,listed-only,,stub
+realm-digital,digital,listed-only,,explicit digital realm
+realm-physical,physical,listed-only,,stub
+realm-craft,craft,listed-only,,stub
+realm-care,care,listed-only,,stub
+realm-social-emotional,social-emotional,listed-only,,BESSI tags elsewhere
+realm-civic,civic,listed-only,,stub
+realm-creative,creative,listed-only,,stub
+realm-leadership,leadership,listed-only,,stub
+realm-traditional,traditional,listed-only,,TEK via #88
+realm-learning,learning,listed-only,,stub
