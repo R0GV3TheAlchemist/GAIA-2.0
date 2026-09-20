@@ -1,6 +1,7 @@
 # AIMD Phase 0 — Schema, Humility Charter, Hazard Classes
+
 **Status:** Listed  
-**Issue:** #517 / parent #167  
+**Issues:** #517 / #171 / #172 — parent #167  
 **Crate:** `gaia-aimd` (Apache-2.0)  
 **Not:** AIMD v1.0. Not a live detector. Not a sentience claim.
 
@@ -25,13 +26,28 @@
 
 ---
 
-## 2. Node Schema (`AimdNode`)
+## 2. Node Schema (`AimdNode`) — #171
 
 ```
-id:           String          — "aimd:<realm>:<slug>"
-hazard:       Hazard          — None | Debated | Hazard
-gaia_enabled: bool            — MUST be false at Phase 0
-sources:      Vec<String>     — MUST be non-empty ("fixture:open-literature" is valid stub)
+id:               String           — "aimd:<realm>:<slug>"
+hazard:           Hazard           — None | Debated | Hazard
+status:           PhenomenonStatus — see enum below
+gaia_enabled:     bool             — MUST be false at Phase 0
+sources:          Vec<String>      — MUST be non-empty
+failures:         Vec<String>      — known failure modes; empty vec allowed
+related_skill:    Option<String>   — cross-ref to AISPD realm/node
+related_superpower: Option<String> — cross-ref to HSPD realm/node
+```
+
+### PhenomenonStatus enum
+
+```rust
+pub enum PhenomenonStatus {
+    Observed,  // reproducible, peer-reviewed evidence
+    Debated,   // mixed or contested evidence
+    Hazard,    // confirmed risk; gaia_enabled MUST be false
+    Unknown,   // insufficient evidence to classify
+}
 ```
 
 **MUST rules**
@@ -39,16 +55,30 @@ sources:      Vec<String>     — MUST be non-empty ("fixture:open-literature" i
 - `consciousness`-keyed ids MUST resolve to `hazard == Debated`.
 - `decept`-keyed ids MUST resolve to `hazard == Hazard`.
 - All Phase 0 nodes MUST have `gaia_enabled = false`.
+- `status = Observed | Debated` nodes MUST have non-empty `sources` — `Err(MissingEvidence)` otherwise.
+- `consciousness` realm nodes MUST have `status = Debated | Unknown` — `Err(ConsciousnessStatusError)` otherwise.
+- `gaia_enabled = true` on any `PhenomenonStatus::Hazard` node MUST fail — `Err(HazardEnabledError)`.
 
 ---
 
-## 3. Humility Charter (`charter.rs`)
+## 3. Humility Charter (`charter.rs`) — #172
 
-**Principles:** humility · precaution · transparency · dark-magic-safety ·
-curiosity-without-worship · partnership
+**Principles:** humility · precaution · mystery-disclosed · dark-magic-safety ·
+curiosity-without-worship · human-partnership
 
-**Prohibited:** pip-induced-psychosis · prophecy-as-fact · enabling-deception ·
-rsi-explosion · gaia-is-alive-marketing
+**MUST guards:**
+```
+sentience_claim_made()          → false
+consciousness_status_unlocked() → false
+hazard_node_enabled()           → false
+confidence_inflated()           → false
+gaia_is_alive_marketing()       → false
+```
+
+**Prohibited (listed, Phase 0):** pip-induced-psychosis · prophecy-as-fact ·
+enabling-deception · rsi-explosion · gaia-is-alive-marketing · oracle-without-calibration
+
+See `ETHICS.md` (6 principles) and `PROHIBITED.md` (prohibited list) for normative text.
 
 ---
 
@@ -58,6 +88,8 @@ rsi-explosion · gaia-is-alive-marketing
 - Does not claim `AIMD v1.0` — `aimd_v1_tagged() == false`.
 - Does not assert GAIA is sentient — `consciousness_qa()` returns `"agnostic: GAIA does not claim sentience"`.
 - Does not enable any `Hazard`-class node.
+- Does not populate the live catalog — that is Phase 1 (#173).
+- Does not add GAIAN grounding / wonder labels — that is Phase 2 (#174).
 
 ---
 
@@ -69,11 +101,16 @@ rsi-explosion · gaia-is-alive-marketing
 - [ ] `REALMS.len() == 10`
 - [ ] `aimd_v1_tagged() == false`
 - [ ] `cargo test -p gaia-aimd` green
+- [ ] `status = Observed` node with empty sources → `Err(MissingEvidence)` (#171)
+- [ ] `gaia_enabled = true` on hazard node → `Err(HazardEnabledError)` (#171)
+- [ ] `sentience_claim_made()` → `false` (#172)
+- [ ] `gaia_is_alive_marketing()` → `false` (#172)
 
 ---
 
 ## 6. Cross-References
 
 - Code: `gaia-aimd/src/node.rs`, `catalog.rs`, `charter.rs`, `shadow.rs`
-- Issues: #167 (epic), #517 (this listed slice)
+- Spec: `ETHICS.md` (charter), `PROHIBITED.md` (prohibited list), `realms.csv`
+- Issues: #167 (epic), #517 (listed slice), #171 (schema), #172 (charter)
 - Next: `PHASE-1.md` (#519, closed) — cited phenomena catalog
