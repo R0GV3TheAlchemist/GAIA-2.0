@@ -27,7 +27,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | scale-layers.csv | one row per layer; R#20 prohibited |
 | scale-sources.csv | scale-doc citations; effects empty |
 | essay-sources.csv | SI/SA/SOS/GAIAN citations; effects empty |
-| ../aisd/ | AISD listed bind through evals (#485 / #130) |
+| ../aisd/ | AISD listed bind through routing (#487 / #131) |
 | ../aikd/ | open-model registry + benches as data (#457 / #100) |
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
 | ../aimd/ | unexpected-capability log schema (#461 / #175) |
