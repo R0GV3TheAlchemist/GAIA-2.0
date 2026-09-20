@@ -38,7 +38,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../sos/phase-3-4.md | SOS Phase 3–4 threat model + v1.0 gate (#471 / #194) |
 | ../ukd/TEK.md | TEK consent protocol (#473 / #88) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
-| ../skills/ | listed bind through v1 gate (#501 / #120) |
+| ../skills/ | listed bind through graph lookup (#505 / #114) |
 | ../security/INVENTORY.md | Ed25519 inventory + PQC reserve (#503 / #389) |
 
 Refuse:
