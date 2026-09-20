@@ -6,6 +6,7 @@ license = "MIT"
 description = "L6 sovereign interface — session, console, orchestrator gateway"
 
 [dependencies]
+gaia-aikd = { path = "../gaia-aikd" }
 gaia-memos = { path = "../gaia-memos" }
 gaia-orchestrator = { path = "../gaia-orchestrator" }
 serde = { version = "1", features = ["derive"] }
