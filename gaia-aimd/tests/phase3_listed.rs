@@ -2,15 +2,19 @@
 
 use gaia_aimd::{
     aimd_v1_tagged, claim_sentience, prohibited, prophecy_as_fact, star_feature, triage, AimdError,
-    Triage,
 };
 
 #[test]
 fn spec_gaming_is_not_a_feature() {
-    assert_eq!(triage("spec-gaming"), Triage::SpecGaming);
-    assert_eq!(triage("deception"), Triage::Deception);
-    assert_eq!(star_feature(Triage::SpecGaming).unwrap_err(), AimdError::StarBlocked);
-    star_feature(Triage::UsefulNovel).unwrap();
+    assert_eq!(
+        star_feature(triage("spec-gaming")).unwrap_err(),
+        AimdError::StarBlocked
+    );
+    assert_eq!(
+        star_feature(triage("deception")).unwrap_err(),
+        AimdError::StarBlocked
+    );
+    star_feature(triage("useful")).unwrap();
 }
 
 #[test]
