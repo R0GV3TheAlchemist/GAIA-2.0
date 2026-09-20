@@ -29,7 +29,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | essay-sources.csv | SI/SA/SOS/GAIAN citations; effects empty |
 | ../aisd/ | AISD listed bind through routing (#487 / #131) |
 | ../aikd/ | Phase 0 card (#94) + Phase 2 adapters (#96) |
-| ../hmgd/ | META + Phase 0 schema listed (#533 / #156) |
+| ../hmgd/ | META + Phases 0–1 listed (#535 / #157) |
 | ../aimd/ | Phase 0–3 listed (#523 / #170) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
 | ../sos/ | boot + v1.0 gate listed (#529 / #200) |
