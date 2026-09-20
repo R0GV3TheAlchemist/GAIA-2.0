@@ -1,0 +1,14 @@
+id,realm,claim_class,effects,notes
+realm-language,language,listed-only,,stub only
+realm-code,code,listed-only,,stub only
+realm-math,math,listed-only,,stub only
+realm-science,science,listed-only,,protein-structure unmeasured
+realm-vision,vision,listed-only,,stub only
+realm-audio,audio,listed-only,,stub only
+realm-planning,planning,listed-only,,stub only
+realm-tool-use,tool-use,listed-only,,stub only
+realm-safety,safety,listed-only,,gates tool use
+realm-embodiment,embodiment,listed-only,,dexterous gap
+realm-social,social,listed-only,,ToM gap
+realm-world-model,world-model,listed-only,,stub only
+realm-meta,meta,listed-only,,stub only

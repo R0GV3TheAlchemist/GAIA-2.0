@@ -1,0 +1,9 @@
+id,gap,claim_class,effects,notes
+gap-long-horizon-cot,long-horizon-cot,listed-only,,open
+gap-swe-pro,swe-pro-engineering,listed-only,,open
+gap-calibration,calibration,listed-only,,open
+gap-causal,causal,listed-only,,open
+gap-tom,theory-of-mind,listed-only,,open
+gap-continual,continual-learning,listed-only,,open
+gap-novelty,genuine-novelty,listed-only,,open
+gap-dexterous,dexterous-embodiment,listed-only,,open
