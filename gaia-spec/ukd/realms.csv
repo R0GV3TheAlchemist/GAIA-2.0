@@ -1,0 +1,13 @@
+id,realm,claim_class,effects,notes
+realm-physical-sciences,physical-sciences,listed-only,,stub
+realm-life-sciences,life-sciences,listed-only,,stub
+realm-earth-systems,earth-systems,listed-only,,stub
+realm-mathematics,mathematics,listed-only,,linear-algebra seed
+realm-engineering,engineering,listed-only,,quantum-computing seed
+realm-health,health,listed-only,,stub
+realm-social-sciences,social-sciences,listed-only,,stub
+realm-humanities,humanities,listed-only,,stub
+realm-arts,arts,listed-only,,stub
+realm-traditional-knowledge,traditional-knowledge,listed-only,,TEK sealed #88
+realm-practical-skills,practical-skills,listed-only,,not a SkillNode
+realm-governance-commons,governance-commons,listed-only,,stub
