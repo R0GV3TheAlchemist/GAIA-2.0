@@ -1,0 +1,4 @@
+id,family,claim_class,effects,gaia_measured_series,notes
+fam-language,language,listed-only,,,empty until a fixture reruns
+fam-code,code,listed-only,,,empty until a fixture reruns
+fam-safety,safety,listed-only,,,empty until a fixture reruns
