@@ -32,7 +32,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../hmgd/ | ethics, TEK gate, prohibited list (#459 / #161) |
 | ../aimd/ | Phase 0–3 listed (#523 / #170) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
-| ../sos/ | META + boot/threats listed (#527 / #199) |
+| ../sos/ | boot + v1.0 gate listed (#529 / #200) |
 | ../ukd/ | TEK META + schema listed (#513 / #83) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
 | ../skills/ | listed bind through graph lookup (#505 / #114) |
