@@ -39,6 +39,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | ../ukd/TEK.md | TEK consent protocol (#473 / #88) |
 | ../aispd/CATALOG.md | open superpower catalog (#475 / #151) |
 | ../skills/ | listed bind through v1 gate (#501 / #120) |
+| ../security/INVENTORY.md | Ed25519 inventory + PQC reserve (#503 / #389) |
 
 Refuse:
 - preference labels as soul or constitution
