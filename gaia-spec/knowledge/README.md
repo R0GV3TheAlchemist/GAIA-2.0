@@ -28,7 +28,7 @@ See `gaia-spec/CLAIM_CLASSES.md`.
 | scale-sources.csv | scale-doc citations; effects empty |
 | essay-sources.csv | SI/SA/SOS/GAIAN citations; effects empty |
 | ../aisd/ | AISD listed bind through routing (#487 / #131) |
-| ../aikd/ | Phases 0–2 listed (#539 / #95) |
+| ../aikd/ | Phases 0–3 listed (#541 / #97) |
 | ../hmgd/ | Phases 0–3 listed (#537 / #159) |
 | ../aimd/ | Phase 0–3 listed (#523 / #170) |
 | ../hspd/ | declare-only vault profile (#463 / #141) |
