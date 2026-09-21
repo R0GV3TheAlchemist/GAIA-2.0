@@ -71,12 +71,14 @@ impl ResourceLimiter for GaiaResourceLimiter {
     ///
     /// Returns `Ok(false)` — causing an OOM trap — when `desired` exceeds
     /// `max_memory_bytes`.
+    ///
+    /// Wasmtime 46 requires `Result<bool, wasmtime::Error>`, not `anyhow::Result`.
     fn memory_growing(
         &mut self,
         _current:  usize,
         desired:   usize,
         _maximum:  Option<usize>,
-    ) -> anyhow::Result<bool> {
+    ) -> Result<bool, wasmtime::Error> {
         if desired > self.quota.max_memory_bytes {
             Ok(false) // deny → Wasmtime raises OOM trap → clean termination
         } else {
@@ -88,12 +90,14 @@ impl ResourceLimiter for GaiaResourceLimiter {
     /// Called by Wasmtime whenever the component requests more table entries.
     ///
     /// Capped at 10 000 entries as a sane default.
+    ///
+    /// Wasmtime 46 requires `usize` params and `Result<bool, wasmtime::Error>`.
     fn table_growing(
         &mut self,
-        _current: u32,
-        desired:  u32,
-        _maximum: Option<u32>,
-    ) -> anyhow::Result<bool> {
+        _current: usize,
+        desired:  usize,
+        _maximum: Option<usize>,
+    ) -> Result<bool, wasmtime::Error> {
         Ok(desired <= 10_000)
     }
 }

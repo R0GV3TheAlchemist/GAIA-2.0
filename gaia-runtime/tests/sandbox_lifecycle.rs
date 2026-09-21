@@ -52,18 +52,19 @@ fn oom_termination_denies_oversized_memory_growth() {
 
 #[test]
 fn timeout_quota_propagates_through_profile_accessor() {
+    // max_epochs (renamed from max_cpu_ms): number of epoch ticks, not ms.
     let profile = SandboxProfile {
         quota: ResourceQuota {
-            max_cpu_ms: 1_000,
+            max_epochs: 1_000,
             ..ResourceQuota::default()
         },
         ..SandboxProfile::default()
     };
     let mgr = SandboxManager::new(profile).unwrap();
     assert_eq!(
-        mgr.profile().quota.max_cpu_ms,
+        mgr.profile().quota.max_epochs,
         1_000,
-        "max_cpu_ms must round-trip through SandboxManager::profile()"
+        "max_epochs must round-trip through SandboxManager::profile()"
     );
 }
 
@@ -112,13 +113,14 @@ fn no_scratch_dir_in_default_profile() {
 fn table_growing_enforces_sane_default_ceiling() {
     let mut limiter = GaiaResourceLimiter::new(ResourceQuota::default());
 
-    let within = limiter.table_growing(0, 5_000, None).unwrap();
+    // Wasmtime 46: table_growing params are usize, not u32.
+    let within = limiter.table_growing(0usize, 5_000usize, None).unwrap();
     assert!(within, "table growth <= 10 000 must be permitted");
 
-    let at_limit = limiter.table_growing(0, 10_000, None).unwrap();
+    let at_limit = limiter.table_growing(0usize, 10_000usize, None).unwrap();
     assert!(at_limit, "table growth == 10 000 must be permitted (inclusive)");
 
-    let over = limiter.table_growing(0, 10_001, None).unwrap();
+    let over = limiter.table_growing(0usize, 10_001usize, None).unwrap();
     assert!(!over, "table growth > 10 000 must be denied");
 }
 

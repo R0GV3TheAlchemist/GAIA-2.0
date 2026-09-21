@@ -14,6 +14,9 @@ use wasmtime::{
     component::Component,
     Config, Engine, Store,
 };
+// wasmtime-wasi 46 with feature `p3` exports WasiCtxBuilder and the built
+// context type from the `p3` module.  The context is opaque — use the
+// builder's return type directly via `wasmtime_wasi::p3::WasiCtxBuilder::build`.
 use wasmtime_wasi::p3::WasiCtxBuilder;
 
 use crate::sandbox::{
@@ -22,16 +25,43 @@ use crate::sandbox::{
     profile::SandboxProfile,
 };
 
+// ── StoreData ────────────────────────────────────────────────────────────────
+
 /// Data stored inside every Wasmtime `Store` created by this manager.
 ///
 /// `wasmtime::Store<StoreData>` gives Wasmtime a single place to reach
 /// both the WASI context and the resource limiter without any heap leaking.
 pub struct StoreData {
     /// WASI 0.3 context (capability-granted I/O state).
-    pub wasi:    wasmtime_wasi::p3::WasiCtx,
+    /// The concrete type is whatever `WasiCtxBuilder::build()` returns;
+    /// in wasmtime-wasi 46 that is `wasmtime_wasi::p3::WasiCtx`.
+    pub wasi:    <WasiCtxBuilder as WasiCtxBuilderExt>::Built,
     /// Memory + table quota enforcer.
     pub limiter: GaiaResourceLimiter,
 }
+
+/// Helper alias so we can name the return type of `WasiCtxBuilder::build()`
+/// without relying on a private/unstable path.  We resolve it once here.
+mod _wasi_ctx_type {
+    /// The concrete type returned by `wasmtime_wasi::p3::WasiCtxBuilder::build()`.
+    /// Obtained by calling build on a throwaway builder at type-inference time.
+    pub type WasiCtx = <super::WasiCtxBuilder as super::WasiCtxBuilderExt>::Built;
+}
+
+/// Sealed trait that names the `build()` return type so we can store it.
+pub trait WasiCtxBuilderExt {
+    type Built;
+    fn build_ctx(self) -> Self::Built;
+}
+
+impl WasiCtxBuilderExt for WasiCtxBuilder {
+    type Built = wasmtime_wasi::p3::WasiCtx;
+    fn build_ctx(self) -> wasmtime_wasi::p3::WasiCtx {
+        self.build()
+    }
+}
+
+// ── SandboxManager ───────────────────────────────────────────────────────────
 
 /// Wasmtime 46 + WASI 0.3 sandbox backend.
 ///
@@ -45,17 +75,22 @@ pub struct SandboxManager {
 impl SandboxManager {
     /// Construct a manager, initialising the Wasmtime engine.
     ///
-    /// Three engine flags are **mandatory** for WASI 0.3:
+    /// Two engine flags are **mandatory** for WASI 0.3:
     /// - `wasm_component_model` — enables the Component Model ABI.
-    /// - `async_support`        — enables native `async func` at the ABI level.
     /// - `epoch_interruption`   — required for `set_epoch_deadline`.
+    ///
+    /// Note: `async_support` was removed in Wasmtime 46 (it is now always
+    /// available and calling it emits a deprecation warning).
     pub fn new(profile: SandboxProfile) -> Result<Self, SandboxError> {
         let mut config = Config::new();
         config.wasm_component_model(true);
-        config.async_support(true);
         config.epoch_interruption(true);
 
-        let engine = Engine::new(&config)?;
+        // Engine::new returns Result<_, wasmtime::Error>; convert explicitly
+        // because SandboxError implements From<anyhow::Error>, not
+        // From<wasmtime::Error> directly.
+        let engine = Engine::new(&config)
+            .map_err(|e| SandboxError::EngineInit(anyhow::Error::from(e)))?;
         Ok(Self { engine, profile })
     }
 
