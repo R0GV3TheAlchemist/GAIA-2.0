@@ -129,3 +129,72 @@ impl PackEntry {
         }
     }
 }
+
+// ── Tests (#25 acceptance criteria — pack catalog) ───────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn catalog_contains_all_system_agents() {
+        let system: Vec<&str> = catalog()
+            .iter()
+            .filter(|e| e.kind == AgentKind::System)
+            .map(|e| e.name)
+            .collect();
+        for expected in &["memory-manager", "resource-optimizer", "security-monitor", "update-manager"] {
+            assert!(system.contains(expected), "missing system agent: {expected}");
+        }
+    }
+
+    #[test]
+    fn catalog_contains_all_cognitive_agents() {
+        let cognitive: Vec<&str> = catalog()
+            .iter()
+            .filter(|e| e.kind == AgentKind::Cognitive)
+            .map(|e| e.name)
+            .collect();
+        for expected in &["researcher", "writer", "coder", "analyst", "planner", "critic"] {
+            assert!(cognitive.contains(expected), "missing cognitive agent: {expected}");
+        }
+    }
+
+    #[test]
+    fn catalog_contains_bridge_agent() {
+        let bridge = catalog().iter().find(|e| e.kind == AgentKind::Bridge);
+        assert!(bridge.is_some(), "catalog must include at least one bridge agent");
+        assert_eq!(bridge.unwrap().name, "mcp-bridge");
+    }
+
+    #[test]
+    fn every_entry_has_non_empty_intent_and_description() {
+        for entry in catalog() {
+            assert!(!entry.intent.is_empty(), "{} has empty intent", entry.name);
+            assert!(!entry.description.is_empty(), "{} has empty description", entry.name);
+        }
+    }
+
+    #[test]
+    fn policy_manifest_never_grants_network() {
+        for entry in catalog() {
+            let manifest = entry.policy_manifest();
+            assert!(!manifest.limits.network_allowed,
+                "{} policy must never grant network", entry.name);
+            assert!(!manifest.declared_capabilities.contains(&Capability::Network),
+                "{} policy must not declare Network capability", entry.name);
+        }
+    }
+
+    #[test]
+    fn find_returns_correct_entry() {
+        let entry = find("critic").expect("critic must be in the catalog");
+        assert_eq!(entry.kind, AgentKind::Cognitive);
+        assert!(entry.handles("review.output"));
+    }
+
+    #[test]
+    fn find_returns_none_for_unknown_agent() {
+        assert!(find("does-not-exist").is_none());
+    }
+}
