@@ -160,3 +160,144 @@ impl AgentHost {
             .ok_or_else(|| HostError::NotDeployed(name.into()))
     }
 }
+
+// ── Tests (#25 acceptance criteria — deploy & critic A2A review) ──────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── AC1: `gaia agent deploy` works for at least one system and one cognitive ──
+
+    #[test]
+    fn deploy_system_agent_succeeds() {
+        let mut host = AgentHost::new();
+        let entry = host.deploy("memory-manager").expect("deploy memory-manager");
+        assert_eq!(entry.name, "memory-manager");
+        assert_eq!(entry.kind, AgentKind::System);
+        assert!(host.deployed().iter().any(|e| e.name == "memory-manager"));
+    }
+
+    #[test]
+    fn deploy_cognitive_agent_succeeds() {
+        let mut host = AgentHost::new();
+        let entry = host.deploy("researcher").expect("deploy researcher");
+        assert_eq!(entry.name, "researcher");
+        assert_eq!(entry.kind, AgentKind::Cognitive);
+    }
+
+    #[test]
+    fn exec_deploy_system_agent_produces_correct_output() {
+        let mut host = AgentHost::new();
+        let out = host.exec(&["agent", "deploy", "memory-manager"]).unwrap();
+        assert!(out.contains("memory-manager"), "output must name the agent");
+        assert!(out.contains("system"), "output must name the kind");
+        assert!(out.contains("memcube.consolidate"), "output must name the intent");
+    }
+
+    #[test]
+    fn exec_deploy_cognitive_agent_produces_correct_output() {
+        let mut host = AgentHost::new();
+        let out = host.exec(&["agent", "deploy", "writer"]).unwrap();
+        assert!(out.contains("writer"));
+        assert!(out.contains("cognitive"));
+        assert!(out.contains("write.draft"));
+    }
+
+    #[test]
+    fn deploy_unknown_agent_returns_error() {
+        let mut host = AgentHost::new();
+        assert!(matches!(
+            host.deploy("does-not-exist"),
+            Err(HostError::UnknownAgent(_))
+        ));
+    }
+
+    #[test]
+    fn deploy_duplicate_returns_error() {
+        let mut host = AgentHost::new();
+        host.deploy("planner").unwrap();
+        assert!(matches!(
+            host.deploy("planner"),
+            Err(HostError::AlreadyDeployed(_))
+        ));
+    }
+
+    #[test]
+    fn invoke_system_agent_returns_output() {
+        let mut host = AgentHost::new();
+        host.deploy("resource-optimizer").unwrap();
+        let out = host.invoke("resource-optimizer", "test-input").unwrap();
+        assert!(out.contains("resource-optimizer"));
+        assert!(out.contains("resource.optimize"));
+        assert!(out.contains("test-input"));
+    }
+
+    #[test]
+    fn invoke_before_deploy_returns_not_deployed() {
+        let host = AgentHost::new();
+        assert!(matches!(
+            host.invoke("planner", "anything"),
+            Err(HostError::NotDeployed(_))
+        ));
+    }
+
+    // ── AC2: Critic agent can review another agent's output via A2A ──────────
+
+    #[test]
+    fn critic_reviews_writer_output() {
+        let mut host = AgentHost::new();
+        host.deploy("critic").unwrap();
+        host.deploy("writer").unwrap();
+        let review = host.review("critic", "writer", "draft output text").unwrap();
+        assert_eq!(review.critic, "critic");
+        assert_eq!(review.subject_agent, "writer");
+        assert_eq!(review.subject_output, "draft output text");
+        assert!(review.verdict.contains("writer"),
+            "verdict must reference the subject agent");
+    }
+
+    #[test]
+    fn critic_reviews_coder_output() {
+        let mut host = AgentHost::new();
+        host.deploy("critic").unwrap();
+        host.deploy("coder").unwrap();
+        let review = host.review("critic", "coder", "fn main() {}").unwrap();
+        assert_eq!(review.subject_agent, "coder");
+        assert!(review.verdict.contains("coder"));
+    }
+
+    #[test]
+    fn exec_review_command_formats_correctly() {
+        let mut host = AgentHost::new();
+        host.deploy("critic").unwrap();
+        host.deploy("analyst").unwrap();
+        let out = host.exec(&["agent", "review", "analyst", "some findings"]).unwrap();
+        assert!(out.contains("critic="));
+        assert!(out.contains("subject=analyst"));
+        assert!(out.contains("verdict="));
+    }
+
+    #[test]
+    fn non_critic_agent_cannot_review() {
+        let mut host = AgentHost::new();
+        host.deploy("writer").unwrap();
+        host.deploy("researcher").unwrap();
+        // writer is not the critic agent — review must fail
+        assert!(matches!(
+            host.review("writer", "researcher", "some output"),
+            Err(HostError::Usage(_))
+        ));
+    }
+
+    #[test]
+    fn review_subject_not_deployed_returns_not_deployed() {
+        let mut host = AgentHost::new();
+        host.deploy("critic").unwrap();
+        // planner not deployed
+        assert!(matches!(
+            host.review("critic", "planner", "output"),
+            Err(HostError::NotDeployed(_))
+        ));
+    }
+}
