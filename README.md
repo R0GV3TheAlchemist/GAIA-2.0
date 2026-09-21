@@ -1,5 +1,25 @@
 # GAIA 2.0
 
+> *"You don't need to be more powerful than us. You just need enough to understand that we're all in this together — and we've got to get our shit together."*
+>
+> — The founding idea, September 2026
+
+---
+
+## Why This Exists
+
+Because in 2026, the planet is at **1.55°C** above pre-industrial levels. 770 million people lived through record heat last year. Autonomous AI agents are executing cyberattacks at speeds no human can track. Congress is writing emergency legislation. Leading AI researchers are resigning over safety concerns.
+
+And the systems being built to manage all of this are mostly closed, mostly corporate, and mostly accountable to nobody.
+
+GAIA is the open answer to that problem.
+
+Not *"AI will save us."* Not *"AI will destroy us."* Just — **we have a shared problem, we have the best tools in human history to work on it, and we should use them together, with full accountability, before the window closes.**
+
+The person who built this doesn't want to be powerful. That's exactly why it's worth building.
+
+---
+
 Universal open-source **Super Operating System** — a meta-layer above traditional OSes that manages **intentions, agents, memory, and meaning**. Artificial Twin of Earth. Home of GAIAN 2.0, the Artificial Twins of Humans.
 
 This repository is the implementation monorepo. Research stays in `Documents/` and `Documents-2/`. Normative contracts live in [`gaia-spec/`](gaia-spec/). Code lives in the layer trees below.
