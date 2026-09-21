@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Test TypeScript SDK
         working-directory: gaia-sdk/typescript
         run: |
@@ -72,9 +72,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: gaia-ui/package-lock.json
+          node-version: "24"
       - name: Install gaia-ui dependencies
         working-directory: gaia-ui
         run: npm ci
