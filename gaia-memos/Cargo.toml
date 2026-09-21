@@ -1,9 +1,9 @@
 [package]
 name = "gaia-memos"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
-description = "GAIA 2.0 MemOS: MemCube store, five-tier hierarchy, and Continuity"
+description = "GAIA 2.0 MemOS: 5-tier persistent memory with hybrid search, decay, erasure, isolation, and sync"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -12,3 +12,5 @@ uuid = { version = "1", features = ["v4", "serde"] }
 thiserror = "1"
 gaia-sfs = { path = "../gaia-sfs" }
 rusqlite = { version = "0.32", features = ["bundled"] }
+sha2 = "0.10"
+hex = "0.4"
