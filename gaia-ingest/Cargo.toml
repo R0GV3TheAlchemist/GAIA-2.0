@@ -6,7 +6,7 @@ license.workspace = true
 description = "Earth Twin ingestion schema — the single auditable boundary through which every external byte enters GAIA."
 
 [dependencies]
-gaia-earth = { path = "../gaia-earth" }
+gaia-earth = { path = "../gaia-earth", features = ["serde"] }
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2       = "0.10"
