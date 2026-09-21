@@ -24,6 +24,7 @@ members = [
   "gaia-geometry",
   "gaia-acp",
   "gaia-runtime",
+  "gaia-ingest",
 ]
 
 [workspace.package]

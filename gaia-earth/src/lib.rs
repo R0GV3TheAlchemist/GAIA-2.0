@@ -51,12 +51,14 @@ pub use simulate::{Distribution, OutcomeKind, ScenarioEngine, ScenarioRun, SimEr
 pub use stream::{DeadLetter, StreamBus, StreamEvent, StreamMetrics};
 pub use tiers::{MemoryTier, TierCube, TierStore};
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SourceKind {
     Measured,
     Synthetic,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SystemTwin {
     Atmosphere,
