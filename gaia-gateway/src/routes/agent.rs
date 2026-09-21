@@ -39,7 +39,7 @@ pub async fn deploy_agent(
     (StatusCode::ACCEPTED, Json(AgentResponse { id: id.clone(), name: id, status: "deploying".into() }))
 }
 
-/// DELETE /agents/:id/revoke — immediately cancels the agent.
+/// DELETE /agents/{id}/revoke — immediately cancels the agent.
 pub async fn revoke_agent(
     State(state): State<AppState>,
     Path(id): Path<String>,
