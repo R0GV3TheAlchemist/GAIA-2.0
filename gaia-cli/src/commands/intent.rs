@@ -6,8 +6,8 @@ pub struct IntentArgs {
     /// The intent text to submit
     pub text: String,
 
-    /// Stream output as it arrives
-    #[arg(long, default_value_t = true)]
+    /// Stream output as SSE chunks as it arrives
+    #[arg(long, default_value_t = false)]
     pub stream: bool,
 
     /// Gateway base URL
