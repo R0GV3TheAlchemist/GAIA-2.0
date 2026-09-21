@@ -1,0 +1,32 @@
+[package]
+name = "gaia-gateway"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "GAIA API gateway — Axum REST + WebSocket + gRPC facade in front of the orchestrator"
+
+[[bin]]
+name = "gaia-gateway"
+path = "src/main.rs"
+
+[lib]
+name = "gaia_gateway"
+path = "src/lib.rs"
+
+[dependencies]
+axum       = { version = "0.8", features = ["ws", "macros"] }
+tokio      = { version = "1", features = ["full"] }
+tower      = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+futures    = "0.3"
+serde      = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow     = "1"
+tracing    = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid       = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tower      = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+hyper      = { version = "1", features = ["http1"] }

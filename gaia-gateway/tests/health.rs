@@ -1,0 +1,20 @@
+//! GET /health → 204 No Content
+
+use axum::{
+    body::Body,
+    http::{Request, StatusCode},
+};
+use gaia_gateway::{router, state::AppState};
+use tower::ServiceExt; // for `.oneshot()`
+
+#[tokio::test]
+async fn health_returns_no_content() {
+    let app = router(AppState::default());
+    let req = Request::builder()
+        .method("GET")
+        .uri("/health")
+        .body(Body::empty())
+        .unwrap();
+    let resp = app.oneshot(req).await.unwrap();
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+}
