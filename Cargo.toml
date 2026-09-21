@@ -25,6 +25,8 @@ members = [
   "gaia-acp",
   "gaia-runtime",
   "gaia-ingest",
+  "gaia-cli",
+  "gaia-gateway",
 ]
 
 [workspace.package]
