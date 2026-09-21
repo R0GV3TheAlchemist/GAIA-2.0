@@ -6,6 +6,15 @@
 //! data type and accessed via a closure: `store.limiter(|d| &mut d.limiter)`.
 //! We use [`StoreData`] to bundle the WASI context and the resource limiter
 //! together so there is no unsafe memory leaking.
+//!
+//! # Import paths
+//!
+//! `wasmtime_wasi::p3` is a sub-module that contains WASI 0.3 *bindings* and
+//! linker helpers (`add_to_linker`, etc.).  The [`WasiCtx`] and
+//! [`WasiCtxBuilder`] types are re-exported from the **crate root** in every
+//! version of `wasmtime-wasi`, including 46.  Enabling the `p3` crate feature
+//! merely gates the `wasmtime_wasi::p3` sub-module; it does not relocate the
+//! context types there.
 
 use std::path::PathBuf;
 
@@ -14,10 +23,9 @@ use wasmtime::{
     component::Component,
     Config, Engine, Store,
 };
-// wasmtime-wasi 46 with feature `p3` exports WasiCtxBuilder and the built
-// context type from the `p3` module.  The context is opaque — use the
-// builder's return type directly via `wasmtime_wasi::p3::WasiCtxBuilder::build`.
-use wasmtime_wasi::p3::WasiCtxBuilder;
+// WasiCtx and WasiCtxBuilder live at the wasmtime_wasi crate root (re-exported
+// from the internal `ctx` module) regardless of which feature flags are active.
+use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
 
 use crate::sandbox::{
     error::{SandboxError, GAIA_CAPABILITY_DENIED},
@@ -32,33 +40,10 @@ use crate::sandbox::{
 /// `wasmtime::Store<StoreData>` gives Wasmtime a single place to reach
 /// both the WASI context and the resource limiter without any heap leaking.
 pub struct StoreData {
-    /// WASI 0.3 context (capability-granted I/O state).
-    /// The concrete type is whatever `WasiCtxBuilder::build()` returns;
-    /// in wasmtime-wasi 46 that is `wasmtime_wasi::p3::WasiCtx`.
-    pub wasi:    <WasiCtxBuilder as WasiCtxBuilderExt>::Built,
+    /// WASI context (capability-granted I/O state).
+    pub wasi:    WasiCtx,
     /// Memory + table quota enforcer.
     pub limiter: GaiaResourceLimiter,
-}
-
-/// Helper alias so we can name the return type of `WasiCtxBuilder::build()`
-/// without relying on a private/unstable path.  We resolve it once here.
-mod _wasi_ctx_type {
-    /// The concrete type returned by `wasmtime_wasi::p3::WasiCtxBuilder::build()`.
-    /// Obtained by calling build on a throwaway builder at type-inference time.
-    pub type WasiCtx = <super::WasiCtxBuilder as super::WasiCtxBuilderExt>::Built;
-}
-
-/// Sealed trait that names the `build()` return type so we can store it.
-pub trait WasiCtxBuilderExt {
-    type Built;
-    fn build_ctx(self) -> Self::Built;
-}
-
-impl WasiCtxBuilderExt for WasiCtxBuilder {
-    type Built = wasmtime_wasi::p3::WasiCtx;
-    fn build_ctx(self) -> wasmtime_wasi::p3::WasiCtx {
-        self.build()
-    }
 }
 
 // ── SandboxManager ───────────────────────────────────────────────────────────
@@ -79,30 +64,29 @@ impl SandboxManager {
     /// - `wasm_component_model` — enables the Component Model ABI.
     /// - `epoch_interruption`   — required for `set_epoch_deadline`.
     ///
-    /// Note: `async_support` was removed in Wasmtime 46 (it is now always
-    /// available and calling it emits a deprecation warning).
+    /// Note: `async_support` was removed in Wasmtime 46 (always available;
+    /// calling it is a deprecated no-op that emits a warning).
     pub fn new(profile: SandboxProfile) -> Result<Self, SandboxError> {
         let mut config = Config::new();
         config.wasm_component_model(true);
         config.epoch_interruption(true);
 
         // Engine::new returns Result<_, wasmtime::Error>; convert explicitly
-        // because SandboxError implements From<anyhow::Error>, not
-        // From<wasmtime::Error> directly.
+        // because SandboxError implements From<anyhow::Error>.
         let engine = Engine::new(&config)
             .map_err(|e| SandboxError::EngineInit(anyhow::Error::from(e)))?;
         Ok(Self { engine, profile })
     }
 
-    /// Build a WASI 0.3 context that grants only the capabilities in the profile.
+    /// Build a WASI context that grants only the capabilities declared in the profile.
     ///
     /// # WASI 0.3 capability model
     ///
     /// In WASI 0.3 a component's capabilities are enforced at the world-import
     /// level: a component without a `wasi:sockets` world import physically
     /// cannot open sockets.  Omitting the socket linker binding is therefore
-    /// sufficient for network isolation; nothing needs to be blocked here.
-    pub fn build_wasi_ctx(&self) -> wasmtime_wasi::p3::WasiCtx {
+    /// sufficient for network isolation.
+    pub fn build_wasi_ctx(&self) -> WasiCtx {
         let mut builder = WasiCtxBuilder::new();
 
         // Filesystem — mount /scratch only when the policy allows it.
@@ -110,7 +94,6 @@ impl SandboxManager {
         if self.profile.scratch_only_writes {
             let scratch = scratch_dir();
             let _ = std::fs::create_dir_all(&scratch);
-            // wasmtime-wasi p3 requires a cap_std::fs::Dir handle.
             let dir = cap_std::fs::Dir::open_ambient_dir(&scratch, ambient_authority())
                 .expect("scratch_dir must be accessible on the host");
             builder.preopened_dir(dir, "/scratch");
@@ -139,8 +122,7 @@ impl SandboxManager {
     /// - Sets epoch deadline for wall-clock CPU budget.
     ///
     /// Full typed component-world invocation (`call_run` / WIT bindings)
-    /// is wired in issue #720 (Execution Engine).  This call validates
-    /// sandbox initialisation and capability gating.
+    /// is wired in issue #720 (Execution Engine).
     pub async fn execute_component(
         &self,
         component: &Component,
@@ -151,25 +133,17 @@ impl SandboxManager {
         };
         let mut store = Store::new(&self.engine, store_data);
 
-        // Borrow the limiter from the store's own data — no Box leaking.
         store.limiter(|data: &mut StoreData| &mut data.limiter);
-
-        // Epoch deadline: number of epoch ticks before interrupt.
         store.set_epoch_deadline(self.profile.quota.max_epochs);
 
-        // Linker construction proves the component can be linked against
-        // the WASI world.  Full invocation added in #720.
         let _linker: wasmtime::component::Linker<StoreData> =
             wasmtime::component::Linker::new(&self.engine);
 
-        let _ = component; // suppress until #720 wires the call
+        let _ = component;
         Ok(())
     }
 
     /// Classify a raw Wasmtime error into a structured [`SandboxError`].
-    ///
-    /// Used by the audit pipeline (#726) to produce typed receipts for every
-    /// sandbox termination event.
     pub fn classify_trap(err: &anyhow::Error) -> SandboxError {
         let msg = err.to_string().to_lowercase();
         if msg.contains("out of memory") || msg.contains("oom") {
@@ -184,9 +158,6 @@ impl SandboxManager {
     }
 
     /// Return a reference to the active [`SandboxProfile`].
-    ///
-    /// Used by the agent lifecycle (#722) to inspect policy before a
-    /// `LOAD → RUN` transition.
     pub fn profile(&self) -> &SandboxProfile {
         &self.profile
     }
