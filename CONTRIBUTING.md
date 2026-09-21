@@ -1,34 +1,36 @@
 # Contributing to GAIA 2.0
 
-Thank you. This project follows an Apache Way / Linux Foundation hybrid: merit, public RFCs, and lazy consensus.
+Thank you for contributing to GAIA 2.0. This project is an open, human-governed effort to create an artificial twin of Earth and humanity.
 
-## How to start
+## Ways to contribute
 
-1. Read [`gaia-spec/`](gaia-spec/) (normative) and the blueprint in `Documents/GAIA 2.0 — Super Operating System.md` (informative).
-2. Find the layer directory for your change.
-3. Open an issue using a template, or an RFC for anything that changes a protocol.
+- Report bugs or propose features through GitHub Issues.
+- Improve specifications, research notes, documentation, and tests.
+- Submit focused pull requests with a clear purpose and verification notes.
+- Participate respectfully in technical, ethical, and governance discussions.
 
-## RFC process
+## Development expectations
 
-- Copy [`rfcs/0000-template.md`](rfcs/0000-template.md) to `rfcs/NNNN-short-title.md`.
-- Open a pull request. Protocol RFCs should also be listed in [`gaia-spec/rfcs.md`](gaia-spec/rfcs.md).
-- Discussion happens on the PR and the linked issue.
-- **Lazy consensus:** if no maintainer objects within 7 days and CI is green, a maintainer may merge.
-- **Breaking changes** (syscall rename, Manifest required-field change, identity scheme change): require a **2/3** vote of sitting TSC members (see [GOVERNANCE.md](GOVERNANCE.md)). Until a legal Foundation exists, the repository owner plus any listed maintainers act as the interim TSC.
+- Keep changes narrowly scoped and explain *why* they are needed.
+- Add or update tests when changing behavior.
+- Preserve privacy, consent, data sovereignty, and least-privilege principles.
+- Do not introduce credentials, personal data, or proprietary material into the repository.
+- Follow existing repository conventions unless an RFC or issue explicitly changes them.
 
-Do not silently assume answers to questions listed in `gaia-spec/rfcs.md`.
+## Pull requests
 
-## Code
+Before opening a pull request:
 
-- Rust: `rustfmt` + `cargo test`
-- Python: Ruff optional; `pytest`
-- TypeScript: `tsc --noEmit` + package tests
-- Spec examples must validate against the JSON Schema in `gaia-spec/schemas/`
+1. Link the relevant issue(s).
+2. Describe the problem, approach, and verification performed.
+3. Keep commits understandable and avoid unrelated formatting churn.
+4. Confirm that applicable tests and checks pass.
+5. Call out known limitations, deferred work, or safety considerations.
 
-## DCO
+## Governance and conduct
 
-Commits should be signed off (`git commit -s`). By contributing you agree your work is licensed under the license of the tree you touch.
+Contributors must follow the [Code of Conduct](CODE_OF_CONDUCT.md), [Security Policy](SECURITY.md), and [Governance Guide](GOVERNANCE.md).
 
-## Security
+## Knowledge-domain naming
 
-Do not file public issues for vulnerabilities. See [SECURITY.md](SECURITY.md).
+Knowledge-domain identities, slugs, aliases, legacy mappings, and deprecations must follow [`docs/knowledge/DOMAIN-NAMING.md`](docs/knowledge/DOMAIN-NAMING.md). In particular, curriculum stage is metadata rather than part of a canonical domain identifier; do not introduce new tier-prefixed IDs or directory names such as `basic-*`, `intermediate-*`, or `mastery-*` without an approved compatibility exception.
