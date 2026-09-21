@@ -1,5 +1,8 @@
-use axum::http::StatusCode;
+use axum::{
+    http::StatusCode,
+    response::IntoResponse,
+};
 
-pub async fn health() -> StatusCode {
-    StatusCode::NO_CONTENT
+pub async fn health() -> impl IntoResponse {
+    (StatusCode::NO_CONTENT, ())
 }
