@@ -75,7 +75,7 @@ jobs:
           node-version: "24"
       - name: Install gaia-ui dependencies
         working-directory: gaia-ui
-        run: npm ci
+        run: npm install
       - name: Build gaia-ui
         working-directory: gaia-ui
         run: npm run build
