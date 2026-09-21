@@ -33,10 +33,14 @@ pub struct SyncBundle {
 
 impl SyncBundle {
     pub fn new(origin_did: impl Into<String>, cubes: Vec<MemCube>) -> Self {
+        // Materialise `origin_did` once so we can use the String for both
+        // the version-vector key and the struct field without consuming the
+        // `impl Into<String>` type parameter twice.
+        let did: String = origin_did.into();
         let mut vv = HashMap::new();
-        vv.insert(origin_did.to_owned().clone(), cubes.len() as u64);
+        vv.insert(did.clone(), cubes.len() as u64);
         Self {
-            origin_did: origin_did.into(),
+            origin_did: did,
             version_vector: vv,
             cubes,
         }

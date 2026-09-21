@@ -21,7 +21,7 @@
 
 use rusqlite::{params, Connection};
 
-use crate::{Lifecycle, MemCube, MemosError, Tier};
+use crate::MemCube;
 
 pub type Result<T> = std::result::Result<T, PersistError>;
 
