@@ -7,7 +7,8 @@ description = "WASM/WASI 0.3 sandbox execution engine for GAIA agents"
 
 [dependencies]
 wasmtime      = { version = "46", features = ["component-model", "async"] }
-wasmtime-wasi = { version = "46", features = ["preview3"] }
+wasmtime-wasi = { version = "46", features = ["p3"] }
+cap-std       = "3"
 serde         = { version = "1", features = ["derive"] }
 thiserror     = "1"
 anyhow        = "1"
