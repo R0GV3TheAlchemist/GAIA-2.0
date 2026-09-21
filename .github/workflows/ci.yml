@@ -59,12 +59,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Test TypeScript SDK
         working-directory: gaia-sdk/typescript
         run: |
           npm install
           npm test
+
+  gaia-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install gaia-ui dependencies
+        working-directory: gaia-ui
+        run: npm install
+      - name: Build gaia-ui
+        working-directory: gaia-ui
+        run: npm run build
+      - name: Test gaia-ui
+        working-directory: gaia-ui
+        run: npm test
 
   rust-workspace:
     runs-on: ubuntu-latest
