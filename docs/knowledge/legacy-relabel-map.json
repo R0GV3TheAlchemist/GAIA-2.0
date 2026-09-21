@@ -1,0 +1,84 @@
+{
+  "schema_version": "0.1.0",
+  "status": "compatibility-baseline",
+  "source": {
+    "repository": "R0GV3TheAlchemist/GAIA",
+    "path": "docs/knowledge/the-subjects-of-knowledge-for-humans/relabel-map.json",
+    "revision": "main@63dd2cf3d181eb0db51d6de1ad83d1f18d4b389a",
+    "retrieved_for_issue": 696
+  },
+  "policy": {
+    "canonical_id_namespace": "gaia.knowledge",
+    "canonical_slug_case": "kebab-case",
+    "tier_is_identity": false,
+    "legacy_values_are_aliases_or_provenance": true,
+    "silent_rename_forbidden": true
+  },
+  "example_mappings": [
+    {
+      "legacy_slug": "basic-programming",
+      "canonical_id": "gaia.knowledge.programming",
+      "canonical_slug": "programming",
+      "learning_placement": {
+        "track": "general-human-literacy",
+        "stage": "foundation"
+      },
+      "migration_status": "proposed"
+    },
+    {
+      "legacy_slug": "basic-data-literacy",
+      "canonical_id": "gaia.knowledge.data-literacy",
+      "canonical_slug": "data-literacy",
+      "learning_placement": {
+        "track": "general-human-literacy",
+        "stage": "foundation"
+      },
+      "migration_status": "proposed",
+      "notes": "Canonical domain proposed by issue #698; not present as a legacy directory."
+    },
+    {
+      "legacy_slug": "basic-biology",
+      "canonical_id": "gaia.knowledge.life-sciences.biology",
+      "canonical_slug": "biology",
+      "learning_placement": {
+        "track": "life-sciences",
+        "stage": "foundation"
+      },
+      "migration_status": "proposed"
+    },
+    {
+      "legacy_slug": "intermediate-advanced-biology",
+      "canonical_id": "gaia.knowledge.life-sciences.biology",
+      "canonical_slug": "biology",
+      "learning_placement": {
+        "track": "life-sciences",
+        "stage": "intermediate"
+      },
+      "migration_status": "needs-review",
+      "notes": "The legacy word advanced is retained in provenance only pending content-scope review."
+    },
+    {
+      "legacy_slug": "mastery-advanced-ai-and-machine-learning",
+      "canonical_id": "gaia.knowledge.computing.ai-and-machine-learning",
+      "canonical_slug": "ai-and-machine-learning",
+      "learning_placement": {
+        "track": "computing",
+        "stage": "mastery"
+      },
+      "migration_status": "needs-scope-review",
+      "notes": "Issue #694 determines final scope and identity-document cross-references."
+    },
+    {
+      "legacy_slug": "reading-and-writing",
+      "canonical_id": null,
+      "canonical_slug": null,
+      "learning_placement": {
+        "track": "foundational-literacy",
+        "stage": "foundation"
+      },
+      "migration_status": "deferred",
+      "notes": "Issue #700 determines whether this is a Tier 0, cross-cutting, or split domain."
+    }
+  ],
+  "full_legacy_mapping": "Retain the source relabel-map.json unchanged during the registry migration. Issue #695 will transform the complete map into registry records after schema validation exists."
+}
