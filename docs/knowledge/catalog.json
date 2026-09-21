@@ -1,0 +1,138 @@
+{
+  "schema_version": "0.1.0",
+  "status": "listed-seed",
+  "runtime_enabled": false,
+  "plane": "knowledge",
+  "id_namespace": "gaia.knowledge",
+  "source": {
+    "ancestor_repository": "R0GV3TheAlchemist/GAIA",
+    "ancestor_human_catalog": "docs/knowledge/the-subjects-of-knowledge-for-humans/catalog.json",
+    "ancestor_revision": "main@49d7a7ffb66fae65b859f0582138067f67e0a4e0",
+    "naming_standard": "docs/knowledge/DOMAIN-NAMING.md"
+  },
+  "stages": ["foundation", "intermediate", "advanced", "mastery"],
+  "counts": {"total": 8, "listed": 7, "blocked": 1},
+  "domains": [
+    {
+      "id": "gaia.knowledge.literacy.reading-and-writing",
+      "slug": "reading-and-writing",
+      "title": "Reading and Writing",
+      "kind": "domain",
+      "status": "listed",
+      "cross_cutting": true,
+      "aliases": ["reading-and-writing", "hum.know.basic.reading-and-writing"],
+      "learning_placements": [{"track": "foundational-literacy", "stage": "foundation", "legacy_slug": "reading-and-writing"}],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": ["docs/knowledge/the-subjects-of-knowledge-for-humans/reading-and-writing"]
+      },
+      "issues": [700]
+    },
+    {
+      "id": "gaia.knowledge.programming",
+      "slug": "programming",
+      "title": "Programming",
+      "kind": "domain",
+      "status": "listed",
+      "aliases": ["basic-programming"],
+      "learning_placements": [{"track": "general-human-literacy", "stage": "foundation", "legacy_slug": "basic-programming"}],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": [],
+        "notes": "No ancestor basic-tier directory. Proposed by #698."
+      },
+      "issues": [698]
+    },
+    {
+      "id": "gaia.knowledge.engineering",
+      "slug": "engineering",
+      "title": "Engineering",
+      "kind": "domain",
+      "status": "listed",
+      "aliases": ["basic-engineering"],
+      "learning_placements": [{"track": "general-human-literacy", "stage": "foundation", "legacy_slug": "basic-engineering"}],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": [],
+        "notes": "No ancestor basic-tier directory. Proposed by #698."
+      },
+      "issues": [698]
+    },
+    {
+      "id": "gaia.knowledge.data-literacy",
+      "slug": "data-literacy",
+      "title": "Data Literacy",
+      "kind": "domain",
+      "status": "listed",
+      "aliases": ["basic-data-literacy"],
+      "learning_placements": [{"track": "general-human-literacy", "stage": "foundation", "legacy_slug": "basic-data-literacy"}],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": [],
+        "notes": "No ancestor basic-tier directory. Proposed by #698."
+      },
+      "issues": [698]
+    },
+    {
+      "id": "gaia.knowledge.life-sciences.biology",
+      "slug": "biology",
+      "title": "Biology",
+      "kind": "domain",
+      "status": "listed",
+      "aliases": ["basic-biology", "intermediate-advanced-biology"],
+      "learning_placements": [
+        {"track": "life-sciences", "stage": "foundation", "legacy_slug": "basic-biology"},
+        {"track": "life-sciences", "stage": "intermediate", "legacy_slug": "intermediate-advanced-biology"}
+      ],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": [
+          "docs/knowledge/the-subjects-of-knowledge-for-humans/basic-biology",
+          "docs/knowledge/the-subjects-of-knowledge-for-humans/intermediate-advanced-biology"
+        ]
+      },
+      "issues": [693, 696]
+    },
+    {
+      "id": "gaia.knowledge.computing.ai-and-machine-learning",
+      "slug": "ai-and-machine-learning",
+      "title": "AI and Machine Learning",
+      "kind": "domain",
+      "status": "listed",
+      "aliases": ["mastery-advanced-ai-and-machine-learning"],
+      "learning_placements": [{"track": "computing", "stage": "mastery", "legacy_slug": "mastery-advanced-ai-and-machine-learning"}],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": ["docs/knowledge/the-subjects-of-knowledge-for-humans/mastery-advanced-ai-and-machine-learning"]
+      },
+      "notes": "Listed discipline. published_closed_score_is_ours remains false.",
+      "issues": [694]
+    },
+    {
+      "id": "gaia.knowledge.society.futurism-and-transhumanism",
+      "slug": "futurism-and-transhumanism",
+      "title": "Futurism and Transhumanism",
+      "kind": "domain",
+      "status": "listed",
+      "aliases": ["mastery-futurism-and-transhumanism"],
+      "learning_placements": [{"track": "society", "stage": "mastery", "legacy_slug": "mastery-futurism-and-transhumanism"}],
+      "legacy": {
+        "repository": "R0GV3TheAlchemist/GAIA",
+        "paths": ["docs/knowledge/the-subjects-of-knowledge-for-humans/mastery-futurism-and-transhumanism"]
+      },
+      "notes": "Crosswalk only. Not a first-person sentience claim.",
+      "issues": [694, 701]
+    },
+    {
+      "id": "gaia.knowledge.refused.full-os-sentience",
+      "slug": "full-os-sentience",
+      "title": "Full OS Sentience",
+      "kind": "refused-title",
+      "status": "blocked",
+      "blocked_reason": "AGENTS.md hard refuse: no sentient twins. Ancestor Mastery GAIA Integration (Full OS Sentience) is not seeded as an available domain.",
+      "aliases": [],
+      "learning_placements": [],
+      "issues": [691, 694]
+    }
+  ]
+}
