@@ -171,3 +171,124 @@ fn verify_package(package: &Package, tagged: &str) -> Result<(), MarketError> {
 pub fn registry_layout() -> &'static str {
     "git/oci registry is not on the wire; packages stay in-process"
 }
+
+// ── Tests (#26 acceptance criteria) ─────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_handoff(privacy: PrivacyMode) -> Handoff {
+        let id = Uuid::new_v4();
+        let cube1 = Uuid::new_v4();
+        let cube2 = Uuid::new_v4();
+        Handoff::new(
+            id,
+            "agent-alpha",
+            "agent-beta",
+            privacy,
+            vec!["work".into(), "health".into()],
+            vec![cube1, cube2],
+        )
+    }
+
+    // ── AC1: Handoff preserves intent_id and allowed memory scope ────────────
+
+    #[test]
+    fn handoff_preserves_intent_id() {
+        let h = make_handoff(PrivacyMode::LocalOnly);
+        let bundle = h.bundle(Some("some memory"), true);
+        assert_eq!(bundle.intent_id, h.intent_id,
+            "intent_id must survive the handoff boundary");
+    }
+
+    #[test]
+    fn handoff_preserves_memory_scope() {
+        let h = make_handoff(PrivacyMode::LocalOnly);
+        let bundle = h.bundle(None, false);
+        assert_eq!(bundle.memory_scope, h.memory_scope,
+            "allowed memory scope must be forwarded unchanged");
+        assert_eq!(bundle.cube_ids, h.cube_ids,
+            "cube ids must be forwarded unchanged");
+    }
+
+    // ── AC2: Unsigned package cannot be installed under default policy ────────
+
+    #[test]
+    fn unsigned_package_rejected_by_default() {
+        let mut market = PackageMarket::new();
+        let pkg = Package::unsigned("my-skill", "v1");
+        assert_eq!(
+            market.install(&pkg),
+            Err(MarketError::Unsigned),
+            "default policy must reject packages with no signature"
+        );
+    }
+
+    #[test]
+    fn signed_package_accepted() {
+        let mut market = PackageMarket::new();
+        let signer = PackageMarket::signer();
+        let pkg = Package::signed_by(&signer, "my-skill", "v1");
+        assert!(market.install(&pkg).is_ok(),
+            "a validly signed package must be accepted");
+        assert!(market.installed().contains(&"my-skill".to_string()));
+    }
+
+    #[test]
+    fn tampered_signature_rejected() {
+        let mut market = PackageMarket::new();
+        let signer = PackageMarket::signer();
+        let mut pkg = Package::signed_by(&signer, "my-skill", "v1");
+        // Corrupt the payload after signing.
+        pkg.payload = "v2-tampered".into();
+        assert_eq!(
+            market.install(&pkg),
+            Err(MarketError::BadSignature),
+            "a package whose payload was altered after signing must be rejected"
+        );
+    }
+
+    #[test]
+    fn duplicate_install_rejected() {
+        let mut market = PackageMarket::new();
+        let signer = PackageMarket::signer();
+        let pkg = Package::signed_by(&signer, "my-skill", "v1");
+        market.install(&pkg).unwrap();
+        assert!(matches!(
+            market.install(&pkg),
+            Err(MarketError::AlreadyInstalled(_))
+        ));
+    }
+
+    // ── AC3: Federated job redacts plaintext unless user opts in ─────────────
+
+    #[test]
+    fn federated_bundle_redacts_plaintext_by_default() {
+        let h = make_handoff(PrivacyMode::Federated);
+        let bundle = h.bundle(Some("sensitive memory"), false /* no opt-in */);
+        assert!(bundle.redacted, "bundle must be marked redacted");
+        assert!(bundle.plaintext.is_none(),
+            "plaintext must not be present without opt-in");
+        assert!(!bundle.ships_plaintext(),
+            "ships_plaintext() must return false");
+    }
+
+    #[test]
+    fn federated_bundle_ships_plaintext_when_opted_in() {
+        let h = make_handoff(PrivacyMode::Federated);
+        let bundle = h.bundle(Some("sensitive memory"), true /* opted in */);
+        assert!(!bundle.redacted, "bundle must not be marked redacted");
+        assert_eq!(bundle.plaintext.as_deref(), Some("sensitive memory"));
+        assert!(bundle.ships_plaintext(),
+            "ships_plaintext() must return true when opted in");
+    }
+
+    #[test]
+    fn local_only_bundle_always_redacts_without_opt_in() {
+        let h = make_handoff(PrivacyMode::LocalOnly);
+        let bundle = h.bundle(Some("private data"), false);
+        assert!(bundle.plaintext.is_none());
+        assert!(bundle.redacted);
+    }
+}
