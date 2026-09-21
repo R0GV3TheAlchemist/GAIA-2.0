@@ -18,14 +18,18 @@
 
 use std::path::PathBuf;
 
-use cap_std::ambient_authority;
 use wasmtime::{
     component::Component,
     Config, Engine, Store,
 };
 // WasiCtx and WasiCtxBuilder live at the wasmtime_wasi crate root (re-exported
 // from the internal `ctx` module) regardless of which feature flags are active.
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
+//
+// In wasmtime-wasi v46 the preopened_dir signature changed to:
+//   preopened_dir(host_path: impl AsRef<Path>, guest_path: &str,
+//                 dir_perms: DirPerms, file_perms: FilePerms)
+// The cap_std Dir handle used in v25 is no longer accepted.
+use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder};
 
 use crate::sandbox::{
     error::{SandboxError, GAIA_CAPABILITY_DENIED},
@@ -91,12 +95,20 @@ impl SandboxManager {
 
         // Filesystem — mount /scratch only when the policy allows it.
         // Default: no preopens → component has zero filesystem access.
+        //
+        // wasmtime-wasi v46 API:
+        //   preopened_dir(host_path, guest_path, DirPerms, FilePerms)
+        // The host_path must implement AsRef<Path>; cap_std::fs::Dir no
+        // longer satisfies that bound and must not be used here.
         if self.profile.scratch_only_writes {
             let scratch = scratch_dir();
             let _ = std::fs::create_dir_all(&scratch);
-            let dir = cap_std::fs::Dir::open_ambient_dir(&scratch, ambient_authority())
-                .expect("scratch_dir must be accessible on the host");
-            builder.preopened_dir(dir, "/scratch");
+            builder.preopened_dir(
+                &scratch,
+                "/scratch",
+                DirPerms::all(),
+                FilePerms::all(),
+            );
         }
 
         // Environment — forward host env only when explicitly declared.
