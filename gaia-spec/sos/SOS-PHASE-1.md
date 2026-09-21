@@ -62,16 +62,19 @@ See `gaia-spec/sos/sched-hooks.csv` for the full hook enumeration.
 
 ## 3. MemCube Ops (`memcube.rs`) — L3-memos, aligns #18
 
-MemCube is the L3 memory tier. All ops address `MemCubeId` entries and MUST be
+MemCube is the L3 memory tier. All ops address a cube by its `id` field
+(`&str` UUID, as defined in `gaia-spec/memcube.md`) and MUST be
 ABI-compatible with the `#18` MemOS tier model.
 
 | Op | Signature | Semantics |
 |---|---|---|
-| `recall` | `recall(id: MemCubeId) -> Result<MemEntry, MemError>` | Fetch entry from L3; `Err(NotFound)` if absent |
-| `consolidate` | `consolidate(ids: &[MemCubeId]) -> Result<MemEntry, MemError>` | Merge multiple entries; deduplicate by `entry_key` |
-| `migrate` | `migrate(id: MemCubeId, target_tier: MemTier) -> Result<(), MemError>` | Move entry to `target_tier`; MUST NOT duplicate |
-| `fuse` | `fuse(a: MemCubeId, b: MemCubeId) -> Result<MemCubeId, MemError>` | Create a new fused entry from two; sources remain until explicit evict |
-| `evict` | `evict(id: MemCubeId) -> Result<(), MemError>` | Remove entry from L3; `Err(NotFound)` if already absent |
+| `recall` | `recall(id: &str) -> Result<MemEntry, MemError>` | Fetch entry from L3; `Err(NotFound)` if absent |
+| `consolidate` | `consolidate(ids: &[&str]) -> Result<MemEntry, MemError>` | Merge multiple entries; deduplicate by `entry_key` |
+| `migrate` | `migrate(id: &str, target_tier: MemTier) -> Result<(), MemError>` | Move entry to `target_tier`; MUST NOT duplicate |
+| `fuse` | `fuse(a: &str, b: &str) -> Result<MemEntry, MemError>` | Create a new fused entry from two source cubes; sources remain until explicit evict |
+| `evict` | `evict(id: &str) -> Result<(), MemError>` | Remove entry from L3; `Err(NotFound)` if already absent |
+
+`id` is the UUID string field defined in `gaia-spec/memcube.md` (`id: UUID`).
 
 ### MemCube rules
 
@@ -199,7 +202,7 @@ States:
 - SOS phase-1 stub: `gaia-spec/sos/phase-1.md`
 - Scheduler hooks CSV: `gaia-spec/sos/sched-hooks.csv`
 - MemOS tiers: `gaia-spec/sos/memos-tiers.csv`; #18
-- MemCube overview: `gaia-spec/memcube.md`
+- MemCube schema: `gaia-spec/memcube.md` (`id: UUID` field)
 - SFS ABI: `gaia-spec/sos/abi.md`
 - SOS Phase 2: `gaia-spec/sos/SOS-PHASE-2.md` (#198)
 - TCB RFC placeholder: `rfcs/sos-kernel-inference-tcb.md`
