@@ -4,3 +4,17 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "GAIAN consent, age-gate, and self-only rules. Not an avatar pipeline."
+
+[features]
+default = []
+# `whisper` does two things simultaneously:
+#   1. Links whisper-rs (and therefore whisper.cpp system libs) so that
+#      `asr::WhisperAsr` runs real inference instead of the stub path.
+#   2. Flips `honesty::live_whisper()` to `true` via cfg!(feature = "whisper").
+# Off by default so `cargo test --workspace` passes in CI without a model file
+# and the honesty contract test (`assert!(!live_whisper())`) continues to pass.
+whisper = ["dep:whisper-rs"]
+
+[dependencies]
+# Only compiled when the `whisper` feature is enabled.
+whisper-rs = { version = "0.13", optional = true }

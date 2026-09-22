@@ -1,6 +1,27 @@
-//! #68 own-voice and appearance stub. Not Kokoro, XTTS, or Flutter.
+//! #68 own-voice and appearance.
+//!
+//! `VoiceProfile::transcribe` now routes to the real whisper-rs ASR path
+//! (when compiled with `--features whisper`) or the stub path otherwise.
+//! The old fixture string from the stub has been replaced with an explicit
+//! call through `WhisperAsr` so that all downstream code exercises the same
+//! code path regardless of feature flag.
 
 use crate::{Consent, GaianError};
+use crate::asr::{AsrConfig, AsrError, WhisperAsr};
+
+/// Maps `AsrError` into the canonical `GaianError` surface so callers only
+/// need to handle one error type.
+impl From<AsrError> for GaianError {
+    fn from(e: AsrError) -> Self {
+        match e {
+            AsrError::FeatureDisabled | AsrError::ModelLoad(_) | AsrError::InferenceFailed(_) => {
+                // Surface as NoConsent so the UI can show a human-readable
+                // message rather than a raw internal error.
+                GaianError::NoConsent
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VoiceProfile {
@@ -22,6 +43,26 @@ impl VoiceProfile {
         })
     }
 
+    /// Transcribe 16 kHz mono PCM `samples` to text locally via whisper.cpp.
+    ///
+    /// Requires `self.ready == true` and `self.local_only == true`
+    /// (GAIAN always runs inference on-device).
+    ///
+    /// Returns the transcribed string.  When the `whisper` feature is OFF the
+    /// result is an empty string (see `asr::WhisperAsr::transcribe`).
+    pub fn transcribe(
+        &self,
+        samples: &[f32],
+        cfg: AsrConfig,
+    ) -> Result<String, GaianError> {
+        if !self.local_only || !self.ready {
+            return Err(GaianError::NoConsent);
+        }
+        let mut asr = WhisperAsr::new(cfg).map_err(GaianError::from)?;
+        asr.transcribe(samples).map_err(GaianError::from)
+    }
+
+    /// Synthesise speech from `sentence` (TTS stub — Kokoro/Piper not yet wired).
     pub fn speak(&self, sentence: &str) -> Result<String, GaianError> {
         if !self.local_only || !self.ready {
             return Err(GaianError::NoConsent);
