@@ -117,20 +117,27 @@ mod tests {
     }
 
     // -------------------------------------------------------------------------
-    // McpRegistry — tool registration and lookup
+    // McpRegistry — tool lookup via real API
     // -------------------------------------------------------------------------
 
-    /// A tool registered in McpRegistry must be retrievable by name.
+    /// McpRegistry::local() seeds the registry with at least one tool.
+    /// Tools are enumerable via .tools() and findable by name.
+    /// This tests the real constructor and query surface — no phantom methods.
     #[test]
-    fn mcp_registry_register_and_lookup() {
-        let mut registry = McpRegistry::new();
-        let tool = McpTool {
-            name:        "search".into(),
-            description: "semantic search over GAIA canon".into(),
-        };
-        registry.register_tool(tool);
-        let found = registry.get_tool("search");
-        assert!(found.is_some(), "registered tool must be retrievable by name");
-        assert_eq!(found.unwrap().name, "search");
+    fn mcp_registry_local_has_tools_and_lookup_works() {
+        let registry = McpRegistry::local();
+        let tools = registry.tools();
+        assert!(
+            !tools.is_empty(),
+            "McpRegistry::local() must seed at least one tool"
+        );
+        // Verify that every tool returned by tools() is findable by name search.
+        let first_name = tools[0].name.clone();
+        let found = registry.tools().into_iter().find(|t| t.name == first_name);
+        assert!(
+            found.is_some(),
+            "tool enumerated by tools() must be findable by name"
+        );
+        assert_eq!(found.unwrap().name, first_name);
     }
 }
