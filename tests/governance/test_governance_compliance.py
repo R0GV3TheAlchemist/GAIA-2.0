@@ -17,6 +17,7 @@ Usage:
 """
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -44,6 +45,18 @@ AUDIT_REQUIRED_FIELDS = [
     "**PRs Opened This Session:**",
     "**Issues Created This Session:**",
 ]
+
+# ---------------------------------------------------------------------------
+# Section-heading separator pattern
+# ---------------------------------------------------------------------------
+# GAIA documents use the Unicode em-dash (—, U+2014) as the separator
+# in section headings: "## Section 2 — Current Canon State".
+# A plain hyphen-minus (-) is accepted as a fallback.
+#
+# IMPORTANT: [—-] is an INVALID regex character class range because
+# U+002D (hyphen) < U+2014 (em-dash). Python's re silently mishandles
+# it rather than raising an error. Always use (?:—|-) instead.
+SEP = r'(?:—|-)'
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -95,8 +108,7 @@ def t006_audit_log_format() -> GovTestResult:
     text  = AUDIT_LOG.read_text(encoding="utf-8")
     lines = text.splitlines()
 
-    # Split into session blocks
-    session_starts: list[tuple[str, int]] = []   # (session_date_label, line_index)
+    session_starts: list[tuple[str, int]] = []
     for i, line in enumerate(lines):
         m = re.match(r'^###\s+Session:\s*(.+)', line.strip())
         if m:
@@ -107,7 +119,6 @@ def t006_audit_log_format() -> GovTestResult:
         return result
 
     for idx, (label, start_line) in enumerate(session_starts):
-        # Collect lines belonging to this block
         end_line = session_starts[idx + 1][1] if idx + 1 < len(session_starts) else len(lines)
         block    = "\n".join(lines[start_line:end_line])
 
@@ -128,16 +139,6 @@ def t007_governance_version() -> GovTestResult:
     """
     Validate GAIA_GOVERNANCE.md Revision History table is well-formed
     and the **Version:** header matches the most recent table row.
-
-    Well-formed means:
-    - The `## Part VI — Revision History` section exists
-    - At least one data row is present (beyond the header/separator)
-    - The **Version:** header value matches the version in the latest row
-
-    On CI with a BASE_SHA environment variable set, this test additionally
-    compares the current version against the base-branch version and fails
-    if the file changed without a version bump. In standalone / no-BASE_SHA
-    mode the structural checks above are sufficient.
     """
     result = GovTestResult("T-007", "Governance Version Integrity")
 
@@ -147,16 +148,14 @@ def t007_governance_version() -> GovTestResult:
 
     text = GOVERNANCE.read_text(encoding="utf-8")
 
-    # --- Extract **Version:** header ---
     version_header_m = re.search(r'^\*\*Version:\*\*\s*([\d.]+)', text, re.MULTILINE)
     if not version_header_m:
         result.fail("GOVERNANCE DRIFT: No **Version:** field found in GAIA_GOVERNANCE.md")
         return result
     header_version = version_header_m.group(1).strip()
 
-    # --- Find Revision History section ---
     rev_section_m = re.search(
-        r'##\s+Part\s+VI\s+[\u2014-]\s+Revision History(.+?)(?=^##|\Z)',
+        rf'##\s+Part\s+VI\s+{SEP}\s+Revision History(.+?)(?=^##|\Z)',
         text, re.MULTILINE | re.DOTALL
     )
     if not rev_section_m:
@@ -167,11 +166,8 @@ def t007_governance_version() -> GovTestResult:
         return result
 
     rev_section = rev_section_m.group(1)
-
-    # Parse table rows: | version | date | change | author |
-    # Skip header row (contains "Version" literally) and separator rows (contain ---)
-    row_re  = re.compile(r'^\|\s*([\d.]+)\s*\|', re.MULTILINE)
-    rows    = row_re.findall(rev_section)
+    row_re      = re.compile(r'^\|\s*([\d.]+)\s*\|', re.MULTILINE)
+    rows        = row_re.findall(rev_section)
 
     if not rows:
         result.fail(
@@ -181,7 +177,6 @@ def t007_governance_version() -> GovTestResult:
         return result
 
     latest_row_version = rows[-1].strip()
-
     if header_version != latest_row_version:
         result.fail(
             f"GOVERNANCE DRIFT: **Version:** header is {header_version} but "
@@ -198,16 +193,8 @@ def t007_governance_version() -> GovTestResult:
 def t008_session_init_currency(data: dict) -> GovTestResult:
     """
     Parse Section 2 tablet table in GAIA_SESSION_INIT.md.
-    For every tablet that is SEALED in color-map.json, assert that:
-      - The tablet appears in the Section 2 table
-      - Its hex value in the table matches color-map.json
-
-    Unsealed tablets are checked for hex match if present in the table,
-    but their absence is not a failure (they may not yet have entries).
-
-    Table format (from live document):
-      | # | Tablet | Hex | Sealed | Tracking Issue |
-      | 01 | Amber | `#8B4513` | 2026-07-15 | [#787](...) |
+    For every sealed tablet in color-map.json, assert it is present
+    in the Section 2 table and its hex matches.
     """
     result = GovTestResult("T-008", "Session Init Currency")
 
@@ -217,9 +204,10 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
 
     text = SESSION_INIT.read_text(encoding="utf-8")
 
-    # --- Extract Section 2 ---
+    # Extract Section 2 block.
+    # Uses SEP = (?:—|-) to avoid the invalid [—-] character-class range.
     section2_m = re.search(
-        r'##\s+Section\s+2\s+[\u2014-]\s+Current Canon State(.+?)(?=^##|\Z)',
+        rf'##\s+Section\s+2\s+{SEP}\s+Current Canon State(.+?)(?=^##|\Z)',
         text, re.MULTILINE | re.DOTALL
     )
     if not section2_m:
@@ -231,17 +219,14 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
 
     section2 = section2_m.group(1)
 
-    # Parse rows: | ## | Name | `#HEX` | sealed-date | issue |
-    # The hex is wrapped in backticks
+    # Parse tablet rows: | 01 | Amber | `#8B4513` | ... |
     row_re = re.compile(
         r'^\|\s*\d+\s*\|\s*([A-Za-z]+)\s*\|\s*`(#[0-9A-Fa-f]{3,8})`',
         re.MULTILINE
     )
     init_hexes: dict[str, str] = {}
     for m in row_re.finditer(section2):
-        name    = m.group(1).strip()
-        hex_val = m.group(2).strip().upper()
-        init_hexes[name] = hex_val
+        init_hexes[m.group(1).strip()] = m.group(2).strip().upper()
 
     if not init_hexes:
         result.fail(
@@ -250,7 +235,6 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
         )
         return result
 
-    # Compare against color-map.json
     for tablet in data["tablets"]:
         name      = tablet["name"]
         map_hex   = tablet["hex"].upper()
@@ -259,15 +243,14 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
         if name not in init_hexes:
             if is_sealed:
                 result.fail(
-                    f"SESSION INIT STALE: Sealed tablet '{name}' is not present "
+                    f"SESSION INIT STALE: Sealed tablet '{name}' not present "
                     f"in GAIA_SESSION_INIT.md Section 2 table"
                 )
             continue
 
-        init_hex = init_hexes[name]
-        if map_hex != init_hex:
+        if map_hex != init_hexes[name]:
             result.fail(
-                f"SESSION INIT STALE: '{name}' hex INIT={init_hex} "
+                f"SESSION INIT STALE: '{name}' hex INIT={init_hexes[name]} "
                 f"color-map={map_hex} — SESSION_INIT.md Section 2 needs updating"
             )
 
@@ -280,21 +263,9 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
 
 def t009_decision_log_presence() -> GovTestResult:
     """
-    Validate that GAIA_SESSION_INIT.md Section 5 Decision Log is
-    parseable and contains at least one data row.
-
-    In a CI environment with CHANGED_FILES set (space-separated list of
-    paths changed in the PR), additionally assert that if any sealed
-    tablet file or INDEX.md was changed, GAIA_SESSION_INIT.md itself
-    was also modified (i.e., a new decision log entry was added).
-
-    Table format (from live document):
-      | Date | Decision | Rationale | Issue/PR |
-
-    This test does NOT check whether the new entry is specifically about
-    the changed file — that would require semantic reasoning. It checks
-    the structural invariant: canon changes must always be accompanied
-    by a SESSION_INIT update.
+    Validate Section 5 Decision Log in GAIA_SESSION_INIT.md is
+    parseable and non-empty. In CI mode (CHANGED_FILES env var set),
+    assert that any PR touching canon files also updates SESSION_INIT.
     """
     result = GovTestResult("T-009", "Decision Log Presence")
 
@@ -304,9 +275,8 @@ def t009_decision_log_presence() -> GovTestResult:
 
     text = SESSION_INIT.read_text(encoding="utf-8")
 
-    # --- Extract Section 5 ---
     section5_m = re.search(
-        r'##\s+Section\s+5\s+[\u2014-]\s+Decision Log(.+?)(?=^##|\Z)',
+        rf'##\s+Section\s+5\s+{SEP}\s+Decision Log(.+?)(?=^##|\Z)',
         text, re.MULTILINE | re.DOTALL
     )
     if not section5_m:
@@ -317,14 +287,8 @@ def t009_decision_log_presence() -> GovTestResult:
         return result
 
     section5 = section5_m.group(1)
-
-    # Parse data rows: | Date | Decision | ... |
-    # Skip header row (contains 'Date' literally) and separator rows
-    row_re = re.compile(
-        r'^\|\s*(\d{4}-\d{2}-\d{2})\s*\|',
-        re.MULTILINE
-    )
-    rows = row_re.findall(section5)
+    row_re   = re.compile(r'^\|\s*(\d{4}-\d{2}-\d{2})\s*\|', re.MULTILINE)
+    rows     = row_re.findall(section5)
 
     if not rows:
         result.fail(
@@ -333,24 +297,18 @@ def t009_decision_log_presence() -> GovTestResult:
         )
         return result
 
-    # CI mode: if CHANGED_FILES env var is set, check that canon changes
-    # are accompanied by a SESSION_INIT update
-    import os
+    # CI mode: if CHANGED_FILES env var is set, enforce the invariant that
+    # any canon file change is accompanied by a SESSION_INIT update.
     changed_files_env = os.environ.get("CHANGED_FILES", "")
     if changed_files_env:
         changed = set(changed_files_env.split())
-        # Detect canon file changes (sealed tablets, INDEX.md)
         canon_changed = any(
             "docs/tablets/" in f or "INDEX.md" in f
             for f in changed
         )
-        session_init_changed = any(
-            "GAIA_SESSION_INIT.md" in f
-            for f in changed
-        )
+        session_init_changed = any("GAIA_SESSION_INIT.md" in f for f in changed)
         if canon_changed and not session_init_changed:
-            canon_files = [f for f in changed if "docs/tablets/" in f or "INDEX.md" in f]
-            for cf in canon_files:
+            for cf in (f for f in changed if "docs/tablets/" in f or "INDEX.md" in f):
                 result.fail(
                     f"DECISION UNLOGGED: '{cf}' was changed but "
                     f"GAIA_SESSION_INIT.md Section 5 was not updated "
@@ -401,7 +359,7 @@ def run_all() -> int:
     if failed:
         print(f"  |  {failed} FAILED")
     else:
-        print("  \u2014 All governance obligations intact.")
+        print("  — All governance obligations intact.")
     print("-" * 60)
     print()
 
