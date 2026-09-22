@@ -2,6 +2,7 @@
 
 mod audit_disk;
 mod broker;
+mod cognitive;
 mod dag;
 mod github_source;
 mod github_source_config;
@@ -16,6 +17,12 @@ mod trust;
 
 pub use audit_disk::persist_audit;
 pub use broker::{Broker, CarbonTimetable, Metrics, ReconcileReport, Worker};
+pub use cognitive::{
+    build_plan, AdaptationEngine, AgentTeam, AllocationPlan, CapabilityMatcher,
+    ConstraintResolver, ConstraintViolation, EacnEntry, ExecutionPlanner, FailureRecovery,
+    GoalDecomposer, PlanError, PlanGenerator, PlanOutcome, PlanValidator, RecoveryAction,
+    RecoveryStrategy,
+};
 pub use dag::{DagNode, Executor, NodeAttempt, Plan, ResourceEstimate, RunReport, TaskPlanner};
 pub use github_source::{
     FakeGitHubSourceProvider, GitHubSourcePolicy, SourceAuditInput, SourceCacheKey, SourceOperation,
