@@ -139,8 +139,6 @@ pub fn tier_for_claim(domain: &str, source: SourceType) -> QualityTier {
         SourceType::Executed    => QualityTier::Verified,
         SourceType::PeerReviewed => QualityTier::HighConfidence,
         SourceType::Encyclopaedic => {
-            // Maths and formal logic get T2; other encyclopaedic domains T2 as well
-            // unless the domain suggests fast-moving knowledge.
             match domain {
                 "mathematics" | "logic" | "formal_science" => QualityTier::HighConfidence,
                 _ => QualityTier::HighConfidence,
@@ -153,12 +151,12 @@ pub fn tier_for_claim(domain: &str, source: SourceType) -> QualityTier {
                 _ => QualityTier::Moderate,
             }
         }
-        SourceType::Specialised => QualityTier::Moderate,
-        SourceType::Statistic   => QualityTier::Low,
+        SourceType::Specialised  => QualityTier::Moderate,
+        SourceType::Statistic    => QualityTier::Low,
         SourceType::Biographical => QualityTier::Low,
-        SourceType::RealTime    => QualityTier::VerifyExternally,
-        SourceType::Personal    => QualityTier::VerifyExternally,
-        SourceType::Unknown     => QualityTier::Low,
+        SourceType::RealTime     => QualityTier::VerifyExternally,
+        SourceType::Personal     => QualityTier::VerifyExternally,
+        SourceType::Unknown      => QualityTier::Low,
     }
 }
 
@@ -169,7 +167,6 @@ pub fn tier_for_claim(domain: &str, source: SourceType) -> QualityTier {
 /// Higher score = higher risk of hallucination. Not a calibrated probability.
 /// Factors: tier (primary), source type, and simple claim-text heuristics.
 pub fn hallucination_risk_score(tier: QualityTier, source: SourceType, text: &str) -> u8 {
-    // Base score from tier
     let base: u8 = match tier {
         QualityTier::Verified         =>  5,
         QualityTier::HighConfidence   => 15,
@@ -178,7 +175,6 @@ pub fn hallucination_risk_score(tier: QualityTier, source: SourceType, text: &st
         QualityTier::VerifyExternally => 85,
     };
 
-    // Additive adjustments from source
     let source_adj: i16 = match source {
         SourceType::Executed      => -4,
         SourceType::PeerReviewed  => -5,
@@ -191,14 +187,10 @@ pub fn hallucination_risk_score(tier: QualityTier, source: SourceType, text: &st
         _                         =>  0,
     };
 
-    // Text heuristics: specific numbers, dates, names raise risk slightly
     let text_adj: i16 = {
         let mut adj: i16 = 0;
-        // Contains a year-like pattern
         if text.chars().filter(|c| c.is_ascii_digit()).count() >= 4 { adj += 3; }
-        // Contains "according to" without a citation marker
         if text.to_ascii_lowercase().contains("according to") { adj += 4; }
-        // Very short claims are less likely to pack hallucinated specifics
         if text.len() < 30 { adj -= 2; }
         adj
     };
@@ -256,18 +248,28 @@ pub struct TemporalValidation {
 /// is flagged as potentially temporal and the tier is raised to at least
 /// `Moderate`.
 pub fn temporal_validation(text: &str, cutoff_year: u16) -> TemporalValidation {
-    // Extract first 4-digit year from text
+    // Extract first 4-digit year from text.
+    //
+    // Guard: `i + 4 <= bytes.len()` ensures every candidate window has exactly
+    // 4 bytes available, including windows right at the end of the string.
+    // The previous `i + 3 < bytes.len()` was equivalent to `i + 4 <= bytes.len() - 1`
+    // (off-by-one), which skipped the last valid window when only 1-2 bytes
+    // followed the year (e.g. "...in 1066.").
     let detected_year: Option<u16> = {
         let bytes = text.as_bytes();
         let mut found = None;
         let mut i = 0;
-        while i + 3 < bytes.len() {
+        while i + 4 <= bytes.len() {
             if bytes[i..i + 4].iter().all(|b| b.is_ascii_digit()) {
-                let year_str = &text[i..i + 4];
-                if let Ok(y) = year_str.parse::<u16>() {
-                    if y >= 1800 && y <= 2200 {
-                        found = Some(y);
-                        break;
+                // Ensure it is a standalone 4-digit sequence (not part of a longer run).
+                let preceded_by_digit = i > 0 && bytes[i - 1].is_ascii_digit();
+                let followed_by_digit = i + 4 < bytes.len() && bytes[i + 4].is_ascii_digit();
+                if !preceded_by_digit && !followed_by_digit {
+                    if let Ok(y) = text[i..i + 4].parse::<u16>() {
+                        if y >= 1800 && y <= 2200 {
+                            found = Some(y);
+                            break;
+                        }
                     }
                 }
             }
@@ -315,7 +317,6 @@ pub fn check_contradiction(source: &str, claim: &str) -> Option<ContradictionFla
     let s = source.to_ascii_lowercase();
     let c = claim.to_ascii_lowercase();
 
-    // Explicit negation: claim contains "not" where source does not, or vice versa
     let source_negated = s.contains(" not ") || s.contains(" never ") || s.contains(" no ");
     let claim_negated  = c.contains(" not ") || c.contains(" never ") || c.contains(" no ");
 
@@ -327,7 +328,6 @@ pub fn check_contradiction(source: &str, claim: &str) -> Option<ContradictionFla
         });
     }
 
-    // Numeric mismatch: both contain numbers but they differ
     let source_nums: Vec<&str> = source
         .split_whitespace()
         .filter(|w| w.chars().all(|c| c.is_ascii_digit() || c == '.' || c == ','))
@@ -371,7 +371,6 @@ pub struct EntityFlag {
 pub fn check_entity_hallucination(entity: &str) -> Option<EntityFlag> {
     let e = entity.trim();
 
-    // arXiv IDs must match NNNN.NNNNN[vN] pattern
     if e.starts_with("arXiv:") || e.starts_with("arxiv:") {
         let id_part = &e[6..];
         let valid = id_part
@@ -394,7 +393,6 @@ pub fn check_entity_hallucination(entity: &str) -> Option<EntityFlag> {
         }
     }
 
-    // DOIs must start with 10.
     if e.starts_with("doi:") || e.starts_with("DOI:") {
         let doi_part = &e[4..];
         if !doi_part.starts_with("10.") {
@@ -405,7 +403,6 @@ pub fn check_entity_hallucination(entity: &str) -> Option<EntityFlag> {
         }
     }
 
-    // Flag suspiciously generic author patterns ("A. Smith et al." with no year)
     let lower = e.to_ascii_lowercase();
     if lower.contains("et al") && !lower.chars().any(|c| c.is_ascii_digit()) {
         return Some(EntityFlag {
