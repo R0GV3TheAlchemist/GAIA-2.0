@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "GAIA Web UI — intent console, agent matrix, and Studio",
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
