@@ -416,21 +416,31 @@ impl LifecycleManager {
     // ── RUN ───────────────────────────────────────────────────────────────────
 
     pub fn run(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        // Copy `now_ms` before borrowing agents.
-        let now = self.now_ms;
-        {
-            let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
-            if record.revoked {
-                return Err(LifecycleError::AgentRevoked(id));
-            }
-            let has_valid = record.tokens.iter().any(|t| t.is_valid(now));
-            if !has_valid {
-                return Err(LifecycleError::TokenExpired {
-                    token_id: record.tokens.first().map(|t| t.id).unwrap_or_else(Uuid::nil),
-                });
-            }
+        let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
+        let from = record.stage;
+
+        // Validate the structural transition FIRST so that callers in an
+        // invalid stage (e.g. Discover) always get InvalidTransition, not a
+        // spurious TokenExpired caused by the empty token list.
+        if !valid_transition(from, LifecycleStage::Run) {
+            return Err(LifecycleError::InvalidTransition {
+                from,
+                to: LifecycleStage::Run,
+            });
         }
-        let from = self.agents[&id].stage;
+
+        // Now that we know the transition is legal, enforce runtime guards.
+        let now = self.now_ms;
+        if record.revoked {
+            return Err(LifecycleError::AgentRevoked(id));
+        }
+        let has_valid = record.tokens.iter().any(|t| t.is_valid(now));
+        if !has_valid {
+            return Err(LifecycleError::TokenExpired {
+                token_id: record.tokens.first().map(|t| t.id).unwrap_or_else(Uuid::nil),
+            });
+        }
+
         self.transition(id, from, LifecycleStage::Run, "agent running")
     }
 
