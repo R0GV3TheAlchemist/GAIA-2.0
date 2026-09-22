@@ -5,8 +5,12 @@
 //! path compiles and runs without panicking.
 //!
 //! `asr_availability_flag` — asserts `live_whisper()` is `true`, confirming
-//! the wiring is real and the honesty flag has been updated.  This test will
-//! catch any future accidental regression of the flag back to `false`.
+//! the wiring is real and the honesty flag has been updated.  Only compiled
+//! and run when the `whisper` feature is enabled:
+//!
+//! ```bash
+//! cargo test --manifest-path gaia-gaian/Cargo.toml --features whisper
+//! ```
 
 use gaia_gaian::{
     asr::AsrConfig,
@@ -48,11 +52,15 @@ fn asr_stub_transcribe_roundtrip() {
 }
 
 /// Confirm `live_whisper()` is `true` — the wiring is real.
-/// This test will fail if the flag is ever regressed back to `false`.
+///
+/// Only compiled when `--features whisper` is passed; skipped in the default
+/// CI build (`cargo test --workspace`) where the feature is off and
+/// `live_whisper()` correctly returns `false`.
 #[test]
+#[cfg(feature = "whisper")]
 fn asr_availability_flag() {
     assert!(
         live_whisper(),
-        "live_whisper() must be true once WhisperAsr wiring is in place"
+        "live_whisper() must be true when compiled with --features whisper"
     );
 }
