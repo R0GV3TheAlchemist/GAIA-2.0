@@ -4,17 +4,14 @@
 //!
 //! Wasmtime requires the `ResourceLimiter` to be stored inside the `Store`'s
 //! data type and accessed via a closure: `store.limiter(|d| &mut d.limiter)`.
-//! We use [`StoreData`] to bundle the WASI context and the resource limiter
-//! together so there is no unsafe memory leaking.
+//! We use [`StoreData`] to bundle the WASI context, the resource table, and
+//! the resource limiter together so there is no unsafe memory leaking.
 //!
-//! # Import paths
-//!
-//! `wasmtime_wasi::p3` is a sub-module that contains WASI 0.3 *bindings* and
-//! linker helpers (`add_to_linker`, etc.).  The [`WasiCtx`] and
-//! [`WasiCtxBuilder`] types are re-exported from the **crate root** in every
-//! version of `wasmtime-wasi`, including 46.  Enabling the `p3` crate feature
-//! merely gates the `wasmtime_wasi::p3` sub-module; it does not relocate the
-//! context types there.
+//! `wasmtime_wasi::p3::add_to_linker` requires `T: WasiView`.  `WasiView` is
+//! a trait with two methods:
+//!   - `table(&mut self) -> &mut ResourceTable`
+//!   - `ctx(&mut self)   -> &mut WasiCtx`
+//! We implement it directly on `StoreData`.
 
 use std::path::PathBuf;
 
@@ -25,7 +22,12 @@ use wasmtime::{
     },
     Config, Engine, Store,
 };
-use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder};
+use wasmtime_wasi::{
+    DirPerms, FilePerms,
+    ResourceTable,
+    WasiCtx, WasiCtxBuilder,
+    WasiView,
+};
 
 use crate::sandbox::{
     error::{SandboxError, GAIA_CAPABILITY_DENIED},
@@ -37,13 +39,26 @@ use crate::sandbox::{
 
 /// Data stored inside every Wasmtime `Store` created by this manager.
 ///
-/// `wasmtime::Store<StoreData>` gives Wasmtime a single place to reach
-/// both the WASI context and the resource limiter without any heap leaking.
+/// Implements [`WasiView`] so that `wasmtime_wasi::p3::add_to_linker` can
+/// bind WASI 0.3 host functions against `Store<StoreData>`.
 pub struct StoreData {
     /// WASI context (capability-granted I/O state).
     pub wasi:    WasiCtx,
+    /// WASI resource table (file descriptors, sockets, etc.).
+    pub table:   ResourceTable,
     /// Memory + table quota enforcer.
     pub limiter: GaiaResourceLimiter,
+}
+
+/// `WasiView` is required by `wasmtime_wasi::p3::add_to_linker<T>`.
+/// It exposes the `WasiCtx` and `ResourceTable` stored inside the `Store`.
+impl WasiView for StoreData {
+    fn table(&mut self) -> &mut ResourceTable {
+        &mut self.table
+    }
+    fn ctx(&mut self) -> &mut WasiCtx {
+        &mut self.wasi
+    }
 }
 
 // ── SandboxManager ───────────────────────────────────────────────────────────
@@ -63,16 +78,11 @@ impl SandboxManager {
     /// Two engine flags are **mandatory** for WASI 0.3:
     /// - `wasm_component_model` — enables the Component Model ABI.
     /// - `epoch_interruption`   — required for `set_epoch_deadline`.
-    ///
-    /// Note: `async_support` was removed in Wasmtime 46 (always available;
-    /// calling it is a deprecated no-op that emits a warning).
     pub fn new(profile: SandboxProfile) -> Result<Self, SandboxError> {
         let mut config = Config::new();
         config.wasm_component_model(true);
         config.epoch_interruption(true);
 
-        // Engine::new returns Result<_, wasmtime::Error>; convert explicitly
-        // because SandboxError implements From<anyhow::Error>.
         let engine = Engine::new(&config)
             .map_err(|e| SandboxError::EngineInit(anyhow::Error::from(e)))?;
         Ok(Self { engine, profile })
@@ -80,28 +90,13 @@ impl SandboxManager {
 
     /// Build a WASI context that grants only the capabilities declared in the profile.
     ///
-    /// # WASI 0.3 capability model
-    ///
-    /// In WASI 0.3 a component's capabilities are enforced at the world-import
-    /// level: a component without a `wasi:sockets` world import physically
-    /// cannot open sockets.  Omitting the socket linker binding is therefore
-    /// sufficient for network isolation.
-    ///
     /// # Errors
     ///
     /// Returns `SandboxError::CapabilityDenied` if a requested filesystem
-    /// preopen cannot be established (e.g. the scratch dir cannot be created
-    /// or the path is not accessible).
+    /// preopen cannot be established.
     pub fn build_wasi_ctx(&self) -> Result<WasiCtx, SandboxError> {
         let mut builder = WasiCtxBuilder::new();
 
-        // Filesystem — mount /scratch only when the policy allows it.
-        // Default: no preopens → component has zero filesystem access.
-        //
-        // wasmtime-wasi v46 API:
-        //   preopened_dir(host_path, guest_path, DirPerms, FilePerms)
-        // The host_path must implement AsRef<Path>; cap_std::fs::Dir no
-        // longer satisfies that bound and must not be used here.
         if self.profile.scratch_only_writes {
             let scratch = scratch_dir();
             std::fs::create_dir_all(&scratch).map_err(|e| {
@@ -118,7 +113,6 @@ impl SandboxManager {
                 })?;
         }
 
-        // Environment — forward host env only when explicitly declared.
         if self.profile.inherited_env {
             builder.inherit_env();
         }
@@ -127,8 +121,6 @@ impl SandboxManager {
     }
 
     /// Compile a WASM Component Model binary.
-    ///
-    /// The result is deterministic and may be cached by the caller.
     pub fn compile(&self, bytes: &[u8]) -> Result<Component, SandboxError> {
         Component::new(&self.engine, bytes)
             .map_err(|e| SandboxError::CompileError(e.to_string()))
@@ -138,13 +130,13 @@ impl SandboxManager {
     ///
     /// Lifecycle:
     /// 1. Build a WASI context gated on the active [`SandboxProfile`].
-    /// 2. Attach [`GaiaResourceLimiter`] (memory + table quotas).
-    /// 3. Set epoch deadline for wall-clock CPU budget.
-    /// 4. Add WASI 0.3 p3 imports to the component linker.
-    /// 5. Instantiate the component and invoke its `run` export.
+    /// 2. Build `Store<StoreData>` with `GaiaResourceLimiter` + epoch deadline.
+    /// 3. Add WASI 0.3 p3 host bindings via `wasmtime_wasi::p3::add_to_linker`.
+    /// 4. Instantiate the component.
+    /// 5. Call the `run` export if present; reactor-style components succeed
+    ///    without a `run` export.
     ///
-    /// Any Wasmtime error is classified by [`Self::classify_trap`] and
-    /// returned as a structured [`SandboxError`].
+    /// Any Wasmtime error is classified by [`Self::classify_trap`].
     pub async fn execute_component(
         &self,
         component: &Component,
@@ -153,6 +145,7 @@ impl SandboxManager {
 
         let store_data = StoreData {
             wasi,
+            table:   ResourceTable::new(),
             limiter: GaiaResourceLimiter::new(self.profile.quota),
         };
         let mut store = Store::new(&self.engine, store_data);
@@ -162,35 +155,33 @@ impl SandboxManager {
 
         let mut linker: Linker<StoreData> = Linker::new(&self.engine);
 
-        // Add WASI 0.3 (p3) host bindings. Network isolation is enforced at
-        // the world-import level: if the component's WIT world does not
-        // import `wasi:sockets`, the socket linker item is never resolved and
-        // the component physically cannot open a socket regardless of what is
-        // added here.  We still conditionally omit network bindings as an
-        // explicit defence-in-depth measure.
+        // Register WASI 0.3 (p3) host functions. Requires StoreData: WasiView.
+        // Network isolation is enforced at the WIT world-import level;
+        // omitting socket bindings here is defence-in-depth.
         wasmtime_wasi::p3::add_to_linker(&mut linker)
             .map_err(|e| SandboxError::EngineInit(anyhow::Error::from(e)))?;
 
-        // Instantiate and run.
-        linker
+        // Instantiate the component.
+        let instance = linker
             .instantiate_async(&mut store, component)
             .await
-            .and_then(|instance| {
-                // Invoke the canonical `run` export if present.
-                // Components that export nothing (e.g. reactor-style) are
-                // considered successful when instantiation succeeds.
-                let func = instance
-                    .get_func(&mut store, "run")
-                    .or_else(|| instance.get_func(&mut store, "wasi:cli/run@0.3.0#run"));
-                if let Some(f) = func {
-                    f.call_async(&mut store, &[], &mut []).map(|_| ())
-                } else {
-                    // No run export — reactor / library component; treat as success.
-                    Box::pin(async { Ok(()) })
-                }
-            })
-            .await
-            .map_err(|e| Self::classify_trap(&e))
+            .map_err(|e| Self::classify_trap(&e))?;
+
+        // Invoke the canonical run export if the component exposes one.
+        // Reactor-style components (no run export) are treated as successful
+        // once instantiation completes.
+        let func = instance
+            .get_func(&mut store, "run")
+            .or_else(|| instance.get_func(&mut store, "wasi:cli/run@0.3.0#run"));
+
+        if let Some(f) = func {
+            f.call_async(&mut store, &[], &mut [])
+                .await
+                .map(|_| ())
+                .map_err(|e| Self::classify_trap(&e))?;
+        }
+
+        Ok(())
     }
 
     /// Classify a raw Wasmtime error into a structured [`SandboxError`].
