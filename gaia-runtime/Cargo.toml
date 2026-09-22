@@ -6,7 +6,9 @@ license.workspace   = true
 description = "WASM/WASI 0.3 sandbox execution engine for GAIA agents"
 
 [dependencies]
-wasmtime      = { version = "46", features = ["component-model", "async"] }
+# "std" enables the std::error::Error impl on wasmtime::Error, which is
+# required for the &dyn std::error::Error coercion in classify_trap.
+wasmtime      = { version = "46", features = ["component-model", "async", "std"] }
 wasmtime-wasi = { version = "46", features = ["p3"] }
 cap-std       = "3"
 serde         = { version = "1", features = ["derive"] }
