@@ -38,20 +38,24 @@ mod tests {
     #[test]
     fn lifecycle_stage_ordering() {
         assert!(
-            LifecycleStage::Discover < LifecycleStage::Install,
-            "Discover must precede Install"
+            LifecycleStage::Discover < LifecycleStage::Register,
+            "Discover must precede Register"
         );
         assert!(
-            LifecycleStage::Install < LifecycleStage::Active,
-            "Install must precede Active"
+            LifecycleStage::Register < LifecycleStage::Initialize,
+            "Register must precede Initialize"
         );
         assert!(
-            LifecycleStage::Active < LifecycleStage::Suspended,
-            "Active must precede Suspended"
+            LifecycleStage::Initialize < LifecycleStage::Run,
+            "Initialize must precede Run"
         );
         assert!(
-            LifecycleStage::Suspended < LifecycleStage::Archive,
-            "Suspended must precede Archive"
+            LifecycleStage::Run < LifecycleStage::Pause,
+            "Run must precede Pause"
+        );
+        assert!(
+            LifecycleStage::Pause < LifecycleStage::Archive,
+            "Pause must precede Archive"
         );
     }
 
@@ -63,7 +67,13 @@ mod tests {
     /// Agents start with no capabilities; each must be explicitly granted.
     #[test]
     fn agent_manifest_default_capabilities_empty() {
-        let manifest = AgentManifest::default();
+        let manifest = AgentManifest {
+            id: String::new(),
+            name: String::new(),
+            version: String::new(),
+            capabilities: vec![],
+            wasm_path: None,
+        };
         assert!(
             manifest.capabilities.is_empty(),
             "default AgentManifest must have no capabilities"
@@ -79,8 +89,8 @@ mod tests {
     #[test]
     fn resource_limits_default_values() {
         let limits = ResourceLimits::default();
-        assert!(limits.max_memory_bytes > 0, "default memory limit must be non-zero");
-        assert!(limits.max_cpu_ms       > 0, "default CPU budget must be non-zero");
+        assert!(limits.memory_mib  > 0, "default memory limit must be non-zero");
+        assert!(limits.cpu_millis  > 0, "default CPU budget must be non-zero");
     }
 
     // -------------------------------------------------------------------------
@@ -107,7 +117,7 @@ mod tests {
     /// audit log formatting that relies on {:?} output.
     #[test]
     fn wasi_grant_debug_is_non_empty() {
-        let grant = WasiGrant::default();
+        let grant = WasiGrant { filesystem: false, network: false };
         let s = format!("{grant:?}");
         assert!(!s.is_empty(), "WasiGrant Debug output must be non-empty");
     }

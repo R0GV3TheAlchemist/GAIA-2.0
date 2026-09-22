@@ -24,6 +24,7 @@ pub use sandbox::{
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wasmtime::ResourceLimiter;
 
     // -------------------------------------------------------------------------
     // SandboxProfile — deny-by-default invariants

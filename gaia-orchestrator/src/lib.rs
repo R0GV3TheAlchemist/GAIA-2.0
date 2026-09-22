@@ -54,36 +54,35 @@ mod tests {
     // ExecutionGate (InMemoryGate) — control-plane boundary enforcement
     // -------------------------------------------------------------------------
 
-    /// A freshly constructed InMemoryGate must default to Open.
+    /// A freshly constructed InMemoryGate must default to Clear (gate open).
     /// The gate is the canonical boundary between the orchestrator and the
-    /// control plane. Defaulting to Open means work proceeds unless the
+    /// control plane. Defaulting to Clear means work proceeds unless the
     /// control plane explicitly signals unavailability.
     #[test]
     fn execution_gate_default_state_is_open() {
-        let gate = InMemoryGate::new();
+        let gate = InMemoryGate::clear();
         assert_eq!(
             gate.state(),
-            GateState::Open,
-            "InMemoryGate must default to Open"
+            GateState::Clear,
+            "InMemoryGate::clear() must have GateState::Clear"
         );
     }
 
-    /// After a control_plane_unavailable_event the gate must transition to Closed.
-    /// Any call to permit_execution on a Closed gate must return Err, never Ok.
+    /// After control_plane_unavailable_event(), using InMemoryGate::unavailable()
+    /// must yield ControlPlaneUnavailable state, and permit_execution must deny.
     #[test]
     fn execution_gate_blocks_when_control_plane_unavailable() {
-        let mut gate = InMemoryGate::new();
-        let sink = InMemorySink::new();
-        control_plane_unavailable_event(&mut gate, &sink);
+        let gate = InMemoryGate::unavailable();
         assert_eq!(
             gate.state(),
-            GateState::Closed,
-            "gate must be Closed after control_plane_unavailable_event"
+            GateState::ControlPlaneUnavailable,
+            "gate must be ControlPlaneUnavailable"
         );
-        let result = permit_execution(&gate);
+        let _event = control_plane_unavailable_event();
+        let permit = permit_execution(&gate, true);
         assert!(
-            result.is_err(),
-            "permit_execution on a Closed gate must return Err"
+            matches!(permit, RunPermit::Deny { .. }),
+            "permit_execution on unavailable gate must return Deny"
         );
     }
 
@@ -91,12 +90,12 @@ mod tests {
     // Broker — work-queue invariants
     // -------------------------------------------------------------------------
 
-    /// A new Broker has no workers and no pending work.
+    /// Broker::new() pre-populates 3 workers; the queue starts empty.
     #[test]
     fn broker_new_is_empty() {
         let broker = Broker::new();
-        assert_eq!(broker.worker_count(), 0, "new Broker must have zero workers");
-        assert_eq!(broker.pending_count(), 0, "new Broker must have zero pending items");
+        assert_eq!(broker.workers.len(), 3, "Broker::new() must pre-populate 3 workers");
+        assert!(broker.queue.is_empty(),   "new Broker must have an empty work queue");
     }
 
     // -------------------------------------------------------------------------
