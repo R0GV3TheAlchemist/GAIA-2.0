@@ -1,6 +1,7 @@
 //! GAIAN first cuts (#57–#75, #213–#221). Consent and local stubs.
 //! Not Ollama, rembg, Flutter, WebGPU, or GAIAN v1.0.
 
+pub mod asr;
 mod agency;
 mod agent;
 mod capture;
@@ -41,6 +42,7 @@ pub use sensors::HealthModule;
 pub use vault::{AuditEntry, Vault};
 pub use voice::{capture_app_allows, Appearance, VoiceProfile};
 pub use wardrobe::{cultural_preset_warning, load_custom, OutfitCategory};
+pub use asr::{AsrConfig, AsrError, WhisperAsr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SampleKind {
