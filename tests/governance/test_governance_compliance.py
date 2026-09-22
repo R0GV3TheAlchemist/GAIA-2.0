@@ -34,8 +34,6 @@ COLOR_MAP    = REPO_ROOT / "docs" / "color" / "color-map.json"
 # ---------------------------------------------------------------------------
 # T-006 constants
 # ---------------------------------------------------------------------------
-# Exact bold-field prefixes as they appear in GAIA_AUDIT_LOG.md entries.
-# Source of truth: GAIA_GOVERNANCE.md Part III audit entry template.
 AUDIT_REQUIRED_FIELDS = [
     "**Actions Taken:**",
     "**Actions Rejected:**",
@@ -47,16 +45,19 @@ AUDIT_REQUIRED_FIELDS = [
 ]
 
 # ---------------------------------------------------------------------------
-# Section-heading separator pattern
+# Regex building blocks
 # ---------------------------------------------------------------------------
-# GAIA documents use the Unicode em-dash (—, U+2014) as the separator
-# in section headings: "## Section 2 — Current Canon State".
-# A plain hyphen-minus (-) is accepted as a fallback.
-#
-# IMPORTANT: [—-] is an INVALID regex character class range because
-# U+002D (hyphen) < U+2014 (em-dash). Python's re silently mishandles
-# it rather than raising an error. Always use (?:—|-) instead.
+# SEP: matches the em-dash separator used in GAIA section headings.
+# NEVER write [—-] — that is an invalid character-class range in Python's
+# re module (U+002D < U+2014) and silently misbehaves.
 SEP = r'(?:—|-)'
+
+# H2_END: lookahead that marks the end of a level-2 section body.
+# Requires '## ' (hash-hash-space) so that ### subheadings inside the
+# section do NOT prematurely terminate the capture group.
+# Without the trailing space, '### Tablet Registry' starts with '##'
+# and fires the lookahead before any table rows are captured.
+H2_END = r'(?=^## |\Z)'
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -92,13 +93,6 @@ class GovTestResult:
 # ---------------------------------------------------------------------------
 
 def t006_audit_log_format() -> GovTestResult:
-    """
-    Parse every Session block in GAIA_AUDIT_LOG.md.
-    Assert all 7 required fields are present in each block.
-
-    Session blocks are delimited by `### Session:` headings.
-    A block ends at the next `### Session:` heading or end-of-file.
-    """
     result = GovTestResult("T-006", "Audit Log Format")
 
     if not AUDIT_LOG.exists():
@@ -121,12 +115,9 @@ def t006_audit_log_format() -> GovTestResult:
     for idx, (label, start_line) in enumerate(session_starts):
         end_line = session_starts[idx + 1][1] if idx + 1 < len(session_starts) else len(lines)
         block    = "\n".join(lines[start_line:end_line])
-
         for field in AUDIT_REQUIRED_FIELDS:
             if field not in block:
-                result.fail(
-                    f"AUDIT VIOLATION: Session '{label}' missing field {field}"
-                )
+                result.fail(f"AUDIT VIOLATION: Session '{label}' missing field {field}")
 
     return result
 
@@ -136,10 +127,6 @@ def t006_audit_log_format() -> GovTestResult:
 # ---------------------------------------------------------------------------
 
 def t007_governance_version() -> GovTestResult:
-    """
-    Validate GAIA_GOVERNANCE.md Revision History table is well-formed
-    and the **Version:** header matches the most recent table row.
-    """
     result = GovTestResult("T-007", "Governance Version Integrity")
 
     if not GOVERNANCE.exists():
@@ -154,8 +141,9 @@ def t007_governance_version() -> GovTestResult:
         return result
     header_version = version_header_m.group(1).strip()
 
+    # H2_END ensures ### subheadings inside this section don't cut the capture short.
     rev_section_m = re.search(
-        rf'##\s+Part\s+VI\s+{SEP}\s+Revision History(.+?)(?=^##|\Z)',
+        rf'##\s+Part\s+VI\s+{SEP}\s+Revision History(.+?){H2_END}',
         text, re.MULTILINE | re.DOTALL
     )
     if not rev_section_m:
@@ -166,8 +154,7 @@ def t007_governance_version() -> GovTestResult:
         return result
 
     rev_section = rev_section_m.group(1)
-    row_re      = re.compile(r'^\|\s*([\d.]+)\s*\|', re.MULTILINE)
-    rows        = row_re.findall(rev_section)
+    rows = re.compile(r'^\|\s*([\d.]+)\s*\|', re.MULTILINE).findall(rev_section)
 
     if not rows:
         result.fail(
@@ -191,11 +178,6 @@ def t007_governance_version() -> GovTestResult:
 # ---------------------------------------------------------------------------
 
 def t008_session_init_currency(data: dict) -> GovTestResult:
-    """
-    Parse Section 2 tablet table in GAIA_SESSION_INIT.md.
-    For every sealed tablet in color-map.json, assert it is present
-    in the Section 2 table and its hex matches.
-    """
     result = GovTestResult("T-008", "Session Init Currency")
 
     if not SESSION_INIT.exists():
@@ -204,10 +186,11 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
 
     text = SESSION_INIT.read_text(encoding="utf-8")
 
-    # Extract Section 2 block.
-    # Uses SEP = (?:—|-) to avoid the invalid [—-] character-class range.
+    # H2_END stops at the next '## ' heading, NOT at '### Tablet Registry'.
+    # Without the trailing space the ### subheading fires the lookahead
+    # and the tablet table rows are never inside the captured group.
     section2_m = re.search(
-        rf'##\s+Section\s+2\s+{SEP}\s+Current Canon State(.+?)(?=^##|\Z)',
+        rf'##\s+Section\s+2\s+{SEP}\s+Current Canon State(.+?){H2_END}',
         text, re.MULTILINE | re.DOTALL
     )
     if not section2_m:
@@ -219,7 +202,6 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
 
     section2 = section2_m.group(1)
 
-    # Parse tablet rows: | 01 | Amber | `#8B4513` | ... |
     row_re = re.compile(
         r'^\|\s*\d+\s*\|\s*([A-Za-z]+)\s*\|\s*`(#[0-9A-Fa-f]{3,8})`',
         re.MULTILINE
@@ -262,11 +244,6 @@ def t008_session_init_currency(data: dict) -> GovTestResult:
 # ---------------------------------------------------------------------------
 
 def t009_decision_log_presence() -> GovTestResult:
-    """
-    Validate Section 5 Decision Log in GAIA_SESSION_INIT.md is
-    parseable and non-empty. In CI mode (CHANGED_FILES env var set),
-    assert that any PR touching canon files also updates SESSION_INIT.
-    """
     result = GovTestResult("T-009", "Decision Log Presence")
 
     if not SESSION_INIT.exists():
@@ -276,7 +253,7 @@ def t009_decision_log_presence() -> GovTestResult:
     text = SESSION_INIT.read_text(encoding="utf-8")
 
     section5_m = re.search(
-        rf'##\s+Section\s+5\s+{SEP}\s+Decision Log(.+?)(?=^##|\Z)',
+        rf'##\s+Section\s+5\s+{SEP}\s+Decision Log(.+?){H2_END}',
         text, re.MULTILINE | re.DOTALL
     )
     if not section5_m:
@@ -287,8 +264,7 @@ def t009_decision_log_presence() -> GovTestResult:
         return result
 
     section5 = section5_m.group(1)
-    row_re   = re.compile(r'^\|\s*(\d{4}-\d{2}-\d{2})\s*\|', re.MULTILINE)
-    rows     = row_re.findall(section5)
+    rows = re.compile(r'^\|\s*(\d{4}-\d{2}-\d{2})\s*\|', re.MULTILINE).findall(section5)
 
     if not rows:
         result.fail(
@@ -297,15 +273,10 @@ def t009_decision_log_presence() -> GovTestResult:
         )
         return result
 
-    # CI mode: if CHANGED_FILES env var is set, enforce the invariant that
-    # any canon file change is accompanied by a SESSION_INIT update.
     changed_files_env = os.environ.get("CHANGED_FILES", "")
     if changed_files_env:
         changed = set(changed_files_env.split())
-        canon_changed = any(
-            "docs/tablets/" in f or "INDEX.md" in f
-            for f in changed
-        )
+        canon_changed = any("docs/tablets/" in f or "INDEX.md" in f for f in changed)
         session_init_changed = any("GAIA_SESSION_INIT.md" in f for f in changed)
         if canon_changed and not session_init_changed:
             for cf in (f for f in changed if "docs/tablets/" in f or "INDEX.md" in f):
