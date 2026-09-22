@@ -1,4 +1,4 @@
-//! AIKD first cuts (#93–#106, #621, #622). Open weights default. Not a practice license.
+//! AIKD first cuts (#93–#106, #621, #622, #628). Open weights default. Not a practice license.
 
 mod agentic;
 mod answer;
@@ -12,6 +12,7 @@ mod honesty;
 mod meta;
 pub mod model_registry;
 mod packs;
+pub mod quality;
 mod registry;
 mod retrieve;
 mod session;
@@ -39,6 +40,11 @@ pub use meta::{aikd_v1_tagged, audit_report, knows_everything};
 pub use model_registry::{model_by_id, models_for_domain, open_models, ModelEntry};
 pub use packs::{
     gaia_certifies_usmle_or_bar, insurer_automation, professional_disclaimer, ScienceAnswer,
+};
+pub use quality::{
+    check_contradiction, check_entity_hallucination, hallucination_risk_score,
+    temporal_validation, tier_for_claim, ContradictionFlag, EntityFlag, KnowledgeClaim,
+    QualityTier, SourceType, TemporalValidation,
 };
 pub use registry::{system_tags, BenchRow};
 pub use retrieve::QueryHit;
