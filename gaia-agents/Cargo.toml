@@ -13,5 +13,6 @@ path = "src/bin/gaia-agent.rs"
 gaia-kernel = { path = "../gaia-kernel" }
 hex = "0.4"
 serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
 uuid = { version = "1", features = ["v4", "serde"] }
 wasmtime = "25"

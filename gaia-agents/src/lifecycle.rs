@@ -19,13 +19,12 @@
 //! a call to `gaia_runtime::Sandbox::loaded_binary_hash(agent_id)`.
 
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
-use crate::runtime::{AgentManifest, Capability, ResourceLimits};
+use crate::runtime::{AgentManifest, Capability};
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -123,7 +122,7 @@ pub struct CapabilityToken {
     pub id: Uuid,
     pub agent_did: AgentDid,
     pub capabilities: Vec<Capability>,
-    /// Epoch seconds after which the token is invalid (None = no expiry in tests).
+    /// Epoch ms after which the token is invalid (None = no expiry in tests).
     pub expires_at_ms: Option<u64>,
     /// HMAC-SHA256 over `id || did || capabilities` — stub key for now.
     pub hmac: Vec<u8>,
@@ -160,14 +159,11 @@ impl CapabilityToken {
                 return false;
             }
         }
-        // Verify HMAC integrity.
         let expected = Self::compute_hmac(&self.id, &self.agent_did, &self.capabilities);
         self.hmac == expected
     }
 
     fn compute_hmac(id: &Uuid, did: &AgentDid, caps: &[Capability]) -> Vec<u8> {
-        // Stub HMAC: SHA-256(id_bytes || did_bytes || sorted_cap_names).
-        // Replace with real HMAC-SHA256 keyed on agent signing key (#724).
         let mut h = Sha256::new();
         h.update(id.as_bytes());
         h.update(did.as_str().as_bytes());
@@ -273,13 +269,13 @@ fn valid_transition(from: LifecycleStage, to: LifecycleStage) -> bool {
 
 /// Manages the full lifecycle for a set of agents.
 pub struct LifecycleManager {
-    agents: HashMap<Uuid, AgentRecord>,
+    pub agents: HashMap<Uuid, AgentRecord>,
     audit_log: Vec<LifecycleEvent>,
     /// Monotonic clock substitute used in tests.
     pub now_ms: u64,
-    /// Max CPU ms enforced at GRANT/RUN.
+    /// Max CPU ms enforced at GRANT.
     pub policy_max_cpu_millis: u64,
-    /// Max memory MiB enforced at GRANT/RUN.
+    /// Max memory MiB enforced at GRANT.
     pub policy_max_memory_mib: u64,
 }
 
@@ -298,7 +294,6 @@ impl Default for LifecycleManager {
 impl LifecycleManager {
     // ── DISCOVER ──────────────────────────────────────────────────────────────
 
-    /// Create a registry entry for a new agent (stage: DISCOVER).
     pub fn discover(&mut self, manifest: AgentManifest) -> Uuid {
         let id = Uuid::new_v4();
         let record = AgentRecord::new(id, manifest);
@@ -309,30 +304,26 @@ impl LifecycleManager {
 
     // ── REGISTER ─────────────────────────────────────────────────────────────
 
-    /// Submit AIP manifest + verify signature (stub: always ok if manifest
-    /// name is non-empty).  Transitions DISCOVER → REGISTER.
     pub fn register(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        let record = self.require_agent(id)?;
-        let from = record.stage;
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Register, "manifest registered")
     }
 
     // ── ATTEST ────────────────────────────────────────────────────────────────
 
-    /// Compute SHA-256 over the supplied WASM bytes and record the hash.
-    /// Rejects an all-zero hash (tamper sentinel).  Transitions → ATTEST.
     pub fn attest(&mut self, id: Uuid, wasm_bytes: &[u8]) -> Result<[u8; 32], LifecycleError> {
-        let record = self.require_agent(id)?;
-        let from = record.stage;
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
+        let agent_name = self.agents[&id].manifest.name.clone();
 
         let mut h = Sha256::new();
         h.update(wasm_bytes);
         let hash: [u8; 32] = h.finalize().into();
 
-        // Reject all-zero hash — indicates a tampered/empty module.
         if hash == [0u8; 32] {
             return Err(LifecycleError::AttestationFailed {
-                agent: record.manifest.name.clone(),
+                agent: agent_name,
                 reason: "binary hash is all-zero (tampered or empty)".into(),
             });
         }
@@ -342,14 +333,8 @@ impl LifecycleManager {
         Ok(hash)
     }
 
-    /// Verify that `wasm_bytes` produces the previously attested hash.
-    /// Returns `Err` if the hash mismatches (tampered module).
-    pub fn verify_attestation(
-        &self,
-        id: Uuid,
-        wasm_bytes: &[u8],
-    ) -> Result<(), LifecycleError> {
-        let record = self.require_agent_ref(id)?;
+    pub fn verify_attestation(&self, id: Uuid, wasm_bytes: &[u8]) -> Result<(), LifecycleError> {
+        let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
         let stored = record.attested_hash.ok_or_else(|| LifecycleError::AttestationFailed {
             agent: record.manifest.name.clone(),
             reason: "no attestation recorded".into(),
@@ -368,36 +353,35 @@ impl LifecycleManager {
 
     // ── LOAD ──────────────────────────────────────────────────────────────────
 
-    /// Instantiate the WASM component (stub: just transitions stage).
     pub fn load(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        let record = self.require_agent(id)?;
-        let from = record.stage;
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Load, "wasm loaded into sandbox")
     }
 
     // ── INITIALIZE ────────────────────────────────────────────────────────────
 
-    /// Pass config + capability grants to the loaded module.
     pub fn initialize(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        let record = self.require_agent(id)?;
-        let from = record.stage;
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Initialize, "agent initialized")
     }
 
     // ── GRANT ─────────────────────────────────────────────────────────────────
 
-    /// Issue a scoped, time-limited capability token.  Enforces quota at
-    /// admission time.  Transitions → GRANT.
     pub fn grant(
         &mut self,
         id: Uuid,
         capabilities: Vec<Capability>,
         ttl_ms: Option<u64>,
     ) -> Result<CapabilityToken, LifecycleError> {
-        {
-            let record = self.require_agent(id)?;
+        // Copy scalars before any borrow of `self.agents`.
+        let max_cpu = self.policy_max_cpu_millis;
+        let max_mem = self.policy_max_memory_mib;
+        let now = self.now_ms;
 
-            // Quota check: only declared capabilities may be granted.
+        {
+            let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
             for cap in &capabilities {
                 if !record.manifest.declared_capabilities.contains(cap) {
                     return Err(LifecycleError::QuotaExceeded {
@@ -406,14 +390,13 @@ impl LifecycleManager {
                     });
                 }
             }
-            // Resource limits.
-            if record.manifest.limits.cpu_millis > self.policy_max_cpu_millis {
+            if record.manifest.limits.cpu_millis > max_cpu {
                 return Err(LifecycleError::QuotaExceeded {
                     agent: record.manifest.name.clone(),
                     reason: "cpu limit exceeds policy".into(),
                 });
             }
-            if record.manifest.limits.memory_mib > self.policy_max_memory_mib {
+            if record.manifest.limits.memory_mib > max_mem {
                 return Err(LifecycleError::QuotaExceeded {
                     agent: record.manifest.name.clone(),
                     reason: "memory limit exceeds policy".into(),
@@ -421,32 +404,25 @@ impl LifecycleManager {
             }
         }
 
-        let from = self.require_agent(id)?.stage;
+        let from = self.agents[&id].stage;
         self.transition(id, from, LifecycleStage::Grant, "capability token issued")?;
 
-        let record = self.agents.get(id.as_ref() /* borrow trick */ )
-            .or_else(|| self.agents.get(&id))
-            .unwrap();
-        let token = CapabilityToken::issue(
-            record.did.clone(),
-            capabilities,
-            ttl_ms,
-            self.now_ms,
-        );
+        let did = self.agents[&id].did.clone();
+        let token = CapabilityToken::issue(did, capabilities, ttl_ms, now);
         self.agents.get_mut(&id).unwrap().tokens.push(token.clone());
         Ok(token)
     }
 
     // ── RUN ───────────────────────────────────────────────────────────────────
 
-    /// Begin execution.  Validates that at least one valid token exists.
     pub fn run(&mut self, id: Uuid) -> Result<(), LifecycleError> {
+        // Copy `now_ms` before borrowing agents.
+        let now = self.now_ms;
         {
-            let record = self.require_agent(id)?;
+            let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
             if record.revoked {
                 return Err(LifecycleError::AgentRevoked(id));
             }
-            let now = self.now_ms;
             let has_valid = record.tokens.iter().any(|t| t.is_valid(now));
             if !has_valid {
                 return Err(LifecycleError::TokenExpired {
@@ -454,70 +430,61 @@ impl LifecycleManager {
                 });
             }
         }
-        let from = self.require_agent(id)?.stage;
+        let from = self.agents[&id].stage;
         self.transition(id, from, LifecycleStage::Run, "agent running")
     }
 
     // ── MONITOR ───────────────────────────────────────────────────────────────
 
-    /// Record a telemetry snapshot. Transitions RUN ↔ MONITOR.
-    /// Enforces OOM: if `memory_mib_used` exceeds the manifest limit,
-    /// triggers a clean TERMINATE.
     pub fn monitor(
         &mut self,
         id: Uuid,
         snapshot: ResourceSnapshot,
     ) -> Result<(), LifecycleError> {
-        {
-            let record = self.require_agent(id)?;
-            // OOM guard.
-            if snapshot.memory_mib_used > record.manifest.limits.memory_mib {
-                let agent_name = record.manifest.name.clone();
-                let from = record.stage;
-                drop(record); // release borrow
-                // Transition to TERMINATE via the valid paths.
-                // MONITOR → TERMINATE is valid.
-                let _ = self.transition(
-                    id, from,
-                    LifecycleStage::Terminate,
-                    &format!("OOM: used {} MiB, limit {} MiB",
-                        snapshot.memory_mib_used,
-                        self.agents[&id].manifest.limits.memory_mib),
-                );
-                return Err(LifecycleError::QuotaExceeded {
-                    agent: agent_name,
-                    reason: format!(
-                        "OOM: used {} MiB exceeds limit",
-                        snapshot.memory_mib_used
-                    ),
-                });
-            }
+        let mem_limit = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?
+            .manifest.limits.memory_mib;
+        if snapshot.memory_mib_used > mem_limit {
+            let agent_name = self.agents[&id].manifest.name.clone();
+            let from = self.agents[&id].stage;
+            let used = snapshot.memory_mib_used;
+            let _ = self.transition(
+                id, from, LifecycleStage::Terminate,
+                &format!("OOM: used {used} MiB, limit {mem_limit} MiB"),
+            );
+            return Err(LifecycleError::QuotaExceeded {
+                agent: agent_name,
+                reason: format!("OOM: used {used} MiB exceeds limit"),
+            });
         }
-        let from = self.require_agent(id)?.stage;
+        let from = self.agents[&id].stage;
         self.agents.get_mut(&id).unwrap().telemetry.push(snapshot);
         self.transition(id, from, LifecycleStage::Monitor, "telemetry recorded")
     }
 
+    /// Convenience: cycle MONITOR → RUN (used in tests after a monitor call).
+    pub fn transition_to_run_from_monitor(&mut self, id: Uuid) -> Result<(), LifecycleError> {
+        self.transition(id, LifecycleStage::Monitor, LifecycleStage::Run, "monitor → run")
+    }
+
     // ── PAUSE ─────────────────────────────────────────────────────────────────
 
-    /// Suspend the agent and save a checkpoint.
     pub fn pause(
         &mut self,
         id: Uuid,
         state_blob: Vec<u8>,
     ) -> Result<AgentCheckpoint, LifecycleError> {
-        let from = {
-            let record = self.require_agent(id)?;
-            record.stage
-        };
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Pause, "agent paused")?;
+        let now = self.now_ms;
         let record = self.agents.get(&id).unwrap();
         let checkpoint = AgentCheckpoint {
             agent_id: id,
             stage: LifecycleStage::Pause,
             manifest: record.manifest.clone(),
             state_blob,
-            saved_at_ms: self.now_ms,
+            saved_at_ms: now,
         };
         self.agents.get_mut(&id).unwrap().checkpoint = Some(checkpoint.clone());
         Ok(checkpoint)
@@ -525,10 +492,9 @@ impl LifecycleManager {
 
     // ── RESUME ────────────────────────────────────────────────────────────────
 
-    /// Restore from checkpoint and transition → RESUME → RUN.
     pub fn resume(&mut self, id: Uuid) -> Result<AgentCheckpoint, LifecycleError> {
         let (from, checkpoint) = {
-            let record = self.require_agent(id)?;
+            let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
             let cp = record
                 .checkpoint
                 .clone()
@@ -536,21 +502,15 @@ impl LifecycleManager {
             (record.stage, cp)
         };
         self.transition(id, from, LifecycleStage::Resume, "checkpoint restored")?;
-        // Immediately move to RUN so the agent is active again.
         self.transition(id, LifecycleStage::Resume, LifecycleStage::Run, "resumed → running")?;
         Ok(checkpoint)
     }
 
     // ── REVOKE ────────────────────────────────────────────────────────────────
 
-    /// Withdraw all capability tokens and mark the agent as revoked.
-    /// Must complete within 100 ms — in this in-memory implementation it is
-    /// synchronous and therefore always within budget.
     pub fn revoke(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        let from = {
-            let record = self.require_agent(id)?;
-            record.stage
-        };
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Revoke, "capabilities revoked")?;
         let record = self.agents.get_mut(&id).unwrap();
         for token in &mut record.tokens {
@@ -562,23 +522,17 @@ impl LifecycleManager {
 
     // ── TERMINATE ─────────────────────────────────────────────────────────────
 
-    /// Clean shutdown + resource release.
     pub fn terminate(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        let from = {
-            let record = self.require_agent(id)?;
-            record.stage
-        };
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Terminate, "agent terminated")
     }
 
     // ── ARCHIVE ───────────────────────────────────────────────────────────────
 
-    /// Persist execution record to audit log.  Final stage.
     pub fn archive(&mut self, id: Uuid) -> Result<(), LifecycleError> {
-        let from = {
-            let record = self.require_agent(id)?;
-            record.stage
-        };
+        let from = self.agents.get(&id)
+            .ok_or(LifecycleError::AgentNotFound(id))?.stage;
         self.transition(id, from, LifecycleStage::Archive, "archived to audit log")
     }
 
@@ -612,14 +566,6 @@ impl LifecycleManager {
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────
-
-    fn require_agent(&mut self, id: Uuid) -> Result<&AgentRecord, LifecycleError> {
-        self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))
-    }
-
-    fn require_agent_ref(&self, id: Uuid) -> Result<&AgentRecord, LifecycleError> {
-        self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))
-    }
 
     fn transition(
         &mut self,
@@ -656,6 +602,8 @@ impl LifecycleManager {
 
 #[cfg(test)]
 mod tests {
+    use std::time::{Duration, Instant};
+
     use super::*;
     use crate::runtime::{AgentManifest, Capability, ResourceLimits};
 
@@ -673,7 +621,6 @@ mod tests {
         }
     }
 
-    /// Walk the full happy path: DISCOVER → ARCHIVE.
     fn full_lifecycle(mgr: &mut LifecycleManager, wasm: &[u8]) -> Uuid {
         let id = mgr.discover(test_manifest("test-agent"));
         mgr.register(id).unwrap();
@@ -685,14 +632,11 @@ mod tests {
         id
     }
 
-    // ── AC: full lifecycle traversal ──────────────────────────────────────────
-
     #[test]
     fn full_lifecycle_discover_to_archive() {
         let mut mgr = LifecycleManager::default();
         let id = full_lifecycle(&mut mgr, b"wasm");
 
-        // Monitor → Pause → Resume → Run → Revoke → Terminate → Archive.
         let snap = ResourceSnapshot {
             agent_id: id,
             cpu_millis_used: 100,
@@ -700,18 +644,14 @@ mod tests {
             network_bytes_out: 0,
         };
         mgr.monitor(id, snap).unwrap();
-        // monitor transitions to MONITOR; cycle back to RUN for pause.
-        // Actually we need RUN → PAUSE, and after monitor we're in MONITOR.
-        // MONITOR → RUN is valid, do that first.
         mgr.transition_to_run_from_monitor(id).unwrap();
         mgr.pause(id, b"state".to_vec()).unwrap();
-        mgr.resume(id).unwrap(); // Pause → Resume → Run
+        mgr.resume(id).unwrap();
         mgr.revoke(id).unwrap();
         mgr.terminate(id).unwrap();
         mgr.archive(id).unwrap();
 
         assert_eq!(mgr.stage_of(id), Some(LifecycleStage::Archive));
-        // Every stage should appear in the audit log.
         let stages: Vec<LifecycleStage> =
             mgr.audit_log().iter().map(|e| e.to_stage).collect();
         for expected in [
@@ -729,8 +669,6 @@ mod tests {
             );
         }
     }
-
-    // ── AC: capability revocation terminates within 100ms ─────────────────────
 
     #[test]
     fn revocation_completes_well_under_100ms() {
@@ -763,28 +701,20 @@ mod tests {
         let id = full_lifecycle(&mut mgr, b"wasm");
         mgr.revoke(id).unwrap();
         mgr.terminate(id).unwrap();
-        // Can't run after revoke+terminate — no valid transition from Archive.
-        // But more importantly: a freshly revoked agent that somehow stays in
-        // REVOKE stage cannot re-run.
         let id2 = full_lifecycle(&mut mgr, b"wasm");
         mgr.revoke(id2).unwrap();
-        // Stage is now REVOKE — no valid RUN transition.
         assert!(matches!(
             mgr.run(id2),
             Err(LifecycleError::AgentRevoked(_))
         ));
     }
 
-    // ── AC: WASM binary attestation rejects tampered modules ──────────────────
-
     #[test]
     fn attestation_rejects_tampered_module() {
         let mut mgr = LifecycleManager::default();
         let id = mgr.discover(test_manifest("tamper-test"));
         mgr.register(id).unwrap();
-        // Attest with original bytes.
         mgr.attest(id, b"original wasm bytes").unwrap();
-        // Verification with tampered bytes fails.
         let err = mgr
             .verify_attestation(id, b"tampered wasm bytes")
             .unwrap_err();
@@ -800,8 +730,6 @@ mod tests {
         assert!(mgr.verify_attestation(id, b"real wasm bytes").is_ok());
     }
 
-    // ── AC: agent checkpoint can be restored ──────────────────────────────────
-
     #[test]
     fn checkpoint_round_trips_state_blob() {
         let mut mgr = LifecycleManager::default();
@@ -809,7 +737,6 @@ mod tests {
         let state = b"memory snapshot bytes";
         let cp = mgr.pause(id, state.to_vec()).unwrap();
         assert_eq!(cp.state_blob, state);
-        // Resume returns the same checkpoint.
         let restored = mgr.resume(id).unwrap();
         assert_eq!(restored.state_blob, state);
         assert_eq!(mgr.stage_of(id), Some(LifecycleStage::Run));
@@ -818,7 +745,6 @@ mod tests {
     #[test]
     fn resume_without_checkpoint_fails() {
         let mut mgr = LifecycleManager::default();
-        // Manually put an agent in PAUSE stage without a saved checkpoint.
         let id = mgr.discover(test_manifest("no-cp"));
         mgr.register(id).unwrap();
         mgr.agents.get_mut(&id).unwrap().stage = LifecycleStage::Pause;
@@ -828,25 +754,20 @@ mod tests {
         ));
     }
 
-    // ── AC: resource quota OOM → clean TERMINATE, not panic ───────────────────
-
     #[test]
     fn oom_triggers_clean_terminate_not_panic() {
         let mut mgr = LifecycleManager::default();
         let id = full_lifecycle(&mut mgr, b"wasm");
-        // Agent limit is 64 MiB; send 65 MiB snapshot.
         let snap = ResourceSnapshot {
             agent_id: id,
             cpu_millis_used: 100,
-            memory_mib_used: 65, // over the 64 MiB limit
+            memory_mib_used: 65,
             network_bytes_out: 0,
         };
         let err = mgr.monitor(id, snap).unwrap_err();
         assert!(matches!(err, LifecycleError::QuotaExceeded { .. }));
         assert_eq!(mgr.stage_of(id), Some(LifecycleStage::Terminate));
     }
-
-    // ── AC: all lifecycle transitions recorded in audit log ───────────────────
 
     #[test]
     fn every_transition_appears_in_audit_log() {
@@ -855,25 +776,18 @@ mod tests {
         mgr.terminate(id).unwrap();
         mgr.archive(id).unwrap();
         let count = mgr.audit_log().iter().filter(|e| e.agent_id == id).count();
-        // DISCOVER + REGISTER + ATTEST + LOAD + INITIALIZE + GRANT + RUN
-        // + TERMINATE + ARCHIVE = 9 minimum.
         assert!(count >= 9, "expected ≥ 9 audit events, got {count}");
     }
-
-    // ── AC: invalid transitions rejected ─────────────────────────────────────
 
     #[test]
     fn invalid_transition_returns_error() {
         let mut mgr = LifecycleManager::default();
         let id = mgr.discover(test_manifest("t-test"));
-        // Cannot go directly DISCOVER → RUN.
         assert!(matches!(
             mgr.run(id),
             Err(LifecycleError::InvalidTransition { .. })
         ));
     }
-
-    // ── Capability token expiry ───────────────────────────────────────────────
 
     #[test]
     fn expired_token_blocks_run() {
@@ -883,39 +797,31 @@ mod tests {
         mgr.attest(id, b"wasm").unwrap();
         mgr.load(id).unwrap();
         mgr.initialize(id).unwrap();
-        // Issue token with 500ms TTL, current time is 1000ms.
         mgr.grant(id, vec![Capability::MemoryRead], Some(500)).unwrap();
-        // Advance clock past expiry.
         mgr.now_ms = 2_000;
         let err = mgr.run(id).unwrap_err();
         assert!(matches!(err, LifecycleError::TokenExpired { .. }));
     }
 
-    // ── Undeclared capability rejected at GRANT ───────────────────────────────
-
     #[test]
     fn undeclared_capability_rejected_at_grant() {
         let mut mgr = LifecycleManager::default();
-        let id = mgr.discover(test_manifest("cap-test")); // only MemoryRead + FilesystemRead
+        let id = mgr.discover(test_manifest("cap-test"));
         mgr.register(id).unwrap();
         mgr.attest(id, b"wasm").unwrap();
         mgr.load(id).unwrap();
         mgr.initialize(id).unwrap();
-        // Try to grant Network (not declared).
         let err = mgr
             .grant(id, vec![Capability::Network], Some(60_000))
             .unwrap_err();
         assert!(matches!(err, LifecycleError::QuotaExceeded { .. }));
     }
 
-    // ── Token HMAC integrity ──────────────────────────────────────────────────
-
     #[test]
     fn tampered_token_hmac_is_invalid() {
         let mut mgr = LifecycleManager::default();
         let id = full_lifecycle(&mut mgr, b"wasm");
         let token_id = mgr.agents[&id].tokens[0].id;
-        // Tamper with the HMAC.
         mgr.agents.get_mut(&id).unwrap().tokens[0].hmac = vec![0u8; 32];
         let token = mgr.token_for(id, token_id).unwrap();
         assert!(!token.is_valid(mgr.now_ms));

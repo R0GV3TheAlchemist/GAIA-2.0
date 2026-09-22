@@ -16,7 +16,7 @@ pub use a2a::{
 pub use host::{AgentHost, HostError, Review};
 pub use lifecycle::{
     AgentCheckpoint, AgentDid, CapabilityToken, LifecycleError, LifecycleEvent, LifecycleManager,
-    LifecycleStage, PlanOutcome, RecoveryAction, RecoveryStrategy, ResourceSnapshot,
+    LifecycleStage, ResourceSnapshot,
 };
 pub use pack::{catalog, find as find_pack, AgentKind, PackEntry};
 pub use runtime::{
