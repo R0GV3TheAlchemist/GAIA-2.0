@@ -187,11 +187,17 @@ impl SandboxManager {
         Ok(())
     }
 
-    /// Classify a raw Wasmtime error into a structured [`SandboxError`].
+    /// Classify any error (Wasmtime, anyhow, or std) into a [`SandboxError`].
     ///
-    /// In Wasmtime 46 `wasmtime::Error` is a distinct type (not `anyhow::Error`).
-    /// We accept it directly and convert to string for pattern matching.
-    pub fn classify_trap(err: &wasmtime::Error) -> SandboxError {
+    /// Accepts `&dyn std::error::Error` so that:
+    /// - Production call-sites pass `&wasmtime::Error` directly (it implements
+    ///   `std::error::Error`).
+    /// - Unit tests construct `anyhow::Error` values via `anyhow::anyhow!()`
+    ///   and pass them without any conversion (anyhow also implements the trait).
+    ///
+    /// Classification is purely string-based so it remains stable across
+    /// Wasmtime minor versions.
+    pub fn classify_trap(err: &dyn std::error::Error) -> SandboxError {
         let msg = err.to_string().to_lowercase();
         if msg.contains("out of memory") || msg.contains("oom") {
             SandboxError::OomTermination
