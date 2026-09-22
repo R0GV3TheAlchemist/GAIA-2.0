@@ -1,0 +1,47 @@
+# GAIA 2.0 — Canon Integrity Workflow
+# Issue: #842 (CI/CD Pipeline), closes #841 (Canon Integrity Test Suite)
+# Governing Tablet: Obsidian — The Law of Boundaries, What Must Not Be Crossed
+#
+# Runs the Canon Integrity Test Suite on every PR and every push to main.
+# A failing canon integrity test BLOCKS merge.
+# No external dependencies — stdlib Python only, completes in < 30 seconds.
+
+name: canon-integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'docs/color/color-map.json'
+      - 'docs/tablets/**'
+      - 'governance/**'
+      - 'proofs/**'
+      - 'tests/canon/**'
+      - '.github/workflows/canon-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  canon-integrity:
+    name: Canon Integrity (T-001 through T-005 + RL-001)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Canon Integrity Test Suite
+        run: python tests/canon/test_canon_integrity.py
+
+      - name: Annotate failure summary
+        if: failure()
+        run: |
+          echo "::error title=Canon Integrity Failed::One or more canon boundaries were violated."
+          echo "::error title=Canon Integrity Failed::Review the test output above for COLLISION, SYNC DRIFT, MISSING FILE, MISSING FIELD, or NAMING DRIFT errors."
+          echo "::error title=Canon Integrity Failed::Source of truth: docs/color/color-map.json | Governed by: governance/GAIA_GOVERNANCE.md Rule 4"
