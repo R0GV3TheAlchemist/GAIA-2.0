@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 use crate::{
     dag::{DagNode, Plan, ResourceEstimate},
-    intent::{Compute, Constraints, IntentBackend, IntentGraph, Privacy, SubIntent},
+    intent::{Compute, Constraints, IntentGraph, Privacy, SubIntent},
     mcp::McpRegistry,
     select::pick_agent,
 };
@@ -288,24 +288,33 @@ impl CapabilityMatcher {
     }
 
     fn eacn_match(&self, goal: &str) -> Option<String> {
-        let lower = goal.to_ascii_lowercase();
-        let mut best: Option<(usize, &str)> = None;
+        let goal = goal.to_ascii_lowercase();
+        let mut best: Option<(usize, String)> = None;
+
         for entry in &self.eacn {
             let score = entry
                 .capabilities
                 .iter()
                 .chain(entry.roles.iter())
-                .filter(|token| lower.contains(token.to_ascii_lowercase().as_str()))
+                .filter(|token: &&String| {
+                    goal.contains(token.as_str().to_ascii_lowercase().as_str())
+                })
                 .count();
-            if score > 0 {
-                match best {
-                    None => best = Some((score, &entry.name)),
-                    Some((prev, _)) if score > prev => best = Some((score, &entry.name)),
-                    _ => {}
+
+            if score == 0 {
+                continue;
+            }
+
+            match &best {
+                None => best = Some((score, entry.name.clone())),
+                Some((previous, _)) if score > *previous => {
+                    best = Some((score, entry.name.clone()));
                 }
+                _ => {}
             }
         }
-        best.map(|(_, name)| name.to_string())
+
+        best.map(|(_, name)| name)
     }
 }
 
