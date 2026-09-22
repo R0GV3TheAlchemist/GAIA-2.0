@@ -13,6 +13,7 @@ use std::convert::TryInto;
 
 use gaia_hal::{
     cpu::CpuArch,
+    platform::HalTier,
     HalCapabilities,
 };
 
@@ -67,19 +68,19 @@ pub fn discover() -> GaiaCapabilityManifest {
         || simd.sve;
 
     // --- Platform-tier proxies (HAL v0.1 — direct sub-module enumeration deferred) ---
-    // Tier 2+ (Desktop/Server/GPU/HPC) is expected to have GPU and NIC hardware.
-    // Tier 1+ (SBC and above) is expected to have sensor buses.
-    use gaia_hal::platform::HalTier;
-    let tier = hal.platform.tier;
-    let accelerator_present = tier >= HalTier::Tier2;
-    let sensors_present     = tier >= HalTier::Tier1;
-    let network_present     = tier >= HalTier::Tier1;
+    // PlatformFeatures has no .tier field; derive the max tier from feature flags.
+    // HalTier variants are T0..T4 (not Tier0..Tier4).
+    let tier = hal.platform.max_tier();
+    let accelerator_present = tier >= HalTier::T2;
+    let sensors_present     = tier >= HalTier::T1;
+    let network_present     = tier >= HalTier::T1;
 
     eprintln!(
         "[gaia-boot] phase=4 status=capability_manifest \
          cpu_cores={cpu_cores} cpu_arch={cpu_arch} simd={simd_available} \
-         accelerator={accelerator_present} sensors={sensors_present} \
-         network={network_present} clock_res_ns={}",
+         tier={tier:?} accelerator={accelerator_present} \
+         sensors={sensors_present} network={network_present} \
+         clock_res_ns={}",
         hal.clock_resolution_ns,
     );
 
