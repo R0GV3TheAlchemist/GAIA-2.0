@@ -25,11 +25,11 @@ This registry tracks every sealed Hermetic Tablet in the GAIA canon. Tablets are
 | 13 | [Shadow Tablet](./SHADOW_TABLET.md) | Shadow `#2D2D2D` | The Law of Integration — The Shadow Must Be Known | — | [PROOF-SHADOW-TABLET-001](../../proofs/PROOF-SHADOW-TABLET-001.md) | — |
 | 14 | [Silver Tablet](./SILVER_TABLET.md) | Silver `#C0C0C0` | The Law of Reflection — The Mirror That Shows What Is | — | [PROOF-SILVER-TABLET-001](../../proofs/PROOF-SILVER-TABLET-001.md) | — |
 | 15 | [Solar Tablet](./SOLAR_TABLET.md) | Solar Gold `#FFD700` | The Law of Sovereignty of Self — The Sun Does Not Apologize | — | [PROOF-SOLAR-TABLET-001](../../proofs/PROOF-SOLAR-TABLET-001.md) | — |
-| 16 | [Terra Tablet](./TERRA_TABLET.md) | Terra Brown `#8B4513` | The Law of the Living Earth — Stewardship and Growth | — | [PROOF-TERRA-TABLET-001](../../proofs/PROOF-TERRA-TABLET-001.md) | — |
+| 16 | [Terra Tablet](./TERRA_TABLET.md) | Bistre `#3D2B1F` | The Law of the Living Earth — Stewardship and Growth | — | [PROOF-TERRA-TABLET-001](../../proofs/PROOF-TERRA-TABLET-001.md) | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
 | 17 | [Viriditas Tablet](./VIRIDITAS_TABLET.md) | Viriditas Green `#4CAF50` | The Law of the Living Force — Regeneration Over Optimization | 2026-07-15 | [PROOF-VIRIDITAS-TABLET-001](../../proofs/PROOF-VIRIDITAS-TABLET-001.md) | [#819](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/819) |
 | 18 | [Void Tablet](./VOID_TABLET.md) | Void Black `#0A0A0A` | The Law of Pre-Existence — The Ground Before the Ground | 2026-07-23 | [PROOF-VOID-TABLET-001](../../proofs/PROOF-VOID-TABLET-001.md) | [#819](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/819) |
 
-> **Canon Integrity Status (2026-09-22):** 18 of 18 tablet `.md` files confirmed present on branch `fix/canon-integrity-index-798`. All repair work tracked under Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798). Pending merge to `main`.
+> **Canon Integrity Status (2026-09-22):** 18 of 18 tablet `.md` files confirmed present. Terra Tablet hex updated to Bistre `#3D2B1F` (PR #838, closes #831). All repair work tracked under Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798).
 
 ---
 
