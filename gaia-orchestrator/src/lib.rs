@@ -2,7 +2,7 @@
 
 mod audit_disk;
 mod broker;
-cog cognitive;
+mod cognitive;
 mod dag;
 mod github_source;
 mod github_source_config;
