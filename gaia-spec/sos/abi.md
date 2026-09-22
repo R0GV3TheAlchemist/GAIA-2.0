@@ -4,6 +4,36 @@
 **Issue:** #715  
 **Scope:** Userspace host ABI and canonical Intent record. This document does not add kernel syscalls, does not grant authority, and does not alter MCP transport behavior.
 
+## 0. Architecture Decision — Path C (userspace-only declaration)
+
+**Decision date:** 2026-09-21  
+**Resolves:** #718, #713  
+**Decision:** Path C — Explicit userspace declaration.
+
+GAIA does **not** implement a kernel in the OS sense. There is no ring-0 boundary, no custom kernel module, no CPU privilege level transition, and no hardware address-space management. The layer previously called "L1 kernel" is formally renamed **GAIA Runtime**.
+
+| Old term | New term | Notes |
+|---|---|---|
+| `gaia-kernel` crate | `gaia-kernel` crate (kept for historical reasons) | Internal crate name unchanged to avoid churn; public-facing docs use "GAIA Runtime" |
+| L1 kernel | GAIA Runtime | A privileged-userspace executor and policy enforcement layer |
+| "kernel syscall" | GAIA Runtime call / host call | Dispatch handled entirely in userspace via the host ABI defined below |
+
+### What GAIA Runtime IS
+- A userspace executor with capability-enforced dispatch.
+- A policy and audit boundary between agents, tools, and the host OS.
+- An intent-lifecycle manager (submit → admit → plan → invoke → observe → learn).
+- A WASM sandbox host (via `wasmtime`) for agent isolation.
+
+### What GAIA Runtime is NOT
+- Not a kernel module (`.ko`).
+- Not a ring-0 / EL1 privilege boundary.
+- Not an OS kernel fork.
+- Not a syscall interceptor at the hardware level.
+
+All "syscall" numbers in Section 12 of this document are **GAIA Runtime call numbers** dispatched in userspace. They are not Linux syscall numbers and do not require kernel modifications.
+
+---
+
 ## 1. Purpose
 
 GAIA is an intent-centric system. The Intent ABI is the common, signed request boundary used by local executors, planners, agents, CLI/API surfaces, memory services, and later protocol adapters. An intent describes a requested outcome and its boundaries; it never grants authority by itself.
@@ -190,6 +220,7 @@ This draft does not:
 - Replace the existing identity/capability contract in `identity-capabilities.md`.
 - Define MCP wire transport, discovery, or network session behavior from Issue #23.
 - Permit autonomous model self-rewrite, recursive self-improvement, or implicit privilege expansion.
+- Claim or imply a hardware privilege boundary — see Section 0 (Path C declaration).
 
 ## 11. Compatibility
 
@@ -197,9 +228,11 @@ This ABI is frozen at v1.0. Future revisions MUST use a new `spec_version` or an
 
 The executable Rust definition lives in `gaia-kernel/src/syscall.rs`. The `ABI_VERSION` constant in that crate is the machine-readable source of truth and MUST match the version declared in this document.
 
-## 12. Syscall ABI (Frozen v1.0)
+## 12. GAIA Runtime Call Table (Frozen v1.0)
 
-The following syscall numbers are frozen. Renumbering any existing entry is a breaking change requiring a major version bump of `ABI_VERSION`.
+> **Note (Path C):** These are **GAIA Runtime call numbers** dispatched entirely in userspace. They are not Linux syscall numbers and do not require kernel modifications. See Section 0.
+
+The following call numbers are frozen. Renumbering any existing entry is a breaking change requiring a major version bump of `ABI_VERSION`.
 
 | Number | Name | Description |
 |--------|------|-------------|
@@ -213,4 +246,4 @@ The following syscall numbers are frozen. Renumbering any existing entry is a br
 | `0x08` | `Observe` | Publish an observation event |
 | `0x09` | `CapabilityCheck` | Check whether a capability is currently granted |
 
-New syscalls are assigned the next sequential number (`0x0A`, `0x0B`, …). Adding a new syscall is non-breaking. Unknown numbers return `NotImplemented` at runtime, allowing callers to probe availability gracefully.
+New calls are assigned the next sequential number (`0x0A`, `0x0B`, …). Adding a new call is non-breaking. Unknown numbers return `NotImplemented` at runtime, allowing callers to probe availability gracefully.
