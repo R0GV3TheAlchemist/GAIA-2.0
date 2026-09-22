@@ -419,9 +419,15 @@ impl LifecycleManager {
         let record = self.agents.get(&id).ok_or(LifecycleError::AgentNotFound(id))?;
         let from = record.stage;
 
-        // Validate the structural transition FIRST so that callers in an
-        // invalid stage (e.g. Discover) always get InvalidTransition, not a
-        // spurious TokenExpired caused by the empty token list.
+        // Revocation is a terminal security condition — check it before the
+        // structural transition guard so that a revoked agent always returns
+        // `AgentRevoked` regardless of which stage it currently sits in.
+        if record.revoked {
+            return Err(LifecycleError::AgentRevoked(id));
+        }
+
+        // Validate the structural transition so that callers in an invalid
+        // stage (e.g. Discover) get `InvalidTransition`.
         if !valid_transition(from, LifecycleStage::Run) {
             return Err(LifecycleError::InvalidTransition {
                 from,
@@ -429,11 +435,8 @@ impl LifecycleManager {
             });
         }
 
-        // Now that we know the transition is legal, enforce runtime guards.
+        // Now that we know the transition is legal, enforce token validity.
         let now = self.now_ms;
-        if record.revoked {
-            return Err(LifecycleError::AgentRevoked(id));
-        }
         let has_valid = record.tokens.iter().any(|t| t.is_valid(now));
         if !has_valid {
             return Err(LifecycleError::TokenExpired {
