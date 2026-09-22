@@ -48,11 +48,28 @@ REQUIRED_SEALED_FIELDS = [
 ]
 
 # ---------------------------------------------------------------------------
+# T-005 file-level exemptions
+# ---------------------------------------------------------------------------
+# Files that DOCUMENT prohibited names (naming rulebooks, append-only audit
+# logs) must enumerate the wrong forms by definition. Scanning them for
+# wrong forms produces false positives; fixing them would either destroy
+# the document's purpose or violate the append-only audit governance rule.
+T005_NAMING_DOC_EXEMPT = {
+    "GAIA_SESSION_INIT.md",   # Section 4 Naming Red Lines table enumerates prohibited strings
+    "GAIA_AUDIT_LOG.md",      # Append-only by governance (GAIA_GOVERNANCE.md Part III);
+                               # historical entries record old names and PR titles verbatim
+}
+
+# ---------------------------------------------------------------------------
 # Naming Rules
 # ---------------------------------------------------------------------------
 # Each entry: (regex_pattern, canonical_form, description, exempt_fn)
-# exempt_fn(line, filepath) -> bool: return True to skip this line/file.
-# Use exempt_fn=None for rules with no exceptions.
+# exempt_fn(line, filepath) -> bool: return True to skip this line.
+#
+# NOTE: Before any rule is tested, backtick-wrapped code spans are stripped
+# from the line (see _strip_code_spans). Infrastructure identifiers inside
+# inline code (Supabase slugs, pg_cron job names, migration function names,
+# hex values in code context) are never matched against naming rules.
 
 def _amber_file_or_line(line: str, filepath: Path) -> bool:
     """
@@ -61,28 +78,54 @@ def _amber_file_or_line(line: str, filepath: Path) -> bool:
     #8B4513 is Amber's legitimate canonical hex.
     """
     if "AMBER_TABLET" in filepath.name:
-        return True  # entire Amber tablet file is exempt for this hex
+        return True
     if re.search(r'(?i)amber', line):
-        return True  # cross-reference lines that name Amber alongside the hex
+        return True
     return False
 
+
 NAMING_RULES = [
-    # pattern                      canonical              description                              exempt_fn
+    # pattern                      canonical              description                                    exempt_fn
     # --- GAIA casing ---
-    # Correct forms: 'GAIA', 'GAIA 2.0' — exempt both
-    (r'\bGAIA\b',                  None,   None,                                                   None),   # correct
-    (r'\bGAIA 2\.0\b',             None,   None,                                                   None),   # correct
-    (r'\bGaia\b',                  "GAIA", "'Gaia' should be 'GAIA'",                              None),
-    (r'\bgaia\b',                  "GAIA", "'gaia' should be 'GAIA' or 'GAIA 2.0'",               None),
+    (r'\bGAIA\b',                  None,   None,                                                         None),   # correct
+    (r'\bGAIA 2\.0\b',             None,   None,                                                         None),   # correct
+    (r'\bGaia\b',                  "GAIA", "'Gaia' should be 'GAIA'",                                    None),
+    (r'\bgaia\b',                  "GAIA", "'gaia' should be 'GAIA' or 'GAIA 2.0'",                     None),
     # --- Terra color name ---
-    (r'Terra Brown',               "Bistre", "'Terra Brown' is obsolete — use 'Bistre'",           None),
+    (r'Terra Brown',               "Bistre", "'Terra Brown' is obsolete — use 'Bistre'",                 None),
     # --- Old Terra hex: exempt if on an Amber line or in the Amber tablet file ---
     (r'#8B4513',  "#3D2B1F (Bistre)",  "Old Terra hex #8B4513 found outside Amber context — use #3D2B1F",  _amber_file_or_line),
 ]
 
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+_BACKTICK_SPAN_RE = re.compile(r'`[^`]*`')
+
+
+def _strip_code_spans(line: str) -> str:
+    """
+    Remove all backtick-wrapped inline code spans from a line before
+    naming-rule matching.
+
+    Rationale: Technical identifiers inside code spans (Supabase project
+    slugs, pg_cron job names, migration function names, hex values in code
+    context) legitimately contain 'gaia', '#8B4513', etc. as slug components.
+    These are infrastructure names recorded as proof evidence, not prose
+    references to the system name or color values. Stripping them prevents
+    false positives without requiring per-file exemptions for every proof
+    that records infrastructure state.
+
+    Examples stripped:
+      `gaia-memory-tier-maintenance-daily`  (pg_cron job name)
+      `gaia20_c77_love_stewardship`         (Supabase migration slug)
+      `gaia-2-0`                            (Supabase project slug)
+      `#8B4513`                             (hex value in code span)
+    """
+    return _BACKTICK_SPAN_RE.sub('', line)
+
 
 def load_color_map() -> dict:
     """Load and return the parsed color-map.json."""
@@ -108,8 +151,6 @@ def parse_index_hex_table(index_path: Path) -> dict[str, str]:
     hexes: dict[str, str] = {}
     text = index_path.read_text(encoding="utf-8")
 
-    # Match table data rows (skip header and separator rows)
-    # Row pattern: | number | [Name Tablet](...) | ... `#HEX` ... | ...
     row_re = re.compile(
         r'^\|\s*\d+\s*'                          # | number |
         r'\|\s*\[([A-Za-z]+)\s+Tablet\]'        # | [Name Tablet](...)
@@ -119,8 +160,8 @@ def parse_index_hex_table(index_path: Path) -> dict[str, str]:
     )
 
     for match in row_re.finditer(text):
-        name    = match.group(1).strip()           # e.g. "Amber"
-        hex_val = match.group(2).strip().upper()   # e.g. "#8B4513"
+        name    = match.group(1).strip()
+        hex_val = match.group(2).strip().upper()
         hexes[name] = hex_val
 
     return hexes
@@ -154,7 +195,7 @@ def t001_hex_collision(data: dict) -> CanonTestResult:
     Every tablet must have a unique color signature.
     """
     result = CanonTestResult("T-001", "Hex Collision")
-    seen: dict[str, str] = {}  # hex -> tablet name
+    seen: dict[str, str] = {}
 
     for tablet in data["tablets"]:
         name    = tablet["name"]
@@ -198,8 +239,6 @@ def t002_index_sync(data: dict) -> CanonTestResult:
         map_hex = tablet["hex"].upper()
 
         if name not in index_hexes:
-            # Non-fatal for unsealed tablets — they may not yet appear in the table
-            # Sealed tablets must be in INDEX
             if tablet.get("sealed"):
                 result.fail(
                     f"MISSING IN INDEX: '{name}' is sealed but not found in INDEX.md table"
@@ -283,13 +322,27 @@ def t004_required_fields(data: dict) -> CanonTestResult:
 
 def t005_naming_conventions() -> CanonTestResult:
     """
-    Scan canon files for known bad patterns and assert canonical spellings are used.
+    Scan canon files for known bad patterns and assert canonical spellings are
+    used throughout prose.
+
     Scans: docs/tablets/, governance/, proofs/
 
-    Rules with exempt_fn: if exempt_fn(line, filepath) returns True, the
-    match is skipped. Used for cases where the same string is legitimate
-    in one context but a drift signal in another (e.g. #8B4513 is correct
-    for Amber but wrong everywhere else).
+    Exemptions operate at three tiers:
+
+    Tier 1 — File-level (T005_NAMING_DOC_EXEMPT):
+      Files that document prohibited names (naming rulebooks, append-only
+      audit logs) are skipped entirely. Fixing them would either destroy
+      their purpose or violate governance rules.
+
+    Tier 2 — Code-span stripping (_strip_code_spans):
+      Before testing each line, all backtick-wrapped inline code spans are
+      removed. Infrastructure identifiers (Supabase slugs, pg_cron job
+      names, migration function names) that contain 'gaia' or old hex values
+      as slug components are never flagged.
+
+    Tier 3 — Rule-level exempt_fn:
+      Context-aware exemptions per rule (e.g. Amber's legitimate hex #8B4513
+      is exempt when the surrounding line also names Amber).
     """
     result = CanonTestResult("T-005", "Naming Conventions")
 
@@ -297,20 +350,29 @@ def t005_naming_conventions() -> CanonTestResult:
         if not scan_dir.exists():
             continue
         for md_file in scan_dir.rglob("*.md"):
+            # Tier 1: file-level exemption
+            if md_file.name in T005_NAMING_DOC_EXEMPT:
+                continue
+
             try:
                 content = md_file.read_text(encoding="utf-8")
             except Exception:
                 continue
+
             lines = content.splitlines()
-            for line_no, line in enumerate(lines, start=1):
+            for line_no, raw_line in enumerate(lines, start=1):
+                # Tier 2: strip backtick code spans before rule matching
+                line = _strip_code_spans(raw_line)
+
                 for rule in NAMING_RULES:
                     pattern, canonical, description, exempt_fn = rule
                     if canonical is None:
-                        continue  # exempt — this is a correct form
+                        continue  # correct form — exempt
                     if not re.search(pattern, line):
                         continue
+                    # Tier 3: rule-level context exemption
                     if exempt_fn and exempt_fn(line, md_file):
-                        continue  # context-specific exemption
+                        continue
                     rel = md_file.relative_to(REPO_ROOT)
                     result.fail(
                         f"NAMING DRIFT: {rel} line {line_no} — {description}"
