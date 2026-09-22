@@ -1,0 +1,16 @@
+[package]
+name        = "gaia-boot"
+version     = "0.1.0"
+edition     = "2021"
+description = "GAIA 2.0 bootloader, platform-init, and hardware-discovery"
+
+[features]
+default  = ["tier2"]
+tier0    = []   # IoT / ARM Cortex-M  (<64 KB)
+tier1    = []   # SBC / Raspberry Pi
+tier2    = []   # Desktop / server x86_64 + ARM64
+tier3    = ["tier2"]  # GPU edge cluster
+tier4    = ["tier3"]  # HPC / supercomputer
+
+[dependencies]
+gaia-hal = { path = "../gaia-hal" }
