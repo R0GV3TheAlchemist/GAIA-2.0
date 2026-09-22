@@ -1,0 +1,55 @@
+name: Governance Compliance
+
+on:
+  push:
+    branches: [ main, 'feat/**', 'fix/**' ]
+    paths:
+      - 'governance/**'
+      - 'docs/tablets/**'
+      - 'docs/color/**'
+      - 'proofs/**'
+      - 'tests/governance/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'governance/**'
+      - 'docs/tablets/**'
+      - 'docs/color/**'
+      - 'proofs/**'
+      - 'tests/governance/**'
+
+jobs:
+  governance-compliance:
+    name: Governance Compliance Test Suite (#843)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history required so git merge-base can find the common
+          # ancestor between the PR branch and the base branch.
+          # depth=1 (the default) causes 'fatal: no merge base' on the
+          # git diff step when base and head share no visible commits.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build changed-files list (PR mode)
+        if: github.event_name == 'pull_request'
+        run: |
+          # Find the common ancestor commit, then diff only the files
+          # changed between that point and the PR HEAD. This works
+          # correctly with fetch-depth: 0 and is equivalent to the
+          # three-dot diff syntax without its shallow-clone fragility.
+          BASE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          # Collapse newlines to spaces so the env var is a flat list
+          CHANGED_FLAT=$(echo "$CHANGED" | tr '\n' ' ')
+          echo "CHANGED_FILES=$CHANGED_FLAT" >> $GITHUB_ENV
+
+      - name: Run Governance Compliance Tests
+        run: python tests/governance/test_governance_compliance.py
