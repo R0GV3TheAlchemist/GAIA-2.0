@@ -2,16 +2,18 @@
 //!
 //! # Store data layout
 //!
-//! Wasmtime requires the `ResourceLimiter` to be stored inside the `Store`'s
-//! data type and accessed via a closure: `store.limiter(|d| &mut d.limiter)`.
-//! We use [`StoreData`] to bundle the WASI context, the resource table, and
-//! the resource limiter together so there is no unsafe memory leaking.
+//! `wasmtime_wasi::p3::add_to_linker` requires `T: WasiView`.
+//! In wasmtime-wasi 46 `WasiView` has a single required method:
 //!
-//! `wasmtime_wasi::p3::add_to_linker` requires `T: WasiView`.  `WasiView` is
-//! a trait with two methods:
-//!   - `table(&mut self) -> &mut ResourceTable`
-//!   - `ctx(&mut self)   -> &mut WasiCtx`
-//! We implement it directly on `StoreData`.
+//! ```text
+//! fn ctx(&mut self) -> WasiCtxView<'_>
+//! ```
+//!
+//! `WasiCtxView` is a struct literal with two fields:
+//!   `{ ctx: &mut WasiCtx, table: &mut ResourceTable }`
+//! where `ResourceTable` lives in `wasmtime::component`.
+//!
+//! `StoreData` bundles all three pieces so there is no unsafe memory leaking.
 
 use std::path::PathBuf;
 
@@ -19,13 +21,13 @@ use wasmtime::{
     component::{
         Component,
         Linker,
+        ResourceTable,
     },
     Config, Engine, Store,
 };
 use wasmtime_wasi::{
     DirPerms, FilePerms,
-    ResourceTable,
-    WasiCtx, WasiCtxBuilder,
+    WasiCtx, WasiCtxBuilder, WasiCtxView,
     WasiView,
 };
 
@@ -44,20 +46,23 @@ use crate::sandbox::{
 pub struct StoreData {
     /// WASI context (capability-granted I/O state).
     pub wasi:    WasiCtx,
-    /// WASI resource table (file descriptors, sockets, etc.).
+    /// WASI resource table (open file descriptors, sockets, etc.).
+    /// Lives in `wasmtime::component` in v46.
     pub table:   ResourceTable,
     /// Memory + table quota enforcer.
     pub limiter: GaiaResourceLimiter,
 }
 
 /// `WasiView` is required by `wasmtime_wasi::p3::add_to_linker<T>`.
-/// It exposes the `WasiCtx` and `ResourceTable` stored inside the `Store`.
+///
+/// In wasmtime-wasi 46 the trait has a single method returning `WasiCtxView`,
+/// a struct literal that bundles `ctx` and `table` by mutable reference.
 impl WasiView for StoreData {
-    fn table(&mut self) -> &mut ResourceTable {
-        &mut self.table
-    }
-    fn ctx(&mut self) -> &mut WasiCtx {
-        &mut self.wasi
+    fn ctx(&mut self) -> WasiCtxView<'_> {
+        WasiCtxView {
+            ctx:   &mut self.wasi,
+            table: &mut self.table,
+        }
     }
 }
 
@@ -156,8 +161,6 @@ impl SandboxManager {
         let mut linker: Linker<StoreData> = Linker::new(&self.engine);
 
         // Register WASI 0.3 (p3) host functions. Requires StoreData: WasiView.
-        // Network isolation is enforced at the WIT world-import level;
-        // omitting socket bindings here is defence-in-depth.
         wasmtime_wasi::p3::add_to_linker(&mut linker)
             .map_err(|e| SandboxError::EngineInit(anyhow::Error::from(e)))?;
 
@@ -168,8 +171,8 @@ impl SandboxManager {
             .map_err(|e| Self::classify_trap(&e))?;
 
         // Invoke the canonical run export if the component exposes one.
-        // Reactor-style components (no run export) are treated as successful
-        // once instantiation completes.
+        // Reactor-style components (no run export) succeed once instantiation
+        // completes.
         let func = instance
             .get_func(&mut store, "run")
             .or_else(|| instance.get_func(&mut store, "wasi:cli/run@0.3.0#run"));
@@ -185,7 +188,10 @@ impl SandboxManager {
     }
 
     /// Classify a raw Wasmtime error into a structured [`SandboxError`].
-    pub fn classify_trap(err: &anyhow::Error) -> SandboxError {
+    ///
+    /// In Wasmtime 46 `wasmtime::Error` is a distinct type (not `anyhow::Error`).
+    /// We accept it directly and convert to string for pattern matching.
+    pub fn classify_trap(err: &wasmtime::Error) -> SandboxError {
         let msg = err.to_string().to_lowercase();
         if msg.contains("out of memory") || msg.contains("oom") {
             SandboxError::OomTermination
