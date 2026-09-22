@@ -1,20 +1,21 @@
-//! AIKD first cuts (#93–#106, #621). Open weights default. Not a practice license.
+//! AIKD first cuts (#93–#106, #621, #622). Open weights default. Not a practice license.
 
 mod agentic;
 mod answer;
 pub mod benchmark_db;
 pub mod card;
-mod domains;
 pub mod domain;
+mod domains;
 mod eval;
 mod hallucination;
 mod honesty;
 mod meta;
-mod packs;
 pub mod model_registry;
+mod packs;
 mod registry;
 mod retrieve;
 mod session;
+pub mod skills;
 mod taxonomy;
 mod verify;
 
@@ -42,6 +43,11 @@ pub use packs::{
 pub use registry::{system_tags, BenchRow};
 pub use retrieve::QueryHit;
 pub use session::{embodied_enabled, sandbox_breakout, ToolCube};
+pub use skills::{
+    all_skills, assess_skill, learning_path, search_skills, skill_by_id, skill_gap_analysis,
+    skills_for_domain, skills_for_tool, Skill, SkillAssessment, SkillCategory, SkillGap,
+    SkillLearningPath,
+};
 pub use taxonomy::{cannot_know_catalog, query_cannot_know, KnowledgeLayer, KnowledgeType, Status};
 pub use verify::Executed;
 
