@@ -71,7 +71,7 @@ fn timeout_quota_propagates_through_profile_accessor() {
 #[test]
 fn escape_attempt_maps_to_capability_denied() {
     let fake_trap = anyhow::anyhow!("permission denied (EACCES): /etc/passwd");
-    let err = SandboxManager::classify_trap(&fake_trap);
+    let err = SandboxManager::classify_trap(&fake_trap.to_string());
     match &err {
         SandboxError::CapabilityDenied(code) => {
             assert_eq!(
@@ -126,7 +126,7 @@ fn table_growing_enforces_sane_default_ceiling() {
 #[test]
 fn oom_trap_classified_correctly() {
     let err = anyhow::anyhow!("wasm trap: out of memory");
-    let classified = SandboxManager::classify_trap(&err);
+    let classified = SandboxManager::classify_trap(&err.to_string());
     assert!(
         matches!(classified, SandboxError::OomTermination),
         "'out of memory' trap must classify as OomTermination, got: {classified:?}"
@@ -138,7 +138,7 @@ fn oom_trap_classified_correctly() {
 #[test]
 fn timeout_trap_classified_correctly() {
     let err = anyhow::anyhow!("wasm trap: epoch interrupt");
-    let classified = SandboxManager::classify_trap(&err);
+    let classified = SandboxManager::classify_trap(&err.to_string());
     assert!(
         matches!(classified, SandboxError::Timeout),
         "epoch interrupt trap must classify as Timeout, got: {classified:?}"
@@ -150,7 +150,7 @@ fn timeout_trap_classified_correctly() {
 #[test]
 fn arbitrary_trap_maps_to_trap_variant() {
     let err = anyhow::anyhow!("some unexpected wasm trap: unreachable");
-    let classified = SandboxManager::classify_trap(&err);
+    let classified = SandboxManager::classify_trap(&err.to_string());
     assert!(
         matches!(classified, SandboxError::Trap(_)),
         "unrecognised trap must fall through to SandboxError::Trap, got: {classified:?}"
