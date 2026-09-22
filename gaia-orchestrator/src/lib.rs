@@ -45,3 +45,94 @@ pub use trace::{
     TraceEventSink,
 };
 pub use trust::{verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent, TrustAudit};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -------------------------------------------------------------------------
+    // ExecutionGate (InMemoryGate) — control-plane boundary enforcement
+    // -------------------------------------------------------------------------
+
+    /// A freshly constructed InMemoryGate must default to Open.
+    /// The gate is the canonical boundary between the orchestrator and the
+    /// control plane. Defaulting to Open means work proceeds unless the
+    /// control plane explicitly signals unavailability.
+    #[test]
+    fn execution_gate_default_state_is_open() {
+        let gate = InMemoryGate::new();
+        assert_eq!(
+            gate.state(),
+            GateState::Open,
+            "InMemoryGate must default to Open"
+        );
+    }
+
+    /// After a control_plane_unavailable_event the gate must transition to Closed.
+    /// Any call to permit_execution on a Closed gate must return Err, never Ok.
+    #[test]
+    fn execution_gate_blocks_when_control_plane_unavailable() {
+        let mut gate = InMemoryGate::new();
+        let sink = InMemorySink::new();
+        control_plane_unavailable_event(&mut gate, &sink);
+        assert_eq!(
+            gate.state(),
+            GateState::Closed,
+            "gate must be Closed after control_plane_unavailable_event"
+        );
+        let result = permit_execution(&gate);
+        assert!(
+            result.is_err(),
+            "permit_execution on a Closed gate must return Err"
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Broker — work-queue invariants
+    // -------------------------------------------------------------------------
+
+    /// A new Broker has no workers and no pending work.
+    #[test]
+    fn broker_new_is_empty() {
+        let broker = Broker::new();
+        assert_eq!(broker.worker_count(), 0, "new Broker must have zero workers");
+        assert_eq!(broker.pending_count(), 0, "new Broker must have zero pending items");
+    }
+
+    // -------------------------------------------------------------------------
+    // TrustAudit — signed intent roundtrip
+    // -------------------------------------------------------------------------
+
+    /// Signing an intent and immediately verifying it must succeed.
+    /// This is the minimal roundtrip that proves the signing key and
+    /// verification path are wired together correctly.
+    #[test]
+    fn trust_audit_signed_intent_roundtrip() {
+        let signer = IntentSigner::generate();
+        let payload = b"intent:query|user:did:gaia:test|ts:1000";
+        let signed  = signer.sign(payload);
+        assert!(
+            TrustAudit::verify(&signed, payload).is_ok(),
+            "valid signed intent must verify successfully"
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // McpRegistry — tool registration and lookup
+    // -------------------------------------------------------------------------
+
+    /// A tool registered in McpRegistry must be retrievable by name.
+    #[test]
+    fn mcp_registry_register_and_lookup() {
+        let mut registry = McpRegistry::new();
+        let tool = McpTool {
+            name:        "search".into(),
+            description: "semantic search over GAIA canon".into(),
+            input_schema: serde_json::json!({}),
+        };
+        registry.register_tool(tool);
+        let found = registry.get_tool("search");
+        assert!(found.is_some(), "registered tool must be retrievable by name");
+        assert_eq!(found.unwrap().name, "search");
+    }
+}
