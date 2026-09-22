@@ -255,6 +255,18 @@ impl MemOs {
             .collect()
     }
 
+    /// Convenience wrapper around [`recall`] that discards scores and returns
+    /// up to 20 matching [`MemCube`]s.
+    ///
+    /// Intended for callers (e.g. `ExecutionEngine`) that need to verify a
+    /// cube exists after writing but do not need ranked scores.
+    pub fn search(&mut self, query: &str) -> Vec<MemCube> {
+        self.recall(query, 20)
+            .into_iter()
+            .map(|(_, cube)| cube)
+            .collect()
+    }
+
     pub fn decay(&mut self, factor: f32) -> usize {
         let mut cubes: Vec<MemCube> = self.cubes.values().cloned().collect();
         let n = decay::tick(&mut cubes, factor);
@@ -506,5 +518,15 @@ mod tests {
             cubes[0].importance < before,
             "unaccessed cube importance must decay"
         );
+    }
+
+    #[test]
+    fn search_delegates_to_recall_and_strips_scores() {
+        let mut mem = MemOs::new();
+        mem.put(MemCube::new(CubeType::Plaintext, "search convenience wrapper test", "t"));
+        let results = mem.search("convenience wrapper");
+        assert!(!results.is_empty(), "search must find the cube");
+        // Confirm the return type is Vec<MemCube> (no score tuple).
+        let _ : Vec<MemCube> = results;
     }
 }
