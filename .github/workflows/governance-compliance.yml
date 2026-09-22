@@ -1,0 +1,43 @@
+name: Governance Compliance
+
+on:
+  push:
+    branches: [ main, 'feat/**', 'fix/**' ]
+    paths:
+      - 'governance/**'
+      - 'docs/tablets/**'
+      - 'docs/color/**'
+      - 'proofs/**'
+      - 'tests/governance/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'governance/**'
+      - 'docs/tablets/**'
+      - 'docs/color/**'
+      - 'proofs/**'
+      - 'tests/governance/**'
+
+jobs:
+  governance-compliance:
+    name: Governance Compliance Test Suite (#843)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build changed-files list (PR mode)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "CHANGED_FILES=$CHANGED" >> $GITHUB_ENV
+
+      - name: Run Governance Compliance Tests
+        run: python tests/governance/test_governance_compliance.py
