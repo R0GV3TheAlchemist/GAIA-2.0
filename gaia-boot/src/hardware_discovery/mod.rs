@@ -1,12 +1,18 @@
 //! Phase 3 + 4 — Hardware discovery and GAIA capability manifest.
 //!
-//! Enumerates CPU cores, RAM, GPU/NPU presence, and sensor buses via
+//! Enumerates CPU cores, architecture, and SIMD capabilities via
 //! `gaia-hal`, then packages the results into a `GaiaCapabilityManifest`
 //! that subsequent kernel and runtime layers consume.
+//!
+//! At HAL v0.1 the only top-level fields on `HalCapabilities` are
+//! `cpu`, `platform`, and `clock_resolution_ns`.  GPU, memory-map,
+//! sensor-bus, and NIC discovery are deferred to future HAL sub-modules;
+//! we derive proxy booleans from CPU topology and platform flags today.
+
+use std::convert::TryInto;
 
 use gaia_hal::{
-    cpu::CpuInfo,
-    memory::MemoryMap,
+    cpu::CpuArch,
     HalCapabilities,
 };
 
@@ -15,19 +21,18 @@ use gaia_hal::{
 pub struct GaiaCapabilityManifest {
     /// Number of logical CPU cores detected.
     pub cpu_cores: u32,
-    /// CPU architecture identifier.
+    /// CPU architecture identifier string.
     pub cpu_arch: String,
     /// Whether any SIMD extensions are available.
     pub simd_available: bool,
-    /// Total usable RAM in bytes as reported by the HAL.
-    pub total_ram_bytes: u64,
-    /// Number of RAM regions in the physical memory map.
-    pub ram_region_count: usize,
-    /// Whether at least one GPU/NPU accelerator was detected.
+    /// Whether at least one GPU/NPU accelerator is expected.
+    /// (Derived from platform tier at HAL v0.1; direct enumeration deferred.)
     pub accelerator_present: bool,
-    /// Whether at least one sensor bus was detected.
+    /// Whether sensor buses are expected for this tier.
+    /// (Derived from platform tier at HAL v0.1; direct enumeration deferred.)
     pub sensors_present: bool,
-    /// Whether a network interface was detected.
+    /// Whether network hardware is expected for this tier.
+    /// (Derived from platform tier at HAL v0.1; direct enumeration deferred.)
     pub network_present: bool,
     /// Raw HAL capabilities for downstream consumers.
     pub hal: HalCapabilities,
@@ -39,28 +44,49 @@ pub fn discover() -> GaiaCapabilityManifest {
 
     let hal = HalCapabilities::detect();
 
-    let cpu_cores      = hal.cpu.logical_cores;
-    let cpu_arch       = hal.cpu.arch.to_string();
-    let simd_available = !hal.cpu.simd_features.is_empty();
-    let total_ram_bytes   = hal.memory.total_bytes();
-    let ram_region_count  = hal.memory.regions.len();
-    let accelerator_present = hal.gpu.is_some();
-    let sensors_present     = hal.sensors.source_count() > 0;
-    let network_present     = hal.network.is_some();
+    // --- CPU ---
+    let cpu_cores: u32 = hal
+        .cpu
+        .logical_cores
+        .try_into()
+        .expect("logical_cores overflows u32");
+
+    let cpu_arch = match hal.cpu.features.arch {
+        CpuArch::X86_64  => "x86_64",
+        CpuArch::Aarch64 => "aarch64",
+        CpuArch::RiscV64 => "riscv64",
+        CpuArch::Other   => "other",
+    }
+    .to_string();
+
+    let simd = &hal.cpu.features.simd;
+    let simd_available = simd.sse2
+        || simd.avx2
+        || simd.avx512f
+        || simd.neon
+        || simd.sve;
+
+    // --- Platform-tier proxies (HAL v0.1 — direct sub-module enumeration deferred) ---
+    // Tier 2+ (Desktop/Server/GPU/HPC) is expected to have GPU and NIC hardware.
+    // Tier 1+ (SBC and above) is expected to have sensor buses.
+    use gaia_hal::platform::HalTier;
+    let tier = hal.platform.tier;
+    let accelerator_present = tier >= HalTier::Tier2;
+    let sensors_present     = tier >= HalTier::Tier1;
+    let network_present     = tier >= HalTier::Tier1;
 
     eprintln!(
         "[gaia-boot] phase=4 status=capability_manifest \
-         cpu_cores={cpu_cores} cpu_arch={cpu_arch} \
-         total_ram_bytes={total_ram_bytes} \
-         accelerator={accelerator_present} sensors={sensors_present} network={network_present}"
+         cpu_cores={cpu_cores} cpu_arch={cpu_arch} simd={simd_available} \
+         accelerator={accelerator_present} sensors={sensors_present} \
+         network={network_present} clock_res_ns={}",
+        hal.clock_resolution_ns,
     );
 
     GaiaCapabilityManifest {
         cpu_cores,
         cpu_arch,
         simd_available,
-        total_ram_bytes,
-        ram_region_count,
         accelerator_present,
         sensors_present,
         network_present,
