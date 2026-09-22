@@ -27,6 +27,8 @@ members = [
   "gaia-ingest",
   "gaia-cli",
   "gaia-gateway",
+  "gaia-hal",
+  "gaia-boot",
 ]
 
 [workspace.package]
