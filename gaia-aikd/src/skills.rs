@@ -50,11 +50,15 @@ pub struct SkillGap {
 }
 
 /// Learning pathway for acquiring a skill.
+///
+/// The lifetime `'a` allows `skill_id` and `benchmarks_to_watch` to borrow
+/// from either a string literal (`'static`) or from a looked-up `&'static
+/// Skill` entry without requiring a heap allocation.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SkillLearningPath {
-    pub skill_id: &'static str,
+pub struct SkillLearningPath<'a> {
+    pub skill_id: &'a str,
     pub prerequisites: &'static [&'static str],
-    pub benchmarks_to_watch: &'static [&'static str],
+    pub benchmarks_to_watch: &'a [&'static str],
     pub tool_components: &'static [&'static str],
     pub next_step: &'static str,
 }
@@ -262,7 +266,8 @@ pub fn skills_for_tool(tool_component: &str) -> Vec<&'static Skill> {
 }
 
 fn query_tokens(query: &str) -> Vec<String> {
-    query.split(|c: char| !c.is_alphanumeric() && c != '-')
+    query
+        .split(|c: char| !c.is_alphanumeric() && c != '-')
         .filter(|s| !s.is_empty())
         .map(|s| s.to_ascii_lowercase())
         .collect()
@@ -278,13 +283,16 @@ fn score_skill_match(skill: &Skill, tokens: &[String]) -> usize {
         skill.model,
     ];
     for token in tokens {
-        if haystacks.iter().any(|h| h.to_ascii_lowercase().contains(token)) {
+        if haystacks
+            .iter()
+            .any(|h| h.to_ascii_lowercase().contains(token.as_str()))
+        {
             score += 2;
         }
         if skill
             .tool_implementation
             .iter()
-            .any(|tool| tool.to_ascii_lowercase().contains(token))
+            .any(|tool| tool.to_ascii_lowercase().contains(token.as_str()))
         {
             score += 3;
         }
@@ -299,7 +307,10 @@ pub fn search_skills(query: &str) -> Vec<&'static Skill> {
         .iter()
         .map(|s| (s, score_skill_match(s, &tokens)))
         .collect();
-    ranked.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| b.0.performance_score.cmp(&a.0.performance_score)));
+    ranked.sort_by(|a, b| {
+        b.1.cmp(&a.1)
+            .then_with(|| b.0.performance_score.cmp(&a.0.performance_score))
+    });
     ranked
         .into_iter()
         .filter(|(_, score)| *score > 0)
@@ -346,35 +357,43 @@ pub fn skill_gap_analysis(goal: &str, current_skill_ids: &[&str]) -> SkillGap {
 }
 
 /// A deterministic learning pathway generator.
-pub fn learning_path(skill_id: &str) -> Option<SkillLearningPath> {
+///
+/// The returned `SkillLearningPath<'_>` borrows `skill_id` and
+/// `benchmarks_to_watch` either from string literals (`'static`) or from the
+/// matching `&'static Skill` entry, so no heap allocation is required.
+pub fn learning_path(skill_id: &str) -> Option<SkillLearningPath<'_>> {
     match skill_id {
         "web-search" => Some(SkillLearningPath {
-            skill_id,
+            skill_id: "web-search",
             prerequisites: &["tool-selection", "goal-tracking"],
             benchmarks_to_watch: &["BrowseComp", "WebArena"],
             tool_components: &["search_web", "fetch_url"],
             next_step: "Practice retrieval grounding and page verification loops.",
         }),
         "debugging" => Some(SkillLearningPath {
-            skill_id,
+            skill_id: "debugging",
             prerequisites: &["algorithm-design", "code-execution"],
             benchmarks_to_watch: &["SWE-bench-Verified", "LiveCodeBench"],
             tool_components: &["git-wasm", "sandbox", "trace-store"],
             next_step: "Train on issue reproduction, patch generation, and regression checks.",
         }),
         "gui-navigation" => Some(SkillLearningPath {
-            skill_id,
+            skill_id: "gui-navigation",
             prerequisites: &["image-understanding", "goal-tracking"],
             benchmarks_to_watch: &["OSWorld", "WebArena"],
             tool_components: &["computer-use-wasm", "vision-parser"],
             next_step: "Improve screenshot grounding, click planning, and recovery from UI drift.",
         }),
         _ => {
+            // skill.skill_id, skill.benchmark, and skill.tool_implementation are
+            // all &'static because `skill` points into the SKILLS static array.
             let skill = skill_by_id(skill_id)?;
             Some(SkillLearningPath {
-                skill_id,
+                skill_id: skill.skill_id,
                 prerequisites: &[],
-                benchmarks_to_watch: &[skill.benchmark],
+                // core::slice::from_ref gives &'static [&'static str] because
+                // skill.benchmark is &'static str stored in a 'static Skill.
+                benchmarks_to_watch: core::slice::from_ref(&skill.benchmark),
                 tool_components: skill.tool_implementation,
                 next_step: "Improve benchmark performance, then widen tool coverage.",
             })
