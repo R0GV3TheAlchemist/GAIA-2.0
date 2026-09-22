@@ -11,6 +11,7 @@ pub mod identity;
 pub mod planner;
 pub mod ports;
 pub mod scheduler;
+pub mod syscall;
 
 pub use execution::{
     ExecutionEngine, ExecutionResult, ExecutionError,
@@ -21,6 +22,7 @@ pub use host::{KernelError, KernelHost, SignedBlob, TaskHandle};
 pub use hpc::{BatchTask, HpcAdapter};
 pub use identity::{Principal, PrincipalKind};
 pub use ports::{matrix, Arch, Footprint, PortProfile};
+pub use syscall::{ABI_VERSION, GaiaSyscall, SyscallRequest, SyscallResult, dispatch};
 
 #[cfg(test)]
 mod tests {
@@ -36,7 +38,7 @@ mod tests {
         },
     };
     use crate::identity::{Principal, PrincipalKind};
-    use crate::scheduler::select::{AgentHandle, AgentRegistry};
+    use crate::scheduler::select::AgentHandle;
     use std::collections::HashMap;
     use std::sync::Arc;
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -77,7 +79,7 @@ mod tests {
         }
     }
 
-    // ── Legacy tests (must stay green) ──────────────────────────────────────
+    // ── Legacy tests (must stay green) ──────────────────────────────────────────────
 
     #[test]
     fn executor_registers_and_pulls_noop() {
@@ -143,7 +145,7 @@ mod tests {
         assert!(matches!(err, KernelError::Denied(_)));
     }
 
-    // ── Execution Engine tests ───────────────────────────────────────────────
+    // ── Execution Engine tests ──────────────────────────────────────────────────────
 
     #[tokio::test]
     async fn stage1_rejects_unsigned_intent() {
