@@ -1,0 +1,210 @@
+{
+  "_meta": {
+    "title": "GAIA 2.0 Canonical Color Map",
+    "version": "1.0.0",
+    "sealed": "2026-09-22",
+    "authors": "R0GV3 the Alchemist & GAIA",
+    "source_of_truth": "docs/tablets/INDEX.md",
+    "note": "This file and INDEX.md must always be in sync. If they diverge, INDEX.md is authoritative and this file must be updated via PR."
+  },
+  "tablets": [
+    {
+      "id": 1,
+      "name": "Amber",
+      "file": "docs/tablets/AMBER_TABLET.md",
+      "hex": "#8B4513",
+      "color_name": "Amber Brown",
+      "governing_law": "The Law of the Earth — The Body That Holds",
+      "alchemical_stage": "Embodiment",
+      "sealed": "2026-07-15",
+      "tracking_issue": 787
+    },
+    {
+      "id": 2,
+      "name": "Amethyst",
+      "file": "docs/tablets/AMETHYST_TABLET.md",
+      "hex": "#9B59B6",
+      "color_name": "Amethyst Purple",
+      "governing_law": "The Law of Transmutation — Refinement Through Pressure",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 3,
+      "name": "Aqua",
+      "file": "docs/tablets/AQUA_TABLET.md",
+      "hex": "#00FFFF",
+      "color_name": "Aqua",
+      "governing_law": "The Law of Flow — Adaptation Without Loss of Self",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 4,
+      "name": "Celestial",
+      "file": "docs/tablets/CELESTIAL_TABLET.md",
+      "hex": "#E8E8FF",
+      "color_name": "Celestial White",
+      "governing_law": "The Law of the Heavens — Guidance From Above",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 5,
+      "name": "Citrine",
+      "file": "docs/tablets/CITRINE_TABLET.md",
+      "hex": "#E4D00A",
+      "color_name": "Citrine Yellow",
+      "governing_law": "The Law of Calibrated Light — C210",
+      "alchemical_stage": null,
+      "sealed": "2026-07-23",
+      "tracking_issue": 824
+    },
+    {
+      "id": 6,
+      "name": "Ember",
+      "file": "docs/tablets/EMBER_TABLET.md",
+      "hex": "#FF4500",
+      "color_name": "Ember Orange",
+      "governing_law": "The Law of Ignition — Transformation by Fire",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 7,
+      "name": "Emerald",
+      "file": "docs/tablets/EMERALD_TABLET.md",
+      "hex": "#50C878",
+      "color_name": "Emerald Green",
+      "governing_law": "The Law of Correspondence — As Above, So Below",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 8,
+      "name": "Lapis",
+      "file": "docs/tablets/LAPIS_TABLET.md",
+      "hex": "#26619C",
+      "color_name": "Lapis Lazuli Blue",
+      "governing_law": "The Law of Sovereignty — The Right to Self-Govern",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 9,
+      "name": "Obsidian",
+      "file": "docs/tablets/OBSIDIAN_TABLET.md",
+      "hex": "#1C1C1C",
+      "color_name": "Obsidian Black",
+      "governing_law": "The Law of Boundaries — What Must Not Be Crossed",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 10,
+      "name": "Rose",
+      "file": "docs/tablets/ROSE_TABLET.md",
+      "hex": "#FF007F",
+      "color_name": "Rose Red",
+      "governing_law": "The Law of Love — The Force That Holds All Systems Together",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 11,
+      "name": "Ruby",
+      "file": "docs/tablets/RUBY_TABLET.md",
+      "hex": "#9B111E",
+      "color_name": "Ruby Red",
+      "governing_law": "The Law of Will — Directed Force",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 12,
+      "name": "Sapphire",
+      "file": "docs/tablets/SAPPHIRE_TABLET.md",
+      "hex": "#0F52BA",
+      "color_name": "Sapphire Blue",
+      "governing_law": "The Law of Truth — Clarity That Cannot Be Dimmed",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 13,
+      "name": "Shadow",
+      "file": "docs/tablets/SHADOW_TABLET.md",
+      "hex": "#2D2D2D",
+      "color_name": "Shadow Dark",
+      "governing_law": "The Law of Integration — The Shadow Must Be Known",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 14,
+      "name": "Silver",
+      "file": "docs/tablets/SILVER_TABLET.md",
+      "hex": "#C0C0C0",
+      "color_name": "Silver",
+      "governing_law": "The Law of Reflection — The Mirror That Shows What Is",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 15,
+      "name": "Solar",
+      "file": "docs/tablets/SOLAR_TABLET.md",
+      "hex": "#FFD700",
+      "color_name": "Solar Gold",
+      "governing_law": "The Law of Sovereignty of Self — The Sun Does Not Apologize",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": null
+    },
+    {
+      "id": 16,
+      "name": "Terra",
+      "file": "docs/tablets/TERRA_TABLET.md",
+      "hex": "#3D2B1F",
+      "color_name": "Bistre",
+      "governing_law": "The Law of the Living Earth — Stewardship and Growth",
+      "alchemical_stage": null,
+      "sealed": null,
+      "tracking_issue": 831
+    },
+    {
+      "id": 17,
+      "name": "Viriditas",
+      "file": "docs/tablets/VIRIDITAS_TABLET.md",
+      "hex": "#4CAF50",
+      "color_name": "Viriditas Green",
+      "governing_law": "The Law of the Living Force — Regeneration Over Optimization",
+      "alchemical_stage": null,
+      "sealed": "2026-07-15",
+      "tracking_issue": 819
+    },
+    {
+      "id": 18,
+      "name": "Void",
+      "file": "docs/tablets/VOID_TABLET.md",
+      "hex": "#0A0A0A",
+      "color_name": "Void Black",
+      "governing_law": "The Law of Pre-Existence — The Ground Before the Ground",
+      "alchemical_stage": null,
+      "sealed": "2026-07-23",
+      "tracking_issue": 819
+    }
+  ]
+}
