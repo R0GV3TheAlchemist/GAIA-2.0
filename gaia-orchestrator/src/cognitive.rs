@@ -673,7 +673,7 @@ mod tests {
     fn registry_with_agents(names: &[&str]) -> McpRegistry {
         let mut r = McpRegistry::default();
         for name in names {
-            r.register(AipManifest {
+            r.agents.push(AipManifest {
                 name: name.to_string(),
                 version: "0.1.0".into(),
                 tools: vec![McpTool {
@@ -681,8 +681,6 @@ mod tests {
                     description: format!("{name} tool"),
                 }],
                 resources: vec![],
-                signed: false,
-                digest: None,
             });
         }
         r
