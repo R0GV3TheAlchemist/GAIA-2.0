@@ -252,9 +252,10 @@ pub fn temporal_validation(text: &str, cutoff_year: u16) -> TemporalValidation {
     //
     // Guard: `i + 4 <= bytes.len()` ensures every candidate window has exactly
     // 4 bytes available, including windows right at the end of the string.
-    // The previous `i + 3 < bytes.len()` was equivalent to `i + 4 <= bytes.len() - 1`
-    // (off-by-one), which skipped the last valid window when only 1-2 bytes
-    // followed the year (e.g. "...in 1066.").
+    //
+    // Year range: 1000–2200. The lower bound was previously 1800, which caused
+    // pre-modern historical years (e.g. 1066) to be silently discarded.
+    // Widening to 1000 covers all plausible four-digit year references.
     let detected_year: Option<u16> = {
         let bytes = text.as_bytes();
         let mut found = None;
@@ -266,7 +267,7 @@ pub fn temporal_validation(text: &str, cutoff_year: u16) -> TemporalValidation {
                 let followed_by_digit = i + 4 < bytes.len() && bytes[i + 4].is_ascii_digit();
                 if !preceded_by_digit && !followed_by_digit {
                     if let Ok(y) = text[i..i + 4].parse::<u16>() {
-                        if y >= 1800 && y <= 2200 {
+                        if y >= 1000 && y <= 2200 {
                             found = Some(y);
                             break;
                         }
