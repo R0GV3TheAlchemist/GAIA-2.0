@@ -68,14 +68,13 @@ mod tests {
     #[test]
     fn agent_manifest_default_capabilities_empty() {
         let manifest = AgentManifest {
-            id: String::new(),
             name: String::new(),
             version: String::new(),
-            capabilities: vec![],
-            wasm_path: None,
+            declared_capabilities: vec![],
+            limits: ResourceLimits::default(),
         };
         assert!(
-            manifest.capabilities.is_empty(),
+            manifest.declared_capabilities.is_empty(),
             "default AgentManifest must have no capabilities"
         );
     }
