@@ -45,3 +45,107 @@ pub use trace::{
     TraceEventSink,
 };
 pub use trust::{verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent, TrustAudit};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // -------------------------------------------------------------------------
+    // ExecutionGate (InMemoryGate) — control-plane boundary enforcement
+    // -------------------------------------------------------------------------
+
+    /// A freshly constructed InMemoryGate must default to the Clear state.
+    /// The gate is the canonical boundary between the orchestrator and the
+    /// control plane. Defaulting to Clear means work proceeds unless the
+    /// control plane explicitly signals unavailability or a gap lock.
+    /// Note: the constructor is InMemoryGate::clear(), not ::new().
+    #[test]
+    fn execution_gate_default_state_is_open() {
+        let gate = InMemoryGate::clear();
+        assert_eq!(
+            gate.state(),
+            GateState::Clear,
+            "InMemoryGate::clear() must have GateState::Clear"
+        );
+    }
+
+    /// An InMemoryGate in the ControlPlaneUnavailable state must produce a
+    /// RunPermit::Deny when deployed=true. This is the primary fail-close
+    /// invariant: a closed gate must never permit execution in production.
+    ///
+    /// API notes:
+    /// - control_plane_unavailable_event() returns a TraceEvent; it does not
+    ///   mutate the gate. Construct the gate via InMemoryGate::unavailable().
+    /// - permit_execution(gate, deployed) takes two arguments and returns
+    ///   RunPermit (not Result); check via pattern match.
+    #[test]
+    fn execution_gate_blocks_when_control_plane_unavailable() {
+        let gate = InMemoryGate::unavailable();
+        assert_eq!(
+            gate.state(),
+            GateState::ControlPlaneUnavailable,
+            "InMemoryGate::unavailable() must have GateState::ControlPlaneUnavailable"
+        );
+        let permit = permit_execution(&gate, true); // deployed = true → fail-close
+        assert!(
+            matches!(permit, RunPermit::Deny { .. }),
+            "permit_execution on an unavailable gate with deployed=true must return Deny"
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Broker — work-queue invariants
+    // -------------------------------------------------------------------------
+
+    /// A new Broker pre-populates one manager and two specialist workers with
+    /// an empty queue. This verifies the initial topology has not regressed.
+    #[test]
+    fn broker_new_is_empty() {
+        let broker = Broker::new();
+        assert_eq!(
+            broker.workers.len(), 3,
+            "new Broker must have 3 workers (1 manager + 2 specialists)"
+        );
+        assert!(
+            broker.queue.is_empty(),
+            "new Broker must have an empty work queue"
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // TrustAudit — signed intent roundtrip
+    // -------------------------------------------------------------------------
+
+    /// Signing an intent and immediately verifying it must succeed.
+    /// This is the minimal roundtrip that proves the signing key and
+    /// verification path are wired together correctly.
+    #[test]
+    fn trust_audit_signed_intent_roundtrip() {
+        let signer = IntentSigner::generate();
+        let payload = b"intent:query|user:did:gaia:test|ts:1000";
+        let signed  = signer.sign(payload);
+        assert!(
+            TrustAudit::verify(&signed, payload).is_ok(),
+            "valid signed intent must verify successfully"
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // McpRegistry — tool registration and lookup
+    // -------------------------------------------------------------------------
+
+    /// A tool registered in McpRegistry must be retrievable by name.
+    #[test]
+    fn mcp_registry_register_and_lookup() {
+        let mut registry = McpRegistry::new();
+        let tool = McpTool {
+            name:        "search".into(),
+            description: "semantic search over GAIA canon".into(),
+            input_schema: serde_json::json!({}),
+        };
+        registry.register_tool(tool);
+        let found = registry.get_tool("search");
+        assert!(found.is_some(), "registered tool must be retrievable by name");
+        assert_eq!(found.unwrap().name, "search");
+    }
+}
