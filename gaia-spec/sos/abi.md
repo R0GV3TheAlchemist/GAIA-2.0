@@ -1,7 +1,7 @@
 # GAIA Host ABI and Intent ABI
 
-**Status:** Draft v0.1  
-**Issue:** #195  
+**Status:** Frozen v1.0  
+**Issue:** #715  
 **Scope:** Userspace host ABI and canonical Intent record. This document does not add kernel syscalls, does not grant authority, and does not alter MCP transport behavior.
 
 ## 1. Purpose
@@ -26,12 +26,12 @@ The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**, **SHOULD NOT**, 
 8. Privacy, data-minimization, local-default, audit, and revocation rules remain in force at every operation.
 
 \[
-\text{effective_authority} =
-\text{requested_scope}
-\cap \text{subject_grant}
-\cap \text{target_manifest}
-\cap \text{host_policy}
-\cap \text{resource_policy}
+\text{effective\_authority} =
+\text{requested\_scope}
+\cap \text{subject\_grant}
+\cap \text{target\_manifest}
+\cap \text{host\_policy}
+\cap \text{resource\_policy}
 \cap \text{consent}
 \cap \text{jurisdiction}
 \]
@@ -193,4 +193,24 @@ This draft does not:
 
 ## 11. Compatibility
 
-This document is compatible with userspace-first GAIA implementations. Future ABI revisions MUST use a new `spec_version` or an explicitly backward-compatible extension path. Security-sensitive changes, including signature semantics, grant evaluation, or canonicalization, require an RFC before a stable release.
+This ABI is frozen at v1.0. Future revisions MUST use a new `spec_version` or an explicitly backward-compatible extension path. Security-sensitive changes, including signature semantics, grant evaluation, or canonicalization, require an RFC before a stable release.
+
+The executable Rust definition lives in `gaia-kernel/src/syscall.rs`. The `ABI_VERSION` constant in that crate is the machine-readable source of truth and MUST match the version declared in this document.
+
+## 12. Syscall ABI (Frozen v1.0)
+
+The following syscall numbers are frozen. Renumbering any existing entry is a breaking change requiring a major version bump of `ABI_VERSION`.
+
+| Number | Name | Description |
+|--------|------|-------------|
+| `0x01` | `IntentCreate` | Create and submit a new signed intent |
+| `0x02` | `IntentQuery` | Query the status of an existing intent |
+| `0x03` | `ContextRecall` | Recall MemCubes permitted by effective authority |
+| `0x04` | `AgentInvoke` | Invoke a registered agent within intent bounds |
+| `0x05` | `MemoryRead` | Read from the memory subsystem |
+| `0x06` | `MemoryWrite` | Write to the memory subsystem |
+| `0x07` | `ResourceDeclare` | Declare a resource for capability tracking |
+| `0x08` | `Observe` | Publish an observation event |
+| `0x09` | `CapabilityCheck` | Check whether a capability is currently granted |
+
+New syscalls are assigned the next sequential number (`0x0A`, `0x0B`, …). Adding a new syscall is non-breaking. Unknown numbers return `NotImplemented` at runtime, allowing callers to probe availability gracefully.
