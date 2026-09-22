@@ -21,7 +21,6 @@ Usage:
 """
 
 import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -48,16 +47,37 @@ REQUIRED_SEALED_FIELDS = [
     "Revision History",
 ]
 
-# Canonical naming rules: (bad_pattern, canonical_form, description)
-# Each bad_pattern is a regex; canonical_form is the correct string for the message.
+# ---------------------------------------------------------------------------
+# Naming Rules
+# ---------------------------------------------------------------------------
+# Each entry: (regex_pattern, canonical_form, description, exempt_fn)
+# exempt_fn(line, filepath) -> bool: return True to skip this line/file.
+# Use exempt_fn=None for rules with no exceptions.
+
+def _amber_file_or_line(line: str, filepath: Path) -> bool:
+    """
+    Exempt lines where #8B4513 appears alongside 'Amber' on the same line,
+    OR the file is the Amber tablet itself.
+    #8B4513 is Amber's legitimate canonical hex.
+    """
+    if "AMBER_TABLET" in filepath.name:
+        return True  # entire Amber tablet file is exempt for this hex
+    if re.search(r'(?i)amber', line):
+        return True  # cross-reference lines that name Amber alongside the hex
+    return False
+
 NAMING_RULES = [
-    # GAIA 2.0 must not be lowercased or written without the version
-    (r'\bgaia 2\.0\b', None, None),          # correct — exempt
-    (r'\bGaia\b(?! 2\.0)',  "GAIA 2.0 or GAIA",  "'Gaia' should be 'GAIA'"),
-    (r'\bgaia\b(?! 2\.0)',  "GAIA 2.0 or GAIA",  "'gaia' should be 'GAIA' or 'GAIA 2.0'"),
-    # Terra's color must be 'Bistre' not 'Terra Brown' or old hex
-    (r'Terra Brown',        "Bistre",             "'Terra Brown' is obsolete — use 'Bistre'"),
-    (r'#8B4513',            "#3D2B1F (Bistre)",   "Old Terra hex #8B4513 — use #3D2B1F"),
+    # pattern                      canonical              description                              exempt_fn
+    # --- GAIA casing ---
+    # Correct forms: 'GAIA', 'GAIA 2.0' — exempt both
+    (r'\bGAIA\b',                  None,   None,                                                   None),   # correct
+    (r'\bGAIA 2\.0\b',             None,   None,                                                   None),   # correct
+    (r'\bGaia\b',                  "GAIA", "'Gaia' should be 'GAIA'",                              None),
+    (r'\bgaia\b',                  "GAIA", "'gaia' should be 'GAIA' or 'GAIA 2.0'",               None),
+    # --- Terra color name ---
+    (r'Terra Brown',               "Bistre", "'Terra Brown' is obsolete — use 'Bistre'",           None),
+    # --- Old Terra hex: exempt if on an Amber line or in the Amber tablet file ---
+    (r'#8B4513',  "#3D2B1F (Bistre)",  "Old Terra hex #8B4513 found outside Amber context — use #3D2B1F",  _amber_file_or_line),
 ]
 
 # ---------------------------------------------------------------------------
@@ -74,17 +94,35 @@ def load_color_map() -> dict:
 
 def parse_index_hex_table(index_path: Path) -> dict[str, str]:
     """
-    Parse the hex values out of INDEX.md's tablet table.
-    Returns {tablet_name: hex_value} mapping.
-    Expects rows like:  | Amber | #8B4513 | ... |
+    Parse hex values from INDEX.md's tablet registry table.
+
+    INDEX.md table format (actual):
+      | 01 | [Amber Tablet](...) | Amber `#8B4513` | The Law... | ... |
+
+    The color cell contains: ColorName `#HEXVALUE`
+    We match the backtick-wrapped hex and pair it with the tablet name
+    extracted from the markdown link in column 2.
+
+    Returns {tablet_name: hex_value} e.g. {"Amber": "#8B4513", ...}
     """
-    hexes = {}
-    hex_re = re.compile(r"^\|\s*([A-Za-z]+)\s*\|\s*(#[0-9A-Fa-f]{3,8})\s*\|", re.MULTILINE)
+    hexes: dict[str, str] = {}
     text = index_path.read_text(encoding="utf-8")
-    for match in hex_re.finditer(text):
-        name = match.group(1).strip()
-        hex_val = match.group(2).strip().upper()
+
+    # Match table data rows (skip header and separator rows)
+    # Row pattern: | number | [Name Tablet](...) | ... `#HEX` ... | ...
+    row_re = re.compile(
+        r'^\|\s*\d+\s*'                          # | number |
+        r'\|\s*\[([A-Za-z]+)\s+Tablet\]'        # | [Name Tablet](...)
+        r'[^|]*'                                  # rest of link cell
+        r'\|[^|]*`(#[0-9A-Fa-f]{3,8})`',        # | ... `#HEX` ...
+        re.MULTILINE
+    )
+
+    for match in row_re.finditer(text):
+        name    = match.group(1).strip()           # e.g. "Amber"
+        hex_val = match.group(2).strip().upper()   # e.g. "#8B4513"
         hexes[name] = hex_val
+
     return hexes
 
 
@@ -103,7 +141,7 @@ class CanonTestResult:
         status = "PASS" if self.passed else "FAIL"
         print(f"  [{status}] {self.test_id}: {self.name}")
         for msg in self.failures:
-            print(f"         ✗ {msg}")
+            print(f"         \u2717 {msg}")
 
 
 # ---------------------------------------------------------------------------
@@ -116,11 +154,10 @@ def t001_hex_collision(data: dict) -> CanonTestResult:
     Every tablet must have a unique color signature.
     """
     result = CanonTestResult("T-001", "Hex Collision")
-    tablets = data["tablets"]
     seen: dict[str, str] = {}  # hex -> tablet name
 
-    for tablet in tablets:
-        name = tablet["name"]
+    for tablet in data["tablets"]:
+        name    = tablet["name"]
         hex_val = tablet["hex"].upper()
         if hex_val in seen:
             result.fail(
@@ -139,7 +176,7 @@ def t001_hex_collision(data: dict) -> CanonTestResult:
 def t002_index_sync(data: dict) -> CanonTestResult:
     """
     Assert color-map.json hex values match INDEX.md exactly (case-insensitive).
-    INDEX.md is authoritative; any divergence must be surfaced.
+    INDEX.md is the authoritative source; any divergence must be surfaced.
     """
     result = CanonTestResult("T-002", "INDEX.md Sync")
 
@@ -151,17 +188,24 @@ def t002_index_sync(data: dict) -> CanonTestResult:
 
     if not index_hexes:
         result.fail(
-            "INDEX PARSE FAILURE: No hex table rows found in INDEX.md — "
-            "check that the table format is '| Name | #HEX | ...'"
+            "INDEX PARSE FAILURE: No hex values found in INDEX.md — "
+            "expected rows like: | 01 | [Name Tablet](...) | Color `#HEXVAL` | ..."
         )
         return result
 
     for tablet in data["tablets"]:
-        name = tablet["name"]
+        name    = tablet["name"]
         map_hex = tablet["hex"].upper()
+
         if name not in index_hexes:
-            result.fail(f"MISSING IN INDEX: '{name}' not found in INDEX.md table")
+            # Non-fatal for unsealed tablets — they may not yet appear in the table
+            # Sealed tablets must be in INDEX
+            if tablet.get("sealed"):
+                result.fail(
+                    f"MISSING IN INDEX: '{name}' is sealed but not found in INDEX.md table"
+                )
             continue
+
         idx_hex = index_hexes[name].upper()
         if map_hex != idx_hex:
             result.fail(
@@ -182,16 +226,14 @@ def t003_file_completeness(data: dict) -> CanonTestResult:
     result = CanonTestResult("T-003", "Tablet File Completeness")
 
     for tablet in data["tablets"]:
-        name = tablet["name"]
+        name          = tablet["name"]
         relative_path = tablet.get("file", "")
         if not relative_path:
             result.fail(f"NO FILE FIELD: '{name}' has no 'file' key in color-map.json")
             continue
         full_path = REPO_ROOT / relative_path
         if not full_path.exists():
-            result.fail(
-                f"MISSING FILE: '{name}' → expected {relative_path}"
-            )
+            result.fail(f"MISSING FILE: '{name}' \u2192 expected {relative_path}")
 
     return result
 
@@ -209,9 +251,9 @@ def t004_required_fields(data: dict) -> CanonTestResult:
 
     for tablet in data["tablets"]:
         if not tablet.get("sealed"):
-            continue  # unsealed tablets are in progress — skip
+            continue
 
-        name = tablet["name"]
+        name          = tablet["name"]
         relative_path = tablet.get("file", "")
         if not relative_path:
             continue
@@ -228,7 +270,8 @@ def t004_required_fields(data: dict) -> CanonTestResult:
         for field in REQUIRED_SEALED_FIELDS:
             if field not in content:
                 result.fail(
-                    f"MISSING FIELD: '{name}' is sealed but '{field}' not found in {relative_path}"
+                    f"MISSING FIELD: '{name}' is sealed but '{field}' "
+                    f"not found in {relative_path}"
                 )
 
     return result
@@ -242,6 +285,11 @@ def t005_naming_conventions() -> CanonTestResult:
     """
     Scan canon files for known bad patterns and assert canonical spellings are used.
     Scans: docs/tablets/, governance/, proofs/
+
+    Rules with exempt_fn: if exempt_fn(line, filepath) returns True, the
+    match is skipped. Used for cases where the same string is legitimate
+    in one context but a drift signal in another (e.g. #8B4513 is correct
+    for Amber but wrong everywhere else).
     """
     result = CanonTestResult("T-005", "Naming Conventions")
 
@@ -255,14 +303,18 @@ def t005_naming_conventions() -> CanonTestResult:
                 continue
             lines = content.splitlines()
             for line_no, line in enumerate(lines, start=1):
-                for pattern, canonical, description in NAMING_RULES:
-                    if canonical is None:  # exempted correct pattern
+                for rule in NAMING_RULES:
+                    pattern, canonical, description, exempt_fn = rule
+                    if canonical is None:
+                        continue  # exempt — this is a correct form
+                    if not re.search(pattern, line):
                         continue
-                    if re.search(pattern, line):
-                        rel = md_file.relative_to(REPO_ROOT)
-                        result.fail(
-                            f"NAMING DRIFT: {rel} line {line_no} — {description}"
-                        )
+                    if exempt_fn and exempt_fn(line, md_file):
+                        continue  # context-specific exemption
+                    rel = md_file.relative_to(REPO_ROOT)
+                    result.fail(
+                        f"NAMING DRIFT: {rel} line {line_no} — {description}"
+                    )
 
     return result
 
@@ -290,7 +342,7 @@ def rl001_terra_bistre_regression(data: dict) -> CanonTestResult:
     bistre    = "#3D2B1F"
     old_hex   = "#8B4513"
 
-    if terra_hex == old_hex:
+    if terra_hex == old_hex.upper():
         result.fail(
             f"REGRESSION #831: Terra hex reverted to old Amber Brown {old_hex} — "
             f"must be Bistre {bistre}"
@@ -352,9 +404,9 @@ def run_all() -> int:
     for r in results:
         r.report()
 
-    total   = len(results)
-    passed  = sum(1 for r in results if r.passed)
-    failed  = total - passed
+    total  = len(results)
+    passed = sum(1 for r in results if r.passed)
+    failed = total - passed
 
     print()
     print("-" * 60)
