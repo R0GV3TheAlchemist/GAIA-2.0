@@ -127,7 +127,6 @@ mod tests {
         let tool = McpTool {
             name:        "search".into(),
             description: "semantic search over GAIA canon".into(),
-            input_schema: serde_json::json!({}),
         };
         registry.register_tool(tool);
         let found = registry.get_tool("search");
