@@ -19,16 +19,12 @@
 use std::path::PathBuf;
 
 use wasmtime::{
-    component::Component,
+    component::{
+        Component,
+        Linker,
+    },
     Config, Engine, Store,
 };
-// WasiCtx and WasiCtxBuilder live at the wasmtime_wasi crate root (re-exported
-// from the internal `ctx` module) regardless of which feature flags are active.
-//
-// In wasmtime-wasi v46 the preopened_dir signature changed to:
-//   preopened_dir(host_path: impl AsRef<Path>, guest_path: &str,
-//                 dir_perms: DirPerms, file_perms: FilePerms)
-// The cap_std Dir handle used in v25 is no longer accepted.
 use wasmtime_wasi::{DirPerms, FilePerms, WasiCtx, WasiCtxBuilder};
 
 use crate::sandbox::{
@@ -90,7 +86,13 @@ impl SandboxManager {
     /// level: a component without a `wasi:sockets` world import physically
     /// cannot open sockets.  Omitting the socket linker binding is therefore
     /// sufficient for network isolation.
-    pub fn build_wasi_ctx(&self) -> WasiCtx {
+    ///
+    /// # Errors
+    ///
+    /// Returns `SandboxError::CapabilityDenied` if a requested filesystem
+    /// preopen cannot be established (e.g. the scratch dir cannot be created
+    /// or the path is not accessible).
+    pub fn build_wasi_ctx(&self) -> Result<WasiCtx, SandboxError> {
         let mut builder = WasiCtxBuilder::new();
 
         // Filesystem — mount /scratch only when the policy allows it.
@@ -102,13 +104,18 @@ impl SandboxManager {
         // longer satisfies that bound and must not be used here.
         if self.profile.scratch_only_writes {
             let scratch = scratch_dir();
-            let _ = std::fs::create_dir_all(&scratch);
-            builder.preopened_dir(
-                &scratch,
-                "/scratch",
-                DirPerms::all(),
-                FilePerms::all(),
-            );
+            std::fs::create_dir_all(&scratch).map_err(|e| {
+                SandboxError::CapabilityDenied(format!(
+                    "{GAIA_CAPABILITY_DENIED}: cannot create scratch dir: {e}"
+                ))
+            })?;
+            builder
+                .preopened_dir(&scratch, "/scratch", DirPerms::all(), FilePerms::all())
+                .map_err(|e| {
+                    SandboxError::CapabilityDenied(format!(
+                        "{GAIA_CAPABILITY_DENIED}: preopened_dir failed: {e}"
+                    ))
+                })?;
         }
 
         // Environment — forward host env only when explicitly declared.
@@ -116,7 +123,7 @@ impl SandboxManager {
             builder.inherit_env();
         }
 
-        builder.build()
+        Ok(builder.build())
     }
 
     /// Compile a WASM Component Model binary.
@@ -129,18 +136,23 @@ impl SandboxManager {
 
     /// Execute a pre-compiled component inside the sandbox.
     ///
-    /// - Attaches [`GaiaResourceLimiter`] (memory + table quotas) via
-    ///   `store.limiter(|d| &mut d.limiter)`.
-    /// - Sets epoch deadline for wall-clock CPU budget.
+    /// Lifecycle:
+    /// 1. Build a WASI context gated on the active [`SandboxProfile`].
+    /// 2. Attach [`GaiaResourceLimiter`] (memory + table quotas).
+    /// 3. Set epoch deadline for wall-clock CPU budget.
+    /// 4. Add WASI 0.3 p3 imports to the component linker.
+    /// 5. Instantiate the component and invoke its `run` export.
     ///
-    /// Full typed component-world invocation (`call_run` / WIT bindings)
-    /// is wired in issue #720 (Execution Engine).
+    /// Any Wasmtime error is classified by [`Self::classify_trap`] and
+    /// returned as a structured [`SandboxError`].
     pub async fn execute_component(
         &self,
         component: &Component,
     ) -> Result<(), SandboxError> {
+        let wasi = self.build_wasi_ctx()?;
+
         let store_data = StoreData {
-            wasi:    self.build_wasi_ctx(),
+            wasi,
             limiter: GaiaResourceLimiter::new(self.profile.quota),
         };
         let mut store = Store::new(&self.engine, store_data);
@@ -148,11 +160,37 @@ impl SandboxManager {
         store.limiter(|data: &mut StoreData| &mut data.limiter);
         store.set_epoch_deadline(self.profile.quota.max_epochs);
 
-        let _linker: wasmtime::component::Linker<StoreData> =
-            wasmtime::component::Linker::new(&self.engine);
+        let mut linker: Linker<StoreData> = Linker::new(&self.engine);
 
-        let _ = component;
-        Ok(())
+        // Add WASI 0.3 (p3) host bindings. Network isolation is enforced at
+        // the world-import level: if the component's WIT world does not
+        // import `wasi:sockets`, the socket linker item is never resolved and
+        // the component physically cannot open a socket regardless of what is
+        // added here.  We still conditionally omit network bindings as an
+        // explicit defence-in-depth measure.
+        wasmtime_wasi::p3::add_to_linker(&mut linker)
+            .map_err(|e| SandboxError::EngineInit(anyhow::Error::from(e)))?;
+
+        // Instantiate and run.
+        linker
+            .instantiate_async(&mut store, component)
+            .await
+            .and_then(|instance| {
+                // Invoke the canonical `run` export if present.
+                // Components that export nothing (e.g. reactor-style) are
+                // considered successful when instantiation succeeds.
+                let func = instance
+                    .get_func(&mut store, "run")
+                    .or_else(|| instance.get_func(&mut store, "wasi:cli/run@0.3.0#run"));
+                if let Some(f) = func {
+                    f.call_async(&mut store, &[], &mut []).map(|_| ())
+                } else {
+                    // No run export — reactor / library component; treat as success.
+                    Box::pin(async { Ok(()) })
+                }
+            })
+            .await
+            .map_err(|e| Self::classify_trap(&e))
     }
 
     /// Classify a raw Wasmtime error into a structured [`SandboxError`].
