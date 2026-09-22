@@ -11,8 +11,8 @@
 use gaia_gaian::{
     asr::AsrConfig,
     honesty::live_whisper,
-    voice::VoiceProfile,
     Consent,
+    VoiceProfile,
 };
 
 fn adult_self_consent() -> Consent {
