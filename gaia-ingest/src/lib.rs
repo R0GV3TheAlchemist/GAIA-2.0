@@ -20,10 +20,19 @@
 //! Every `DocumentChunk` seals provenance over the raw source bytes of the
 //! **parent document**, not the chunk text, for the same auditability guarantee
 //! (#909).
+//!
+//! ## Lexicon plane contract
+//! Every `DocumentChunk` carries a `lexicon_plane` field (`Order`, `Chaos`,
+//! or `Bridge`) so the RAG pipeline always knows which ontological plane it
+//! is pulling from. `Bridge` is the safe default — it signals unresolved
+//! provenance, not an error. The ingestion pipeline promotes chunks via
+//! `lexicon::classify_chunk()`. The retrieval layer must refuse implicit
+//! cross-plane lookups (C30: no silent failures).
 
 pub mod artifact;
 pub mod chunker;
 pub mod document;
+pub mod lexicon;
 pub mod provenance;
 pub mod schema;
 
@@ -31,6 +40,9 @@ pub use artifact::{ArtifactStore, IngestError, RawArtifactRef};
 pub use chunker::{ChunkError, Chunker, SlidingWindowChunker};
 pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
+};
+pub use lexicon::{
+    classify_chunk, LexiconPlane, LexiconSignals, LexiconVoice,
 };
 pub use provenance::{ProvenanceBuilder, ProvenanceReceipt};
 pub use schema::{
