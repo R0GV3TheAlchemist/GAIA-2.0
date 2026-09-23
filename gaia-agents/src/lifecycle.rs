@@ -568,7 +568,7 @@ impl LifecycleManager {
     }
 
     pub fn is_revoked(&self, id: Uuid) -> bool {
-        self.agents.get(&id).map_or(false, |r| r.revoked)
+        self.agents.get(&id).is_some_and(|r| r.revoked)
     }
 
     pub fn telemetry(&self, id: Uuid) -> &[ResourceSnapshot] {
