@@ -16,6 +16,9 @@
 //! - `artifact` is `Some` when the full source document lives in SFS.
 //! - `access_tier` and `access_control` are enforced at retrieval time
 //!   by `gaia-memos`; this crate only stores the policy.
+//! - `lexicon_plane` defaults to `LexiconPlane::Bridge`. The ingestion
+//!   pipeline promotes it to `Order` or `Chaos` via `classify_chunk()`.
+//!   The RAG retrieval layer must reject implicit cross-plane lookups (C30).
 
 use std::collections::BTreeMap;
 
@@ -23,6 +26,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     artifact::RawArtifactRef,
+    lexicon::{LexiconPlane, LexiconVoice},
     provenance::ProvenanceReceipt,
 };
 
@@ -122,11 +126,21 @@ pub enum ConfidenceTier {
 /// | `chunk_index` | Zero-indexed. Must be `< total_chunks`. |
 /// | `provenance.sha256` | SHA-256 of the raw source bytes, NOT the chunk text. |
 /// | `artifact` | `Some` when the full source document is stored in SFS. |
+/// | `lexicon_plane` | Defaults to `Bridge`. Promoted by the ingestion pipeline. |
 ///
 /// ## Chunking parameters
 /// See `gaia-spec/rag/chunking-standard.md` for the authoritative values:
 /// 400–600 token target, 200 token minimum, 800 token maximum,
 /// 10–20% sliding overlap, sentence-boundary required.
+///
+/// ## Lexicon plane
+/// Every chunk carries a `lexicon_plane` tag (`Order`, `Chaos`, or `Bridge`)
+/// so the RAG pipeline always knows which ontological plane it is pulling from.
+/// `Bridge` is the safe default — it signals that provenance has not yet been
+/// resolved. The pipeline calls `crate::lexicon::classify_chunk()` to promote
+/// the field based on document metadata (author type, language, domain, sacred
+/// flag). The retrieval layer in `gaia-memos` must refuse implicit cross-plane
+/// lookups (C30: no silent failures).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentChunk {
     /// UUID v4 assigned at ingest time.
@@ -184,8 +198,6 @@ pub struct DocumentChunk {
 
     /// Agent IDs permitted to retrieve this chunk when
     /// `access_tier == AccessTier::Restricted`. Ignored for other tiers.
-    /// Uses string IDs rather than a foreign key because `gaia-acp` agent
-    /// identity types are not yet frozen.
     pub access_control: Vec<String>,
 
     /// Cryptographic provenance receipt. Always present.
@@ -199,6 +211,21 @@ pub struct DocumentChunk {
     /// Open map for source-native metadata not covered by fixed fields.
     /// Examples: `"heading_path"`, `"git_commit"`, `"doi"`, `"section"`.
     pub attributes: BTreeMap<String, String>,
+
+    /// Which ontological plane this chunk's vocabulary belongs to.
+    ///
+    /// - `Order`  — formal, machine-tractable, AI-authored or standards-body text.
+    /// - `Chaos`  — lived, cultural, human-authored, contested, or sacred text.
+    /// - `Bridge` — safe default; provenance not yet resolved.
+    ///
+    /// Promoted from `Bridge` by the ingestion pipeline via
+    /// `crate::lexicon::classify_chunk()`. The RAG retrieval layer
+    /// must refuse implicit cross-plane lookups (C30).
+    pub lexicon_plane: LexiconPlane,
+
+    /// Who speaks the vocabulary in this chunk.
+    /// `None` until resolved by the ingestion pipeline classify step.
+    pub lexicon_voice: Option<LexiconVoice>,
 }
 
 impl DocumentChunk {
@@ -209,6 +236,9 @@ impl DocumentChunk {
     /// - `document_uri` is non-empty
     /// - `domain` is non-empty
     /// - `provenance.is_valid()` passes
+    ///
+    /// Note: `lexicon_plane == Bridge` is valid — it means the pipeline
+    /// classify step has not yet run, not that the chunk is broken.
     pub fn is_valid(&self) -> bool {
         !self.text.is_empty()
             && self.char_count == self.text.chars().count()
@@ -243,6 +273,7 @@ impl DocumentChunk {
 mod tests {
     use super::*;
     use crate::{
+        lexicon::{LexiconPlane, LexiconVoice},
         provenance::ProvenanceReceipt,
         schema::DataSource,
     };
@@ -280,6 +311,8 @@ mod tests {
             },
             artifact: None,
             attributes: BTreeMap::new(),
+            lexicon_plane: LexiconPlane::Bridge,
+            lexicon_voice: None,
         }
     }
 
@@ -301,14 +334,14 @@ mod tests {
     #[test]
     fn rejects_mismatched_char_count() {
         let mut c = valid_chunk();
-        c.char_count = c.char_count + 1; // deliberate mismatch
+        c.char_count = c.char_count + 1;
         assert!(!c.is_valid());
     }
 
     #[test]
     fn rejects_chunk_index_out_of_range() {
         let mut c = valid_chunk();
-        c.chunk_index = c.total_chunks; // equal, not less-than
+        c.chunk_index = c.total_chunks;
         assert!(!c.is_valid());
     }
 
@@ -326,19 +359,47 @@ mod tests {
         assert!(!c.is_valid());
     }
 
+    // ── lexicon plane ──
+
+    #[test]
+    fn chunk_default_plane_is_bridge() {
+        assert_eq!(valid_chunk().lexicon_plane, LexiconPlane::Bridge);
+    }
+
+    #[test]
+    fn chunk_lexicon_voice_none_by_default() {
+        assert_eq!(valid_chunk().lexicon_voice, None);
+    }
+
+    #[test]
+    fn chunk_accepts_order_plane() {
+        let mut c = valid_chunk();
+        c.lexicon_plane = LexiconPlane::Order;
+        c.lexicon_voice = Some(LexiconVoice::AIVoice);
+        assert!(c.is_valid());
+        assert_eq!(c.lexicon_plane, LexiconPlane::Order);
+    }
+
+    #[test]
+    fn chunk_accepts_chaos_plane_with_sacred_voice() {
+        let mut c = valid_chunk();
+        c.lexicon_plane = LexiconPlane::Chaos;
+        c.lexicon_voice = Some(LexiconVoice::Sacred);
+        assert!(c.is_valid());
+    }
+
     // ── is_stale ──
 
     #[test]
     fn no_ttl_never_stale() {
-        let c = valid_chunk(); // ttl_seconds: None
+        let c = valid_chunk();
         assert!(!c.is_stale(u64::MAX));
     }
 
     #[test]
     fn stale_when_ttl_elapsed() {
         let mut c = valid_chunk();
-        c.ttl_seconds = Some(3600); // 1 hour
-        // authored_at_unix = 1_700_000_000; now = authored + ttl + 1
+        c.ttl_seconds = Some(3600);
         assert!(c.is_stale(1_700_000_000 + 3600 + 1));
     }
 
@@ -363,6 +424,8 @@ mod tests {
         assert_eq!(c.total_chunks, back.total_chunks);
         assert_eq!(c.domain, back.domain);
         assert_eq!(c.provenance.sha256, back.provenance.sha256);
+        assert_eq!(c.lexicon_plane, back.lexicon_plane);
+        assert_eq!(c.lexicon_voice, back.lexicon_voice);
         assert!(back.is_valid());
     }
 
@@ -409,17 +472,16 @@ mod tests {
 
     #[test]
     fn char_count_counts_unicode_scalars_not_bytes() {
-        // "caf\u{00e9}" is 4 Unicode scalar values but 5 UTF-8 bytes
         let text = "caf\u{00e9}".to_string();
-        assert_eq!(text.len(), 5);       // UTF-8 bytes
-        assert_eq!(text.chars().count(), 4); // Unicode scalar values
+        assert_eq!(text.len(), 5);
+        assert_eq!(text.chars().count(), 4);
 
         let mut c = valid_chunk();
         c.text = text;
-        c.char_count = 4; // correct
+        c.char_count = 4;
         assert!(c.is_valid());
 
-        c.char_count = 5; // wrong — byte count, not char count
+        c.char_count = 5;
         assert!(!c.is_valid());
     }
 }
