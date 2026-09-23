@@ -109,14 +109,24 @@ impl SlidingWindowChunker {
         Ok(())
     }
 
-    /// Extract the heading path at `offset` bytes into `text`.
+    /// Extract the heading path at `probe_end` bytes into `text`.
     ///
     /// Scans all ATX headings (`# `, `## `, `### `) that appear *before*
-    /// `offset` and returns the last heading of each level joined with ` > `.
-    fn heading_path_at(text: &str, offset: usize) -> String {
+    /// `probe_end` and returns the last heading of each level joined with ` > `.
+    ///
+    /// ## Why probe_end, not chunk start?
+    ///
+    /// `unicode_sentences()` does not yield heading lines (they carry no
+    /// terminal punctuation), so the byte offset of the *first sentence* in a
+    /// chunk can be greater than the heading that labels it — or, for the very
+    /// first chunk, exactly 0 (before the heading).  Passing the end of the
+    /// raw chunk text as `probe_end` guarantees that any ATX heading preceding
+    /// the chunk content is always visible to the scanner regardless of where
+    /// sentences begin.
+    fn heading_path_at(text: &str, probe_end: usize) -> String {
         // heading_stack[0] = last H1, [1] = last H2, [2] = last H3
         let mut stack: [Option<&str>; 3] = [None; 3];
-        let prefix = &text[..offset.min(text.len())];
+        let prefix = &text[..probe_end.min(text.len())];
         for line in prefix.lines() {
             let trimmed = line.trim_start();
             if let Some(rest) = trimmed.strip_prefix("### ") {
@@ -255,7 +265,7 @@ impl Chunker for SlidingWindowChunker {
                     let carry: Vec<&str> = window[carry_start..].to_vec();
                     window_chars = carry.iter().map(|s| s.chars().count()).sum();
 
-                    // FIX: correctly compute the absolute sentence index of the
+                    // Correctly compute the absolute sentence index of the
                     // first carried sentence.
                     //
                     // At emit time, `window` holds exactly `window.len()`
@@ -266,13 +276,9 @@ impl Chunker for SlidingWindowChunker {
                     // The carry begins at `carry_start` within that window, so:
                     //   carry_absolute_idx = first_in_window + carry_start
                     //
-                    // The previous formula `sent_idx + 1 - (window.len() - carry_start)`
-                    // is algebraically equivalent but evaluates incorrectly in
-                    // Rust because the intermediate subtraction `window.len() - carry_start`
-                    // can exceed `sent_idx + 1`, causing a usize underflow / wrap,
-                    // and in practice resolves to byte offset 0 or a pre-heading
-                    // position, making `heading_path_at` return an empty string
-                    // and leaving `heading_path` absent from every chunk's attributes.
+                    // saturating_sub guards against the pathological case where
+                    // window.len() > sent_idx + 1 (shouldn't happen in practice
+                    // but avoids usize underflow / wrap in debug builds).
                     let first_in_window = (sent_idx + 1).saturating_sub(window.len());
                     let carry_absolute_idx = first_in_window + carry_start;
 
@@ -294,9 +300,29 @@ impl Chunker for SlidingWindowChunker {
         let mut chunks: Vec<DocumentChunk> = Vec::with_capacity(raw_chunks.len());
 
         for (idx, (chunk_text, byte_offset)) in raw_chunks.into_iter().enumerate() {
-            // Resolve heading path at the byte offset of this chunk's first sentence
+            // Resolve heading path using the END of the raw chunk text in the
+            // source document as the probe point.
+            //
+            // Rationale: `unicode_sentences()` skips heading lines (no terminal
+            // punctuation), so `byte_offset` — the start of the first *sentence*
+            // — may be 0 for the very first chunk even when an H1 sits above it.
+            // Probing at chunk-end guarantees we always scan past any ATX
+            // heading that precedes the chunk's content, regardless of where
+            // sentences start within that chunk.
+            let probe_end = if self.inject_heading_prefix {
+                // Find the byte position just after the last character of
+                // chunk_text in the source document.  text.find() gives the
+                // *first* occurrence; since chunk_text is derived from
+                // sentences in document order this will be the correct window.
+                text.find(chunk_text.as_str())
+                    .map(|start| start + chunk_text.len())
+                    .unwrap_or(byte_offset + chunk_text.len())
+            } else {
+                0
+            };
+
             let heading = if self.inject_heading_prefix {
-                Self::heading_path_at(text, byte_offset)
+                Self::heading_path_at(text, probe_end)
             } else {
                 String::new()
             };
