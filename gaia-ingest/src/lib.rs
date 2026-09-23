@@ -16,12 +16,20 @@
 //! `ProvenanceReceipt` with a SHA-256 hash of the raw bytes it was derived
 //! from.  This makes every ingested datum auditable back to its exact source
 //! payload, which is a hard requirement of #729.
+//!
+//! Every `DocumentChunk` seals provenance over the raw source bytes of the
+//! **parent document**, not the chunk text, for the same auditability guarantee
+//! (#909).
 
 pub mod artifact;
+pub mod document;
 pub mod provenance;
 pub mod schema;
 
 pub use artifact::{ArtifactStore, IngestError, RawArtifactRef};
+pub use document::{
+    AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
+};
 pub use provenance::{ProvenanceBuilder, ProvenanceReceipt};
 pub use schema::{
     DataSource, GeoBBox, GeoPoint, NormalizedObservation, ObservationKind,
