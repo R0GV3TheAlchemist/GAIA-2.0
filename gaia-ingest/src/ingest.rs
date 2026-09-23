@@ -53,11 +53,15 @@ use crate::{
     schema::DataSource,
 };
 
-// ── IngestError ───────────────────────────────────────────────────────────────
+// ── PipelineError ───────────────────────────────────────────────────────────
 
 /// Errors produced by [`IngestPipeline`].
+///
+/// Named `PipelineError` (not `IngestError`) to avoid a name collision with
+/// [`crate::artifact::IngestError`], which is separately re-exported from
+/// `lib.rs`.
 #[derive(Debug, thiserror::Error)]
-pub enum IngestError {
+pub enum PipelineError {
     #[error("I/O error reading {path}: {source}")]
     Io {
         path:   PathBuf,
@@ -113,11 +117,11 @@ impl IngestPipeline {
     ///
     /// The caller supplies only a path; all template fields are derived
     /// automatically — see the module-level table for the exact rules.
-    pub fn from_path(&self, path: impl AsRef<Path>) -> Result<Vec<DocumentChunk>, IngestError> {
+    pub fn from_path(&self, path: impl AsRef<Path>) -> Result<Vec<DocumentChunk>, PipelineError> {
         let path = path.as_ref();
 
         // ── 1. Read raw bytes ─────────────────────────────────────────────────
-        let raw = std::fs::read(path).map_err(|e| IngestError::Io {
+        let raw = std::fs::read(path).map_err(|e| PipelineError::Io {
             path:   path.to_path_buf(),
             source: e,
         })?;
@@ -138,13 +142,13 @@ impl IngestPipeline {
             "file://{}",
             canonical
                 .to_str()
-                .ok_or_else(|| IngestError::NonUtf8Path(path.to_path_buf()))?
+                .ok_or_else(|| PipelineError::NonUtf8Path(path.to_path_buf()))?
         );
 
         let document_title = path
             .file_stem()
             .and_then(|s| s.to_str())
-            .ok_or_else(|| IngestError::NoFileStem(path.to_path_buf()))?
+            .ok_or_else(|| PipelineError::NoFileStem(path.to_path_buf()))?
             .to_string();
 
         let ext = path
@@ -225,8 +229,6 @@ mod tests {
     use std::io::Write;
     use tempfile::NamedTempFile;
 
-    /// Write `content` to a temp file with the given extension and return
-    /// a [`NamedTempFile`] whose path can be passed to [`IngestPipeline`].
     fn tmp(content: &str, ext: &str) -> NamedTempFile {
         let mut f = tempfile::Builder::new()
             .suffix(&format!(".{ext}"))
@@ -237,8 +239,6 @@ mod tests {
         f
     }
 
-    /// Minimum viable Markdown that is long enough to pass the 800-char
-    /// minimum chunk size (the pipeline will produce exactly 1 chunk).
     fn long_md() -> String {
         let body = "This is a sentence about GAIA. ".repeat(60);
         format!("# Test Document\n\n{body}")
@@ -315,7 +315,7 @@ mod tests {
     fn missing_file_returns_io_error() {
         let result = IngestPipeline::default()
             .from_path("/nonexistent/path/file.md");
-        assert!(matches!(result, Err(IngestError::Io { .. })));
+        assert!(matches!(result, Err(PipelineError::Io { .. })));
     }
 
     #[test]
