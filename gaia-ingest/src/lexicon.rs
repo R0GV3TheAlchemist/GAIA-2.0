@@ -213,13 +213,12 @@ pub fn classify_chunk(signals: &LexiconSignals) -> (LexiconPlane, Option<Lexicon
 ///
 /// | Source | Signal |
 /// |---|---|
-/// | `CanonTablet` | `institutional = true` |
-/// | `SpecDocument` | `institutional = true` |
-/// | `GbifOccurrence`, `GbifSpecies` | `institutional = true` (GBIF = standards body) |
-/// | `Noaa`, `Copernicus`, `SentinelHub` | `institutional = true` (government/ESA) |
-/// | `SensorThings` | `ai_generated = true` (machine sensor) |
-/// | `ManualEntry` | `human_authored = true` |
-/// | `ApiEndpoint` | `ai_generated = true` (machine-generated response) |
+/// | `CanonTablet` | `institutional = true` (GAIA canon / spec) |
+/// | `Gbif` | `institutional = true` (standards body occurrence data) |
+/// | `Noaa`, `Nasa`, `Usgs`, `Copernicus` | `institutional = true` (government / ESA) |
+/// | `SensorThings` | `ai_generated = true` (machine sensor stream) |
+/// | `HomeNode`, `CommunityNode` | `human_authored = true` (community-operated sensor) |
+/// | `InternalDocument` | no signal — stays Bridge unless attributes say otherwise |
 /// | others | no signal |
 ///
 /// Attribute overrides (priority 2) always win over kind/source inference
@@ -248,23 +247,23 @@ pub fn signals_from_chunk(chunk: &DocumentChunk) -> LexiconSignals {
     // Only apply if kind didn't already set a signal.
     if !signals.institutional && !signals.ai_generated && !signals.human_authored {
         match chunk.provenance.source {
-            DataSource::CanonTablet | DataSource::SpecDocument => {
+            DataSource::CanonTablet => {
                 signals.institutional = true;
             }
-            DataSource::GbifOccurrence
-            | DataSource::GbifSpecies
+            DataSource::Gbif
             | DataSource::Noaa
-            | DataSource::Copernicus
-            | DataSource::SentinelHub => {
+            | DataSource::Nasa
+            | DataSource::Usgs
+            | DataSource::Copernicus => {
                 signals.institutional = true;
             }
-            DataSource::SensorThings | DataSource::ApiEndpoint => {
+            DataSource::SensorThings => {
                 signals.ai_generated = true;
             }
-            DataSource::ManualEntry => {
+            DataSource::HomeNode | DataSource::CommunityNode => {
                 signals.human_authored = true;
             }
-            // OsmFeature, S3Artifact, Unknown — no signal; remain Bridge.
+            // InternalDocument, INaturalist, OceanNode, SatelliteCommercial — no signal; remain Bridge.
             _ => {}
         }
     }
@@ -479,7 +478,8 @@ mod tests {
 
     #[test]
     fn signals_spec_document_is_order_institutional() {
-        let chunk = base_chunk(DocumentKind::SpecDocument, DataSource::SpecDocument);
+        // SpecDocument kind + CanonTablet source (no SpecDocument DataSource variant).
+        let chunk = base_chunk(DocumentKind::SpecDocument, DataSource::CanonTablet);
         let s = signals_from_chunk(&chunk);
         assert!(s.institutional);
         assert!(!s.ai_generated);
@@ -487,7 +487,8 @@ mod tests {
 
     #[test]
     fn signals_episode_summary_is_order_ai() {
-        let chunk = base_chunk(DocumentKind::EpisodeSummary, DataSource::ApiEndpoint);
+        // EpisodeSummary kind sets ai_generated regardless of source.
+        let chunk = base_chunk(DocumentKind::EpisodeSummary, DataSource::InternalDocument);
         let s = signals_from_chunk(&chunk);
         assert!(s.ai_generated);
         assert!(!s.institutional);
@@ -495,14 +496,15 @@ mod tests {
 
     #[test]
     fn signals_source_code_is_order_ai() {
-        let chunk = base_chunk(DocumentKind::SourceCode, DataSource::ApiEndpoint);
+        let chunk = base_chunk(DocumentKind::SourceCode, DataSource::InternalDocument);
         let s = signals_from_chunk(&chunk);
         assert!(s.ai_generated);
     }
 
     #[test]
     fn signals_non_english_human_authored_attr() {
-        let mut chunk = base_chunk(DocumentKind::Other, DataSource::ManualEntry);
+        // HomeNode → human_authored via DataSource; language override in chunk.
+        let mut chunk = base_chunk(DocumentKind::Other, DataSource::HomeNode);
         chunk.language = "mi".into();  // Māori
         let s = signals_from_chunk(&chunk);
         assert!(s.human_authored);
@@ -556,7 +558,9 @@ mod tests {
 
     #[test]
     fn classify_doc_chunk_chaos_from_human_authored_attr() {
-        let mut chunk = base_chunk(DocumentKind::ResearchDocument, DataSource::ManualEntry);
+        // ResearchDocument + HomeNode source → human_authored via DataSource,
+        // then attribute confirms it.
+        let mut chunk = base_chunk(DocumentKind::ResearchDocument, DataSource::HomeNode);
         chunk.attributes.insert("human_authored".into(), "true".into());
         classify_document_chunk(&mut chunk);
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Chaos);
@@ -565,7 +569,7 @@ mod tests {
 
     #[test]
     fn classify_doc_chunk_sacred_attr() {
-        let mut chunk = base_chunk(DocumentKind::Other, DataSource::ManualEntry);
+        let mut chunk = base_chunk(DocumentKind::Other, DataSource::HomeNode);
         chunk.attributes.insert("sacred".into(), "true".into());
         classify_document_chunk(&mut chunk);
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Chaos);
@@ -585,7 +589,7 @@ mod tests {
 
     #[test]
     fn classify_doc_chunk_episode_summary_is_order_ai() {
-        let mut chunk = base_chunk(DocumentKind::EpisodeSummary, DataSource::ApiEndpoint);
+        let mut chunk = base_chunk(DocumentKind::EpisodeSummary, DataSource::InternalDocument);
         classify_document_chunk(&mut chunk);
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Order);
         assert_eq!(chunk.lexicon_voice, Some(LexiconVoice::AIVoice));
@@ -602,8 +606,8 @@ mod tests {
 
     #[test]
     fn classify_doc_chunk_unknown_source_stays_bridge() {
-        // Other kind + Unknown source + no attributes → stays Bridge.
-        let mut chunk = base_chunk(DocumentKind::Other, DataSource::Unknown);
+        // Other kind + InternalDocument source + no attributes → stays Bridge.
+        let mut chunk = base_chunk(DocumentKind::Other, DataSource::InternalDocument);
         classify_document_chunk(&mut chunk);
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Bridge);
         assert_eq!(chunk.lexicon_voice, None);
