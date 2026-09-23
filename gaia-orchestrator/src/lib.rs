@@ -49,6 +49,7 @@ pub use trust::{verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use uuid::Uuid;
 
     // -------------------------------------------------------------------------
     // ExecutionGate (InMemoryGate) — control-plane boundary enforcement
@@ -102,17 +103,24 @@ mod tests {
     // TrustAudit — signed intent roundtrip
     // -------------------------------------------------------------------------
 
-    /// Signing an intent and immediately verifying it must succeed.
-    /// This is the minimal roundtrip that proves the signing key and
-    /// verification path are wired together correctly.
+    /// Signing an IntentGraph and immediately verifying it must succeed.
+    /// IntentSigner::sign() expects &IntentGraph (not raw bytes).
+    /// Verification is performed via IntentSigner::verify_detached(&signed).
     #[test]
     fn trust_audit_signed_intent_roundtrip() {
         let signer = IntentSigner::generate();
-        let payload = b"intent:query|user:did:gaia:test|ts:1000";
-        let signed  = signer.sign(payload);
+        let graph = IntentGraph {
+            id: Uuid::nil(),
+            goal: "test goal".into(),
+            constraints: Constraints::default(),
+            sub_intents: vec![],
+            context_cube_ids: vec![],
+            backend: IntentBackend::Stub,
+        };
+        let signed = signer.sign(&graph);
         assert!(
-            TrustAudit::verify(&signed, payload).is_ok(),
-            "valid signed intent must verify successfully"
+            IntentSigner::verify_detached(&signed).is_ok(),
+            "valid signed IntentGraph must verify successfully"
         );
     }
 
