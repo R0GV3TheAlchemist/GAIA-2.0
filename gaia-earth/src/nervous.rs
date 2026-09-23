@@ -30,6 +30,22 @@ pub struct Sample {
     pub quality: QcTier,
 }
 
+/// Parameters for [`NervousFabric::ingest`].
+/// Introduced to satisfy `clippy::too_many_arguments` (limit 7).
+#[derive(Debug, Clone)]
+pub struct IngestParams {
+    pub cell: String,
+    pub system: SystemTwin,
+    pub source: SourceKind,
+    pub value: f64,
+    pub uncertainty: f64,
+    pub unit: String,
+    pub feed: FeedKind,
+    pub provenance: String,
+    pub timestamp_unix: u64,
+    pub quality: QcTier,
+}
+
 #[derive(Debug, Default)]
 pub struct NervousFabric {
     cells: Vec<(String, Vec<Sample>)>,
@@ -40,34 +56,23 @@ impl NervousFabric {
         Self::default()
     }
 
-    pub fn ingest(
-        &mut self,
-        cell: &str,
-        system: SystemTwin,
-        source: SourceKind,
-        value: f64,
-        uncertainty: f64,
-        unit: &str,
-        feed: FeedKind,
-        provenance: &str,
-        timestamp_unix: u64,
-        quality: QcTier,
-    ) -> Result<(), TwinError> {
-        if provenance.trim().is_empty() {
+    pub fn ingest(&mut self, p: IngestParams) -> Result<(), TwinError> {
+        if p.provenance.trim().is_empty() {
             return Err(TwinError::UnlabeledPoint);
         }
-        let observation = Observation::admit(system, source, value, Some(uncertainty), unit)?;
+        let observation =
+            Observation::admit(p.system, p.source, p.value, Some(p.uncertainty), &p.unit)?;
         let sample = Sample {
             observation,
-            feed,
-            provenance: provenance.into(),
-            timestamp_unix,
-            quality,
+            feed: p.feed,
+            provenance: p.provenance,
+            timestamp_unix: p.timestamp_unix,
+            quality: p.quality,
         };
-        if let Some((_, samples)) = self.cells.iter_mut().find(|(id, _)| id == cell) {
+        if let Some((_, samples)) = self.cells.iter_mut().find(|(id, _)| id == &p.cell) {
             samples.push(sample);
         } else {
-            self.cells.push((cell.into(), vec![sample]));
+            self.cells.push((p.cell, vec![sample]));
         }
         Ok(())
     }

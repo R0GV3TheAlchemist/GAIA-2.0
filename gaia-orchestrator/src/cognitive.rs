@@ -27,7 +27,7 @@ use uuid::Uuid;
 
 use crate::{
     dag::{DagNode, Plan, ResourceEstimate},
-    intent::{Compute, Constraints, IntentBackend, IntentGraph, Privacy, SubIntent},
+    intent::{Compute, Constraints, IntentGraph, Privacy, SubIntent},
     mcp::McpRegistry,
     select::pick_agent,
 };
@@ -288,24 +288,33 @@ impl CapabilityMatcher {
     }
 
     fn eacn_match(&self, goal: &str) -> Option<String> {
-        let lower = goal.to_ascii_lowercase();
-        let mut best: Option<(usize, &str)> = None;
+        let goal = goal.to_ascii_lowercase();
+        let mut best: Option<(usize, String)> = None;
+
         for entry in &self.eacn {
             let score = entry
                 .capabilities
                 .iter()
                 .chain(entry.roles.iter())
-                .filter(|token| lower.contains(token.to_ascii_lowercase().as_str()))
+                .filter(|token: &&String| {
+                    goal.contains(token.as_str().to_ascii_lowercase().as_str())
+                })
                 .count();
-            if score > 0 {
-                match best {
-                    None => best = Some((score, &entry.name)),
-                    Some((prev, _)) if score > prev => best = Some((score, &entry.name)),
-                    _ => {}
+
+            if score == 0 {
+                continue;
+            }
+
+            match &best {
+                None => best = Some((score, entry.name.clone())),
+                Some((previous, _)) if score > *previous => {
+                    best = Some((score, entry.name.clone()));
                 }
+                _ => {}
             }
         }
-        best.map(|(_, name)| name.to_string())
+
+        best.map(|(_, name)| name)
     }
 }
 
@@ -509,7 +518,7 @@ impl FailureRecovery {
         let mut actions = Vec::new();
         let mut skip_count = 0usize;
 
-        for (&id, _reason) in failed_nodes {
+        for &id in failed_nodes.keys() {
             let node = plan
                 .nodes
                 .iter()
@@ -569,19 +578,11 @@ pub struct PlanOutcome {
 /// In production this will feed a local fine-tuning loop or a retrieval store.
 /// For now it accumulates `PlanOutcome` records in memory and exposes a
 /// `score` function so the planner can rank historical agent→goal pairings.
+#[derive(Default)]
 pub struct AdaptationEngine {
     outcomes: Vec<PlanOutcome>,
     /// Tracks success rate per agent name.
     agent_scores: HashMap<String, (u32, u32)>, // (successes, total)
-}
-
-impl Default for AdaptationEngine {
-    fn default() -> Self {
-        Self {
-            outcomes: Vec::new(),
-            agent_scores: HashMap::new(),
-        }
-    }
 }
 
 impl AdaptationEngine {

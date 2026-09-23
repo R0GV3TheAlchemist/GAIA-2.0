@@ -3,11 +3,11 @@ use axum::{
     extract::State,
     http::StatusCode,
     response::{
-        IntoResponse, Response,
+        IntoResponse,
         sse::{Event, Sse},
     },
 };
-use futures::stream::{self, StreamExt};
+use futures::stream;
 use serde::{Deserialize, Serialize};
 use crate::state::AppState;
 

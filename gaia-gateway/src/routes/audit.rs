@@ -6,7 +6,7 @@ use axum::{
         sse::{Event, Sse},
     },
 };
-use futures::stream::{self, StreamExt};
+use futures::stream;
 use crate::state::AppState;
 
 pub async fn get_audit(

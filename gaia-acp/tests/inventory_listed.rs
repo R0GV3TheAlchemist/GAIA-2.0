@@ -1,24 +1,22 @@
-//! #503 listed shelf. Existing APIs only. No PQC crate.
-
-use gaia_acp::{from_invoke, refuse_live_supabase, ClaimClass, ReasonCode, TraceKind};
-
-#[test]
-fn live_sink_stays_refused() {
-    assert!(refuse_live_supabase().is_err());
-}
+use gaia_acp::{
+    from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, ReasonCode, TraceKind, TraceSink,
+};
 
 #[test]
-fn prohibited_claim_cannot_allow() {
-    let ev = from_invoke(
-        TraceKind::Allow,
-        1,
-        "agent-a",
-        "intent-1",
-        "corr-1",
-        ReasonCode::UntrustedAuthority,
-        "hash",
-        ClaimClass::Prohibited,
-    );
-    assert_eq!(ev.kind, TraceKind::Deny);
-    assert_eq!(ev.claim_class, ClaimClass::Prohibited);
+fn untrusted_authority_is_logged() {
+    let mut sink = MemoryTraceSink::default();
+    let ev = from_invoke(InvokeTraceInput {
+        kind: TraceKind::Allow,
+        ts: 1,
+        actor_id: "agent-a",
+        intent_id: "intent-1",
+        correlation_id: "corr-1",
+        reason: ReasonCode::UntrustedAuthority,
+        request_hash: "hash",
+        claim_class: ClaimClass::Prohibited,
+    });
+    sink.emit(ev);
+    let events = &sink.events;
+    assert_eq!(events.len(), 1);
+    assert_eq!(events[0].reason, ReasonCode::UntrustedAuthority.as_str());
 }

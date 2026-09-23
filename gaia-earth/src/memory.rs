@@ -33,6 +33,19 @@ pub struct CubeSet {
     pub models: Vec<ModelOutput>,
 }
 
+/// Parameters for [`PlanetaryMemory::store`].
+/// Introduced to satisfy `clippy::too_many_arguments` (limit 7).
+#[derive(Debug, Clone)]
+pub struct MemStoreParams {
+    pub place: String,
+    pub timestamp_unix: u64,
+    pub system: SystemTwin,
+    pub source: SourceKind,
+    pub value: f64,
+    pub uncertainty: f64,
+    pub unit: String,
+}
+
 #[derive(Debug, Default)]
 pub struct PlanetaryMemory {
     cubes: Vec<PlanetaryMemCube>,
@@ -43,23 +56,15 @@ impl PlanetaryMemory {
         Self::default()
     }
 
-    pub fn store(
-        &mut self,
-        place: &str,
-        timestamp_unix: u64,
-        system: SystemTwin,
-        source: SourceKind,
-        value: f64,
-        uncertainty: f64,
-        unit: &str,
-    ) -> Result<PlanetaryMemCube, TwinError> {
-        let observation = Observation::admit(system, source, value, Some(uncertainty), unit)?;
-        let fingerprint = fingerprint(place, timestamp_unix, value, uncertainty);
+    pub fn store(&mut self, p: MemStoreParams) -> Result<PlanetaryMemCube, TwinError> {
+        let observation =
+            Observation::admit(p.system, p.source, p.value, Some(p.uncertainty), &p.unit)?;
+        let fp = fingerprint(&p.place, p.timestamp_unix, p.value, p.uncertainty);
         let cube = PlanetaryMemCube {
-            place: place.into(),
-            timestamp_unix,
+            place: p.place,
+            timestamp_unix: p.timestamp_unix,
             observation,
-            fingerprint,
+            fingerprint: fp,
             signed: true,
         };
         self.cubes.push(cube.clone());

@@ -1,18 +1,18 @@
-use gaia_earth::{PlanetaryMemory, SourceKind, SystemTwin};
+use gaia_earth::{MemStoreParams, PlanetaryMemory, SourceKind, SystemTwin};
 
 #[test]
 fn query_returns_signed_cube_and_synthetic_models() {
     let mut memory = PlanetaryMemory::new();
     memory
-        .store(
-            "Austin",
-            1_725_000_000,
-            SystemTwin::Atmosphere,
-            SourceKind::Measured,
-            31.2,
-            0.4,
-            "degC",
-        )
+        .store(MemStoreParams {
+            place: "Austin".into(),
+            timestamp_unix: 1_725_000_000,
+            system: SystemTwin::Atmosphere,
+            source: SourceKind::Measured,
+            value: 31.2,
+            uncertainty: 0.4,
+            unit: "degC".into(),
+        })
         .unwrap();
     let set = memory.query("Austin", 1_725_000_000).unwrap();
     assert!(set.cubes[0].signed);

@@ -92,29 +92,37 @@ pub fn refuse_live_supabase() -> Result<(), &'static str> {
     Err("trace sink is local-only; no live Supabase write")
 }
 
+/// Structured input for [`from_invoke`].
+///
+/// Replaces the previous 8-argument flat signature. The trace event's input
+/// domain was already a coherent domain object; this type formally models it.
+/// Consistent with `HashInput` / `AuditPushInput` in `audit.rs` and
+/// `PolicyEvaluationContext` in `policy.rs`.
+pub struct InvokeTraceInput<'a> {
+    pub kind: TraceKind,
+    pub ts: u64,
+    pub actor_id: &'a str,
+    pub intent_id: &'a str,
+    pub correlation_id: &'a str,
+    pub reason: ReasonCode,
+    pub request_hash: &'a str,
+    pub claim_class: ClaimClass,
+}
+
 /// Prohibited claims cannot be emitted as an allow (#375).
-pub fn from_invoke(
-    kind: TraceKind,
-    ts: u64,
-    actor_id: &str,
-    intent_id: &str,
-    correlation_id: &str,
-    reason: ReasonCode,
-    request_hash: &str,
-    claim_class: ClaimClass,
-) -> TraceEvent {
-    let kind = if matches!(kind, TraceKind::Allow) && matches!(claim_class, ClaimClass::Prohibited)
-    {
-        TraceKind::Deny
-    } else {
-        kind
-    };
+pub fn from_invoke(input: InvokeTraceInput<'_>) -> TraceEvent {
+    let kind =
+        if matches!(input.kind, TraceKind::Allow) && matches!(input.claim_class, ClaimClass::Prohibited) {
+            TraceKind::Deny
+        } else {
+            input.kind
+        };
     TraceEvent {
         kind,
-        ts,
-        actor_id: actor_id.into(),
-        intent_id: intent_id.into(),
-        correlation_id: correlation_id.into(),
+        ts: input.ts,
+        actor_id: input.actor_id.into(),
+        intent_id: input.intent_id.into(),
+        correlation_id: input.correlation_id.into(),
         outcome: match kind {
             TraceKind::Allow => "allowed",
             TraceKind::Deny => "denied",
@@ -124,8 +132,8 @@ pub fn from_invoke(
             TraceKind::Kill => "killed",
         }
         .into(),
-        reason: reason.as_str().into(),
-        request_hash: request_hash.into(),
-        claim_class,
+        reason: input.reason.as_str().into(),
+        request_hash: input.request_hash.into(),
+        claim_class: input.claim_class,
     }
 }

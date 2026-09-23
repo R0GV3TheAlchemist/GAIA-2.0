@@ -23,7 +23,7 @@ impl AuditLog {
         let prev = self
             .records
             .last()
-            .map(|r| hash_record(r))
+            .map(hash_record)
             .unwrap_or_else(|| "genesis".into());
         let payload = format!("{prev}|{op}|{detail}|{}", principal.did());
         let payload_hash = sha256_hex(payload.as_bytes());
@@ -49,6 +49,10 @@ impl AuditLog {
 
     pub fn len(&self) -> usize {
         self.records.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.records.is_empty()
     }
 
     pub fn chain_ok(&self) -> bool {

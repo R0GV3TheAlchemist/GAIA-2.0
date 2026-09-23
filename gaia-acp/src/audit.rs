@@ -88,42 +88,59 @@ impl ActionReceipt {
     }
 
     pub fn recompute_hash(&self) -> String {
-        hash_fields(
-            &self.previous_hash,
-            self.sequence,
-            self.event,
-            &self.agent_id,
-            &self.tool,
-            &self.request_hash,
-            &self.reason,
-            &self.outcome,
-            &self.action_class,
-        )
+        hash_fields(HashInput {
+            previous_hash: &self.previous_hash,
+            sequence: self.sequence,
+            event: self.event,
+            agent_id: &self.agent_id,
+            tool: &self.tool,
+            request_hash: &self.request_hash,
+            reason: &self.reason,
+            outcome: &self.outcome,
+            action_class: &self.action_class,
+        })
     }
 }
 
-fn hash_fields(
-    previous_hash: &str,
+struct HashInput<'a> {
+    previous_hash: &'a str,
     sequence: u64,
     event: PlaneEvent,
-    agent_id: &str,
-    tool: &str,
-    request_hash: &str,
-    reason: &str,
-    outcome: &str,
-    action_class: &str,
-) -> String {
+    agent_id: &'a str,
+    tool: &'a str,
+    request_hash: &'a str,
+    reason: &'a str,
+    outcome: &'a str,
+    action_class: &'a str,
+}
+
+fn hash_fields(input: HashInput<'_>) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(previous_hash.as_bytes());
-    hasher.update(sequence.to_le_bytes());
-    hasher.update(format!("{event:?}").as_bytes());
-    hasher.update(agent_id.as_bytes());
-    hasher.update(tool.as_bytes());
-    hasher.update(request_hash.as_bytes());
-    hasher.update(reason.as_bytes());
-    hasher.update(outcome.as_bytes());
-    hasher.update(action_class.as_bytes());
+    hasher.update(input.previous_hash.as_bytes());
+    hasher.update(input.sequence.to_le_bytes());
+    hasher.update(format!("{:?}", input.event).as_bytes());
+    hasher.update(input.agent_id.as_bytes());
+    hasher.update(input.tool.as_bytes());
+    hasher.update(input.request_hash.as_bytes());
+    hasher.update(input.reason.as_bytes());
+    hasher.update(input.outcome.as_bytes());
+    hasher.update(input.action_class.as_bytes());
     hex::encode(hasher.finalize())
+}
+
+/// Structured input for [`AuditChain::push`].
+///
+/// Replaces the previous 7-argument flat signature. Consistent with the
+/// `HashInput` pattern in this file and `MemStoreParams` / `IngestParams`
+/// in `gaia-earth`.
+pub struct AuditPushInput<'a> {
+    pub event: PlaneEvent,
+    pub agent_id: &'a str,
+    pub tool: &'a str,
+    pub action_class: &'a str,
+    pub request_hash: &'a str,
+    pub reason: ReasonCode,
+    pub outcome: &'a str,
 }
 
 #[derive(Debug, Default)]
@@ -136,6 +153,10 @@ impl AuditChain {
         self.receipts.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.receipts.is_empty()
+    }
+
     pub fn last_hash(&self) -> String {
         self.receipts
             .last()
@@ -143,41 +164,32 @@ impl AuditChain {
             .unwrap_or_else(|| "0".into())
     }
 
-    pub fn push(
-        &mut self,
-        event: PlaneEvent,
-        agent_id: &str,
-        tool: &str,
-        action_class: &str,
-        request_hash: &str,
-        reason: ReasonCode,
-        outcome: &str,
-    ) -> ActionReceipt {
+    pub fn push(&mut self, input: AuditPushInput<'_>) -> ActionReceipt {
         let previous_hash = self.last_hash();
         let sequence = self.receipts.len() as u64 + 1;
-        let reason_s = reason.as_str();
-        let hash = hash_fields(
-            &previous_hash,
+        let reason_s = input.reason.as_str();
+        let hash = hash_fields(HashInput {
+            previous_hash: &previous_hash,
             sequence,
-            event,
-            agent_id,
-            tool,
-            request_hash,
-            reason_s,
-            outcome,
-            action_class,
-        );
+            event: input.event,
+            agent_id: input.agent_id,
+            tool: input.tool,
+            request_hash: input.request_hash,
+            reason: reason_s,
+            outcome: input.outcome,
+            action_class: input.action_class,
+        });
         let receipt = ActionReceipt {
             sequence,
-            event,
+            event: input.event,
             previous_hash,
             hash,
-            agent_id: agent_id.into(),
-            tool: tool.into(),
-            action_class: action_class.into(),
-            request_hash: request_hash.into(),
+            agent_id: input.agent_id.into(),
+            tool: input.tool.into(),
+            action_class: input.action_class.into(),
+            request_hash: input.request_hash.into(),
             reason: reason_s.into(),
-            outcome: outcome.into(),
+            outcome: input.outcome.into(),
             policy_version: crate::policy::POLICY_VERSION.into(),
         };
         self.receipts.push(receipt.clone());

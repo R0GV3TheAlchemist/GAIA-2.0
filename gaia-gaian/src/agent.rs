@@ -23,6 +23,12 @@ pub struct Agent {
     pub revoked: bool,
 }
 
+impl Default for Agent {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Agent {
     pub fn new() -> Self {
         Self {

@@ -2,8 +2,9 @@
 
 use crate::UkdError;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CollectionState {
+    #[default]
     Sealed,
     CommunityGoverned,
     PublicWithGrant,
@@ -21,12 +22,6 @@ pub struct Agreement {
 pub struct TekGraph {
     pub state: CollectionState,
     replicas: Vec<String>,
-}
-
-impl Default for CollectionState {
-    fn default() -> Self {
-        Self::Sealed
-    }
 }
 
 impl TekGraph {

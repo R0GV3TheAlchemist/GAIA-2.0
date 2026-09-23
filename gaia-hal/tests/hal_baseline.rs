@@ -8,7 +8,6 @@
 
 use gaia_hal::{
     cpu::{CpuArch, CpuInfo},
-    memory::MemoryMap,
     platform::{HalTier, PlatformFeatures},
     sensors::{SensorBus, SensorKind, inject_mock_events},
     storage::{BlockDevice, FileBackedDevice},

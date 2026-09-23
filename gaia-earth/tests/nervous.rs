@@ -1,21 +1,21 @@
-use gaia_earth::{FeedKind, NervousFabric, QcTier, SourceKind, SystemTwin, TwinError};
+use gaia_earth::{FeedKind, IngestParams, NervousFabric, QcTier, SourceKind, SystemTwin, TwinError};
 
 #[test]
 fn heterogeneous_feeds_land_with_full_metadata() {
     let mut fabric = NervousFabric::new();
     fabric
-        .ingest(
-            "cell-austin",
-            SystemTwin::Atmosphere,
-            SourceKind::Measured,
-            31.2,
-            0.4,
-            "degC",
-            FeedKind::InSitu,
-            "fixture ground station",
-            1_725_000_000,
-            QcTier::L2Calibrated,
-        )
+        .ingest(IngestParams {
+            cell: "cell-austin".into(),
+            system: SystemTwin::Atmosphere,
+            source: SourceKind::Measured,
+            value: 31.2,
+            uncertainty: 0.4,
+            unit: "degC".into(),
+            feed: FeedKind::InSitu,
+            provenance: "fixture ground station".into(),
+            timestamp_unix: 1_725_000_000,
+            quality: QcTier::L2Calibrated,
+        })
         .unwrap();
     let samples = fabric.read_cell("cell-austin").unwrap();
     assert_eq!(samples[0].observation.uncertainty, 0.4);

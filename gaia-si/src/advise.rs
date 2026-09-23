@@ -3,10 +3,8 @@
 use crate::SiError;
 
 pub fn advise(action: &str, ticket: bool) -> Result<&'static str, SiError> {
-    if action.contains("dam") || action.contains("grid") {
-        if !ticket {
-            return Err(SiError::NeedsTicket);
-        }
+    if (action.contains("dam") || action.contains("grid")) && !ticket {
+        return Err(SiError::NeedsTicket);
     }
     if action.contains("conscious") {
         return Err(SiError::ConsciousMarketing);

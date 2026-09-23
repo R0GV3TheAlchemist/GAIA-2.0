@@ -1,10 +1,10 @@
 use crate::adapter::{FakeAdapter, RecordingAdapter};
 use crate::approval::HumanApprovalReceipt;
-use crate::audit::{ActionReceipt, AuditChain, PlaneEvent, PlaneState};
+use crate::audit::{ActionReceipt, AuditChain, AuditPushInput, PlaneEvent, PlaneState};
 use crate::autonomy::{gate, AutonomyLevel};
 use crate::manifest::{CapabilityManifest, RevocationList};
-use crate::policy::{PolicyDecision, PolicyEngine};
-use crate::trace::{from_invoke, ClaimClass, MemoryTraceSink, TraceKind, TraceSink};
+use crate::policy::{PolicyDecision, PolicyEngine, PolicyEvaluationContext};
+use crate::trace::{from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, TraceKind, TraceSink};
 use crate::types::{ProposedAction, ReasonCode, SignedIntent, UntrustedContent};
 
 #[derive(Debug)]
@@ -56,16 +56,17 @@ impl ControlPlane {
     }
 
     fn emit(&mut self, kind: TraceKind, agent_id: &str, reason: ReasonCode, request_hash: &str) {
-        let ev = from_invoke(
+        let intent_id = self.intent.intent_id.clone();
+        let ev = from_invoke(InvokeTraceInput {
             kind,
-            self.now,
-            agent_id,
-            &self.intent.intent_id.clone(),
-            &self.intent.intent_id.clone(),
+            ts: self.now,
+            actor_id: agent_id,
+            intent_id: &intent_id,
+            correlation_id: &intent_id,
             reason,
             request_hash,
-            ClaimClass::Established,
-        );
+            claim_class: ClaimClass::Established,
+        });
         self.traces.emit(ev);
     }
 
@@ -83,29 +84,29 @@ impl ControlPlane {
             PlaneState::Killed => PlaneEvent::ServerKilled,
             PlaneState::Unregistered => PlaneEvent::AnomalyDetected,
         };
-        self.audit.push(
-            ev,
+        self.audit.push(AuditPushInput {
+            event: ev,
             agent_id,
-            "-",
-            "lifecycle",
-            "0",
-            ReasonCode::Allow,
-            "state",
-        );
+            tool: "-",
+            action_class: "lifecycle",
+            request_hash: "0",
+            reason: ReasonCode::Allow,
+            outcome: "state",
+        });
         Ok(())
     }
 
     pub fn revoke(&mut self, id: &str) {
         self.revoked.revoke(id);
-        self.audit.push(
-            PlaneEvent::CredentialRevoked,
-            id,
-            "-",
-            "revoke",
-            "0",
-            ReasonCode::Revoked,
-            "revoked",
-        );
+        self.audit.push(AuditPushInput {
+            event: PlaneEvent::CredentialRevoked,
+            agent_id: id,
+            tool: "-",
+            action_class: "revoke",
+            request_hash: "0",
+            reason: ReasonCode::Revoked,
+            outcome: "revoked",
+        });
     }
 
     /// Owner mid-task pause. Next invoke is denied until resume. Not a kill.
@@ -124,15 +125,15 @@ impl ControlPlane {
     pub fn kill(&mut self, agent_id: &str) {
         self.emergency_stop = true;
         let _ = self.transition(PlaneState::Killed, agent_id);
-        self.audit.push(
-            PlaneEvent::EmergencyStop,
+        self.audit.push(AuditPushInput {
+            event: PlaneEvent::EmergencyStop,
             agent_id,
-            "-",
-            "stop",
-            "0",
-            ReasonCode::EmergencyStop,
-            "killed",
-        );
+            tool: "-",
+            action_class: "stop",
+            request_hash: "0",
+            reason: ReasonCode::EmergencyStop,
+            outcome: "killed",
+        });
         self.emit(TraceKind::Kill, agent_id, ReasonCode::EmergencyStop, "0");
     }
 
@@ -155,15 +156,15 @@ impl ControlPlane {
         untrusted: Option<&UntrustedContent>,
         adapter: &mut A,
     ) -> InvokeResult {
-        self.audit.push(
-            PlaneEvent::ToolProposed,
-            &action.agent_id,
-            &action.tool,
-            format!("{:?}", action.action_class).as_str(),
-            &action.request_hash(),
-            ReasonCode::Allow,
-            "proposed",
-        );
+        self.audit.push(AuditPushInput {
+            event: PlaneEvent::ToolProposed,
+            agent_id: &action.agent_id,
+            tool: &action.tool,
+            action_class: &format!("{:?}", action.action_class),
+            request_hash: &action.request_hash(),
+            reason: ReasonCode::Allow,
+            outcome: "proposed",
+        });
 
         if !self.state.allows_calls() {
             let receipt = self.deny(action, ReasonCode::StateInvalid);
@@ -185,26 +186,26 @@ impl ControlPlane {
             };
         }
 
-        let decision = PolicyEngine::evaluate(
-            self.now,
-            &self.intent,
+        let decision = PolicyEngine::evaluate(PolicyEvaluationContext {
+            now: self.now,
+            intent: &self.intent,
             manifest,
             action,
             approval,
-            &self.revoked,
-            self.emergency_stop,
-            &self.consumed_approvals,
+            revoked: &self.revoked,
+            emergency_stop: self.emergency_stop,
+            consumed_approvals: &self.consumed_approvals,
             untrusted,
-        );
-        self.audit.push(
-            PlaneEvent::PolicyEvaluated,
-            &action.agent_id,
-            &action.tool,
-            format!("{:?}", action.action_class).as_str(),
-            &action.request_hash(),
-            decision.reason(),
-            "evaluated",
-        );
+        });
+        self.audit.push(AuditPushInput {
+            event: PlaneEvent::PolicyEvaluated,
+            agent_id: &action.agent_id,
+            tool: &action.tool,
+            action_class: &format!("{:?}", action.action_class),
+            request_hash: &action.request_hash(),
+            reason: decision.reason(),
+            outcome: "evaluated",
+        });
 
         match decision {
             PolicyDecision::Allow { reason } => {
@@ -216,19 +217,21 @@ impl ControlPlane {
                 manifest.actions_used = manifest.actions_used.saturating_add(1);
                 self.deny_streak = 0;
                 let executed = adapter.execute(action).is_ok();
-                let receipt = self.audit.push(
-                    if executed {
+                let action_class_s = format!("{:?}", action.action_class);
+                let request_hash_s = action.request_hash();
+                let receipt = self.audit.push(AuditPushInput {
+                    event: if executed {
                         PlaneEvent::ExecutionCompleted
                     } else {
                         PlaneEvent::ExecutionFailed
                     },
-                    &action.agent_id,
-                    &action.tool,
-                    format!("{:?}", action.action_class).as_str(),
-                    &action.request_hash(),
+                    agent_id: &action.agent_id,
+                    tool: &action.tool,
+                    action_class: &action_class_s,
+                    request_hash: &request_hash_s,
                     reason,
-                    if executed { "executed" } else { "adapter-fail" },
-                );
+                    outcome: if executed { "executed" } else { "adapter-fail" },
+                });
                 self.emit(
                     if executed {
                         TraceKind::Allow
@@ -260,30 +263,32 @@ impl ControlPlane {
     fn deny(&mut self, action: &ProposedAction, reason: ReasonCode) -> ActionReceipt {
         self.deny_streak += 1;
         if self.deny_streak >= 5 {
-            self.audit.push(
-                PlaneEvent::AnomalyDetected,
-                &action.agent_id,
-                &action.tool,
-                "anomaly",
-                &action.request_hash(),
+            self.audit.push(AuditPushInput {
+                event: PlaneEvent::AnomalyDetected,
+                agent_id: &action.agent_id,
+                tool: &action.tool,
+                action_class: "anomaly",
+                request_hash: &action.request_hash(),
                 reason,
-                "repeated-deny",
-            );
+                outcome: "repeated-deny",
+            });
         }
         let ev = if matches!(reason, ReasonCode::EgressDenied | ReasonCode::SsrfDenied) {
             PlaneEvent::EgressDenied
         } else {
             PlaneEvent::CallDenied
         };
-        let receipt = self.audit.push(
-            ev,
-            &action.agent_id,
-            &action.tool,
-            format!("{:?}", action.action_class).as_str(),
-            &action.request_hash(),
+        let request_hash_s = action.request_hash();
+        let action_class_s = format!("{:?}", action.action_class);
+        let receipt = self.audit.push(AuditPushInput {
+            event: ev,
+            agent_id: &action.agent_id,
+            tool: &action.tool,
+            action_class: &action_class_s,
+            request_hash: &request_hash_s,
             reason,
-            "denied",
-        );
+            outcome: "denied",
+        });
         let kind = if matches!(reason, ReasonCode::ApprovalReplay) {
             TraceKind::Replay
         } else {

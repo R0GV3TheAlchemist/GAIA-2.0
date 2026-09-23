@@ -31,29 +31,24 @@ use uuid::Uuid;
 use crate::{
     audit::AuditLog,
     execution::{
-        dag::{Task, TaskDAG},
-        error::{
-            ExecutionError,
-            GAIA_AUDIT_FAILURE,
-            GAIA_INTENT_SCHEMA_INVALID,
-            GAIA_INTENT_SIGNATURE_REQUIRED,
-        },
+        dag::Task,
+        error::ExecutionError,
         metrics::IntentSpan,
     },
     identity::{verify, sha256_hex, Principal},
     planner::{
-        decompose::{Planner, SubGoal},
+        decompose::Planner,
         replan::Replanner,
     },
     scheduler::{
-        allocate::{ResourceQuota, Scheduler},
+        allocate::Scheduler,
         select::AgentRegistry,
     },
 };
 
 use gaia_memos::{CubeType, MemCube, MemOs};
 
-// ── Intent ───────────────────────────────────────────────────────────────────
+// ── Intent ─────────────────────────────────────────────────────────────
 
 /// Schema version 1.0 signed intent (JSON-serialisable).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,7 +139,7 @@ impl Intent {
     }
 }
 
-// ── ExecutionOutcome ─────────────────────────────────────────────────────────
+// ── ExecutionOutcome ─────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Outcome {
@@ -166,7 +161,7 @@ pub struct ExecutionResult {
     pub total_ms:     u64,
 }
 
-// ── ExecutionEngine ──────────────────────────────────────────────────────────
+// ── ExecutionEngine ──────────────────────────────────────────────
 
 /// Wasmtime 46 + WASI 0.3 twelve-stage intent execution pipeline.
 pub struct ExecutionEngine {
@@ -199,18 +194,18 @@ impl ExecutionEngine {
     ) -> Result<ExecutionResult, ExecutionError> {
         let mut span = IntentSpan::new();
 
-        // ── Stage 1: Validate ────────────────────────────────────────────────
+        // ── Stage 1: Validate ──────────────────────────────────────
         let s1 = crate::execution::metrics::StageSpan::begin(1);
         intent.verify_signature()?;
         intent.validate_schema()?;
         span.record_stage(1, s1.finish());
 
-        // ── Stage 2: Decompose ───────────────────────────────────────────────
+        // ── Stage 2: Decompose ─────────────────────────────────────
         let s2 = crate::execution::metrics::StageSpan::begin(2);
         let subgoals = self.planner.decompose(&intent);
         span.record_stage(2, s2.finish());
 
-        // ── Stage 3: Plan (produces TaskDAG) ─────────────────────────────────
+        // ── Stage 3: Plan (produces TaskDAG) ─────────────────────────
         let s3 = crate::execution::metrics::StageSpan::begin(3);
         let dag = self.planner.plan(&subgoals);
         span.record_stage(3, s3.finish());
@@ -257,7 +252,7 @@ impl ExecutionEngine {
         let task_id = task.id;
         let mut stage_ms = [0u64; 12];
 
-        // ── Stage 4: Discover ────────────────────────────────────────────────
+        // ── Stage 4: Discover ──────────────────────────────────────
         let s4 = crate::execution::metrics::StageSpan::begin(4);
         let candidates = self.registry.find(&task.capability);
         stage_ms[3] = s4.finish();
@@ -273,12 +268,12 @@ impl ExecutionEngine {
             };
         }
 
-        // ── Stage 5: Select ──────────────────────────────────────────────────
+        // ── Stage 5: Select ────────────────────────────────────────
         let s5 = crate::execution::metrics::StageSpan::begin(5);
         let agent = self.registry.select(candidates);
         stage_ms[4] = s5.finish();
 
-        // ── Stage 6: Policy (ACP gate) ───────────────────────────────────────
+        // ── Stage 6: Policy (ACP gate) ───────────────────────────────
         let s6 = crate::execution::metrics::StageSpan::begin(6);
         let policy_ok = agent.capabilities.contains(&task.capability);
         stage_ms[5] = s6.finish();
@@ -294,7 +289,7 @@ impl ExecutionEngine {
             };
         }
 
-        // ── Stage 7: Allocate ────────────────────────────────────────────────
+        // ── Stage 7: Allocate ──────────────────────────────────────
         let s7 = crate::execution::metrics::StageSpan::begin(7);
         let _quota = self.scheduler.allocate(&task);
         stage_ms[6] = s7.finish();
@@ -306,12 +301,12 @@ impl ExecutionEngine {
         };
         stage_ms[7] = s8.finish();
 
-        // ── Stage 9: Observe ─────────────────────────────────────────────────
+        // ── Stage 9: Observe ───────────────────────────────────────
         let s9 = crate::execution::metrics::StageSpan::begin(9);
         // TODO(#734): emit telemetry span for outcome
         stage_ms[8] = s9.finish();
 
-        // ── Stage 10: Adapt (re-plan on failure) ─────────────────────────────
+        // ── Stage 10: Adapt (re-plan on failure) ─────────────────────────
         let s10 = crate::execution::metrics::StageSpan::begin(10);
         if let Outcome::Failed { ref reason } = outcome {
             match self.replanner.fallback(&task, reason) {
@@ -335,12 +330,12 @@ impl ExecutionEngine {
         }
         stage_ms[9] = s10.finish();
 
-        // ── Stage 11: Audit ──────────────────────────────────────────────────
+        // ── Stage 11: Audit ────────────────────────────────────────
         let s11 = crate::execution::metrics::StageSpan::begin(11);
         self.write_audit(intent, &task, "success");
         stage_ms[10] = s11.finish();
 
-        // ── Stage 12: Memory update ──────────────────────────────────────────
+        // ── Stage 12: Memory update ────────────────────────────────
         let s12 = crate::execution::metrics::StageSpan::begin(12);
         let output_str = match &outcome {
             Outcome::Success { output } => output.clone(),
@@ -348,7 +343,7 @@ impl ExecutionEngine {
         };
         let cube = MemCube::new(
             CubeType::Episodic,
-            &format!("intent:{}:task:{}:{}", intent.id, task_id, output_str),
+            format!("intent:{}:task:{}:{}", intent.id, task_id, output_str),
             "execution-engine",
         );
         self.memory.put(cube);

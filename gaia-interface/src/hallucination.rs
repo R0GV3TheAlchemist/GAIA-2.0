@@ -5,10 +5,10 @@
 
 use gaia_aikd::{
     hallucination_warning, propagate_uncertainty, tier_floor, uncertainty_band,
-    AikdError, HallucinationClass, HallucinationWarning, UncertaintyBand,
+    AikdError, HallucinationClass,
 };
 
-// ── Uncertainty band rendering ───────────────────────────────
+// ── Uncertainty band rendering ─────────────────────────────────
 
 /// Render the Phase 1 uncertainty band as a plain-text line.
 /// Callers MUST NOT present this as a measured or calibrated score.
@@ -45,7 +45,7 @@ pub fn render_propagated_band(tier: u8) -> Result<String, AikdError> {
     ))
 }
 
-// ── Tier floor guard ───────────────────────────────────────
+// ── Tier floor guard ────────────────────────────────────────────
 
 /// Named guard over `tier_floor`. Returns a user-facing error string on refusal.
 pub fn guard_tier(tier: u8) -> Result<u8, String> {
@@ -59,7 +59,7 @@ pub fn guard_tier(tier: u8) -> Result<u8, String> {
     }
 }
 
-// ── Hallucination warning rendering ─────────────────────────
+// ── Hallucination warning rendering ─────────────────────────────
 
 /// Render a hallucination warning as a plain-text line.
 ///
@@ -95,7 +95,7 @@ pub fn render_hallucination_warning_html(
     ))
 }
 
-// ── CannotKnow hard-floor surface ────────────────────────────
+// ── CannotKnow hard-floor surface ──────────────────────────────
 
 /// Named hard-floor guard. Returns a user-facing refusal when the question
 /// is empty or otherwise triggers `CannotKnow`.
@@ -106,7 +106,7 @@ pub fn guard_cannot_know(question: &str) -> Result<(), String> {
     Ok(())
 }
 
-// ── helpers ──────────────────────────────────────────────
+// ── helpers ─────────────────────────────────────────────────
 
 fn escape(value: &str) -> String {
     value
