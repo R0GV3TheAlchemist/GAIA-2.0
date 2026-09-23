@@ -1,5 +1,7 @@
 # docs/canon/
 
+> Proof: `PROOF-CANON-GOV-README-001`
+
 This directory is the **meta-canon** — the governance layer that defines how
 GAIA's Hermetic Tablet Canon is written, sealed, amended, and retired.
 

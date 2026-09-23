@@ -1,5 +1,7 @@
 # GAIA Element Ontology
 
+> Proof: `PROOF-CANON-GOV-ELEMENTS-001`
+
 **Canon document.** This file defines the complete set of valid values for the
 `Governing Element` field in any GAIA Hermetic Tablet. It is the authoritative
 reference for issue #808 (element field audit) and #828 (element field

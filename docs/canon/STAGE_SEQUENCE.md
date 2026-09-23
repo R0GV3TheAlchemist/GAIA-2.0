@@ -1,5 +1,7 @@
 # GAIA Alchemical Stage Sequence
 
+> Proof: `PROOF-CANON-GOV-STAGES-001`
+
 **Canon document.** This file defines the canonical sequence of alchemical
 stages that form valid values for the `Governing Stage` field in any GAIA
 Hermetic Tablet. It is the authoritative reference for issue #809 (stage field

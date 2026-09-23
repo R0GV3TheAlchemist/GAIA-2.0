@@ -1,5 +1,7 @@
 # Sealing Ceremony
 
+> Proof: `PROOF-CANON-GOV-SEALING-001`
+
 **Canon document.** This file defines the formal process by which a new GAIA
 Hermetic Tablet is sealed. A tablet that has not completed this ceremony is a
 **draft**. Only a sealed tablet is binding canon.

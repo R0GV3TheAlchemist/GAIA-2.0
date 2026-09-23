@@ -1,5 +1,7 @@
 # Amendment Protocol
 
+> Proof: `PROOF-CANON-GOV-AMENDMENT-001`
+
 **Canon document.** This file defines how a sealed GAIA Hermetic Tablet may
 be amended. The binding nature of a sealed tablet is preserved by ensuring
 that every change is versioned, justified, and traceable.
