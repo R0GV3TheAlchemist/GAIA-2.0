@@ -117,7 +117,7 @@ mod tests {
     use super::*;
     use crate::{
         document::{AccessTier, ConfidenceTier, DocumentChunk, DocumentKind},
-        lexicon::{LexiconPlane, LexiconVoice},
+        lexicon::LexiconPlane,
         provenance::ProvenanceReceipt,
         schema::DataSource,
     };
@@ -135,14 +135,14 @@ mod tests {
             kind:            DocumentKind::SpecDocument,
             domain:          "test".into(),
             language:        "en".into(),
-            authored_at_unix: 0,
+            authored_at_unix: Some(0),
             ttl_seconds:     None,
-            confidence:      ConfidenceTier::High,
-            access_tier:     AccessTier::Internal,
+            confidence:      ConfidenceTier::Verified,
+            access_tier:     AccessTier::Public,
             access_control:  Vec::new(),
             attributes:      BTreeMap::new(),
             lexicon_plane:   LexiconPlane::Bridge,
-            lexicon_voice:   LexiconVoice::Logos,
+            lexicon_voice:   None,
             provenance:      ProvenanceReceipt {
                 source:           DataSource::InternalDocument,
                 source_url:       "file:///test.md".into(),
