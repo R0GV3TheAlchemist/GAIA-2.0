@@ -36,7 +36,6 @@ mod tests {
     };
     use crate::scheduler::select::AgentHandle;
     use std::collections::HashMap;
-    use std::sync::Arc;
     use std::time::{SystemTime, UNIX_EPOCH};
     use uuid::Uuid;
 
@@ -79,10 +78,10 @@ mod tests {
 
     #[test]
     fn executor_registers_and_pulls_noop() {
-        let broker = Arc::new(Broker::new());
+        let broker = Broker::new();
         broker.enqueue("noop", "{}");
         let p = Principal::generate(PrincipalKind::Node);
-        let exec = Executor::new(&p, Default::default(), broker.clone());
+        let exec = Executor::new(&p, Default::default(), &broker);
         let task = exec.pull_one().expect("task");
         assert_eq!(task.kind, "noop");
         assert!(exec.run_task(&task).starts_with("noop-ok"));
@@ -175,7 +174,6 @@ mod tests {
         let user_principal = Principal::generate(PrincipalKind::Human);
         let mut engine = ExecutionEngine::new(node_principal);
 
-        // Register an agent that can handle "query"
         engine.registry.register(AgentHandle::new(
             "agent-alpha",
             vec!["query".into()],
@@ -196,7 +194,6 @@ mod tests {
         let node_principal = Principal::generate(PrincipalKind::Node);
         let user_principal = Principal::generate(PrincipalKind::Human);
         let mut engine = ExecutionEngine::new(node_principal);
-        // No agents registered — registry is empty
 
         let intent = signed_intent(&user_principal, "query");
         let result = engine.execute(intent).await.expect("pipeline returns result even on task failure");
