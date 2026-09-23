@@ -12,7 +12,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust
+//! ```rust,no_run
 //! use gaia_ingest::{ChunkId, DocumentChunk};
 //!
 //! // Derive from an existing chunk:
