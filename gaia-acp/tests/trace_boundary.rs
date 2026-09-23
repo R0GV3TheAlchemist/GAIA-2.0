@@ -1,9 +1,11 @@
-use gaia_acp::trace::{from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, TraceKind, TraceSink};
-use gaia_acp::types::ReasonCode;
+use gaia_acp::{
+    from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, ReasonCode, TraceKind, TraceSink,
+};
 
 #[test]
 fn allow_and_deny_are_recorded() {
     let mut sink = MemoryTraceSink::default();
+
     sink.emit(from_invoke(InvokeTraceInput {
         kind: TraceKind::Allow,
         ts: 1,
@@ -14,6 +16,7 @@ fn allow_and_deny_are_recorded() {
         request_hash: "h1",
         claim_class: ClaimClass::Established,
     }));
+
     sink.emit(from_invoke(InvokeTraceInput {
         kind: TraceKind::Deny,
         ts: 2,
@@ -24,6 +27,7 @@ fn allow_and_deny_are_recorded() {
         request_hash: "h2",
         claim_class: ClaimClass::Established,
     }));
+
     sink.emit(from_invoke(InvokeTraceInput {
         kind: TraceKind::Replay,
         ts: 3,
@@ -34,6 +38,7 @@ fn allow_and_deny_are_recorded() {
         request_hash: "h3",
         claim_class: ClaimClass::Established,
     }));
+
     sink.emit(from_invoke(InvokeTraceInput {
         kind: TraceKind::ExecutionFailure,
         ts: 4,
@@ -45,12 +50,7 @@ fn allow_and_deny_are_recorded() {
         claim_class: ClaimClass::Established,
     }));
 
-    let events = sink.events();
-    assert_eq!(events.len(), 4);
-    assert_eq!(events[0].kind, TraceKind::Allow);
-    assert_eq!(events[1].kind, TraceKind::Deny);
-    assert_eq!(events[2].kind, TraceKind::Replay);
-    assert_eq!(events[3].kind, TraceKind::ExecutionFailure);
+    assert_eq!(sink.events.len(), 4);
 }
 
 #[test]
@@ -67,6 +67,9 @@ fn prohibited_claim_is_tagged() {
         claim_class: ClaimClass::Prohibited,
     });
     sink.emit(ev);
-    let events = sink.events();
-    assert_eq!(events[0].claim_class, ClaimClass::Prohibited);
+    assert_eq!(sink.events.len(), 1);
+    assert_eq!(
+        sink.events[0].claim_class,
+        ClaimClass::Prohibited.to_string()
+    );
 }

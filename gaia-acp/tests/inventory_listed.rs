@@ -1,6 +1,5 @@
 use gaia_acp::{
-    ClaimClass, InvokeTraceInput, MemoryTraceSink, ReasonCode, TraceKind, TraceSink,
-    from_invoke,
+    from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, ReasonCode, TraceKind, TraceSink,
 };
 
 #[test]
@@ -19,5 +18,5 @@ fn untrusted_authority_is_logged() {
     sink.emit(ev);
     let events = &sink.events;
     assert_eq!(events.len(), 1);
-    assert_eq!(events[0].reason, ReasonCode::UntrustedAuthority);
+    assert_eq!(events[0].reason, ReasonCode::UntrustedAuthority.to_string());
 }
