@@ -10,18 +10,10 @@ pub struct BatchTask {
 }
 
 /// Local stand-in for a Slurm/MPI pull executor.
+#[derive(Default)]
 pub struct HpcAdapter {
     queue: VecDeque<BatchTask>,
     pulled: Vec<BatchTask>,
-}
-
-impl Default for HpcAdapter {
-    fn default() -> Self {
-        Self {
-            queue: VecDeque::new(),
-            pulled: Vec::new(),
-        }
-    }
 }
 
 impl HpcAdapter {

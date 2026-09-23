@@ -50,7 +50,7 @@ impl IntentSpan {
     }
 
     pub fn record_stage(&mut self, stage: u8, ms: u64) {
-        if stage >= 1 && stage <= 12 {
+        if (1..=12).contains(&stage) {
             self.stage_ms[(stage - 1) as usize] = ms;
         }
     }
