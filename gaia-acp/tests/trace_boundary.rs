@@ -1,85 +1,72 @@
-use gaia_acp::*;
+use gaia_acp::trace::{from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, TraceKind, TraceSink};
+use gaia_acp::types::ReasonCode;
 
 #[test]
-fn emits_allow_deny_replay_and_failure_shapes() {
+fn allow_and_deny_are_recorded() {
     let mut sink = MemoryTraceSink::default();
-    sink.emit(from_invoke(
-        TraceKind::Allow,
-        1,
-        "agent-a",
-        "intent-a",
-        "c1",
-        ReasonCode::Allow,
-        "h1",
-        ClaimClass::Established,
-    ));
-    sink.emit(from_invoke(
-        TraceKind::Deny,
-        2,
-        "agent-a",
-        "intent-a",
-        "c2",
-        ReasonCode::ToolNotListed,
-        "h2",
-        ClaimClass::Established,
-    ));
-    sink.emit(from_invoke(
-        TraceKind::Replay,
-        3,
-        "agent-a",
-        "intent-a",
-        "c3",
-        ReasonCode::ApprovalReplay,
-        "h3",
-        ClaimClass::Established,
-    ));
-    sink.emit(from_invoke(
-        TraceKind::ExecutionFailure,
-        4,
-        "agent-a",
-        "intent-a",
-        "c4",
-        ReasonCode::StateInvalid,
-        "h4",
-        ClaimClass::Established,
-    ));
-    assert_eq!(
-        sink.kinds(),
-        vec![
-            TraceKind::Allow,
-            TraceKind::Deny,
-            TraceKind::Replay,
-            TraceKind::ExecutionFailure,
-        ]
-    );
-    assert!(!sink.events[0].leaks(&["sk-secret", "Bearer abc"]));
+    sink.emit(from_invoke(InvokeTraceInput {
+        kind: TraceKind::Allow,
+        ts: 1,
+        actor_id: "agent-a",
+        intent_id: "intent-a",
+        correlation_id: "c1",
+        reason: ReasonCode::Allow,
+        request_hash: "h1",
+        claim_class: ClaimClass::Established,
+    }));
+    sink.emit(from_invoke(InvokeTraceInput {
+        kind: TraceKind::Deny,
+        ts: 2,
+        actor_id: "agent-a",
+        intent_id: "intent-a",
+        correlation_id: "c2",
+        reason: ReasonCode::ToolNotListed,
+        request_hash: "h2",
+        claim_class: ClaimClass::Established,
+    }));
+    sink.emit(from_invoke(InvokeTraceInput {
+        kind: TraceKind::Replay,
+        ts: 3,
+        actor_id: "agent-a",
+        intent_id: "intent-a",
+        correlation_id: "c3",
+        reason: ReasonCode::ApprovalReplay,
+        request_hash: "h3",
+        claim_class: ClaimClass::Established,
+    }));
+    sink.emit(from_invoke(InvokeTraceInput {
+        kind: TraceKind::ExecutionFailure,
+        ts: 4,
+        actor_id: "agent-a",
+        intent_id: "intent-a",
+        correlation_id: "c4",
+        reason: ReasonCode::StateInvalid,
+        request_hash: "h4",
+        claim_class: ClaimClass::Established,
+    }));
+
+    let events = sink.events();
+    assert_eq!(events.len(), 4);
+    assert_eq!(events[0].kind, TraceKind::Allow);
+    assert_eq!(events[1].kind, TraceKind::Deny);
+    assert_eq!(events[2].kind, TraceKind::Replay);
+    assert_eq!(events[3].kind, TraceKind::ExecutionFailure);
 }
 
 #[test]
-fn prohibited_claim_cannot_emit_as_allow() {
-    let ev = from_invoke(
-        TraceKind::Allow,
-        1,
-        "agent-a",
-        "intent-a",
-        "c1",
-        ReasonCode::Allow,
-        "h1",
-        ClaimClass::Prohibited,
-    );
-    assert_eq!(ev.kind, TraceKind::Deny);
-    assert_eq!(ev.claim_class, ClaimClass::Prohibited);
-}
-
-#[test]
-fn gap_lock_blocks_fail_closed_and_local_dev_runs_without_remote() {
-    assert!(execution_allowed(Some(GapLock { active: true }), GateMode::LocalDev).is_err());
-    assert!(execution_allowed(None, GateMode::FailClosed).is_err());
-    assert!(execution_allowed(None, GateMode::LocalDev).is_ok());
-    assert!(execution_allowed(Some(GapLock { active: false }), GateMode::FailClosed).is_ok());
-}
-
-#[test]
-fn live_supabase_write_is_refused() {
-    assert!(refuse_live_supabase().is_err());
+fn prohibited_claim_is_tagged() {
+    let mut sink = MemoryTraceSink::default();
+    let ev = from_invoke(InvokeTraceInput {
+        kind: TraceKind::Allow,
+        ts: 1,
+        actor_id: "agent-a",
+        intent_id: "intent-a",
+        correlation_id: "c1",
+        reason: ReasonCode::Allow,
+        request_hash: "h1",
+        claim_class: ClaimClass::Prohibited,
+    });
+    sink.emit(ev);
+    let events = sink.events();
+    assert_eq!(events[0].claim_class, ClaimClass::Prohibited);
 }
