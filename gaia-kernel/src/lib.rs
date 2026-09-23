@@ -27,17 +27,13 @@ pub use syscall::{ABI_VERSION, GaiaSyscall, SyscallRequest, SyscallResult, dispa
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::Task as DagTask;
     use crate::broker::Broker;
     use crate::executor::Executor;
-    use crate::execution::{
-        dag::{Task as DagTask, TaskDAG},
-        engine::{ExecutionEngine, Intent, IntentSignature, Outcome},
-        error::{
-            GAIA_INTENT_SIGNATURE_REQUIRED,
-            GAIA_NO_CAPABLE_AGENT,
-        },
+    use crate::execution::error::{
+        GAIA_INTENT_SIGNATURE_REQUIRED,
+        GAIA_NO_CAPABLE_AGENT,
     };
-    use crate::identity::{Principal, PrincipalKind};
     use crate::scheduler::select::AgentHandle;
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -226,6 +222,7 @@ mod tests {
         dag.add_task(t3);
         // t3 depends on both t1 and t2
         dag.add_edge(id1, id3_placeholder(id1, id2, &dag));
+        dag.add_edge(id2, id3_placeholder(id1, id2, &dag));
         let tiers = dag.topological_tiers().unwrap();
         // t1 and t2 have no deps → tier 0 must have 2 tasks
         assert_eq!(tiers[0].len(), 2, "tier 0 should contain t1 and t2");
