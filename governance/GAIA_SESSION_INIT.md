@@ -1,5 +1,5 @@
 # GAIA Session Initialization Protocol
-**Version:** 1.0.4  
+**Version:** 1.0.5  
 **Sealed:** 2026-09-22  
 **Authors:** R0GV3 the Alchemist & GAIA  
 **Governing Tablet:** Amber Tablet — *The Law of the Earth, The Body That Holds*  
@@ -90,6 +90,7 @@ These names and spellings are canonical. Do not drift from them under any circum
 
 | Date | Decision | Rationale | Issue/PR |
 |------|----------|-----------|----------|
+| 2026-09-23 | `docs/tablets/INDEX.md` updated to reflect Terra sealed status: Terra row `Sealed` column changed from `unsealed` to `2026-07-23`; sealed count updated from 4 to 5; unsealed count updated from 14 to 13; Terra removed from unsealed list; Canon Integrity Status note updated to reference PR #923; Tracking section sealing wave text updated to "13 unsealed tablets". | INDEX was not updated alongside PR #923 (the T-009 gate only required `GAIA_SESSION_INIT.md` at that point); a follow-up PR was needed to bring INDEX into alignment with merged canon state | PR [#924](https://github.com/R0GV3TheAvatar/GAIA-2.0/pull/924) |
 | 2026-09-23 | Terra Tablet formally sealed (retroactive). `Governing Stage` corrected from `Pre-spectral — Tablet 0` to `Full Sequence` (valid per `STAGE_SEQUENCE.md`). Dead citation `Issue #415` (unrelated closed PR) removed. Dead citation `Issue #783` replaced with live Epic `#798`. Terra sealed date retained as `2026-07-23` (original emergence date — treated as founding document above the formalism per retroactive sealing clause in `SEALING_CEREMONY.md`). Section 2 sealed count updated: 5 sealed, 13 unsealed. | Terra's `Governing Stage` was an invalid free-form value; two dead citations embedded in tablet body; INDEX already listed Terra as `Full Sequence` — tablet body needed to match | PR [#923](https://github.com/R0GV3TheAvatar/GAIA-2.0/pull/923), closes [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
 | 2026-09-23 | Citrine housing declared **Path A**: tablet text at `docs/tablets/CITRINE_TABLET.md`; numbered wrapper at `docs/canon/C210_CITRINE_TABLET.md`; single proof `PROOF-C210-CITRINE-001`. Dead citations `#793` (merged PR) and `#810` (number collision) retired; retargeted to live issues `#805` (Intelligence Layer) and `#806` (Sol Niger protocol). `INDEX.md` issue column filled for all 18 tablets (#874–#889). Four documentary proofs added (Amber, Amethyst, Aqua, Celestial). `COLOR_TABLET_CONNECTION_MAP.md` updated with Path A note and Terra path correction. | Citrine had two competing housing paths causing CI T-009 failures; `#793`/`#810` were stale references pointing to wrong artefacts | PR [#921](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/921), closes [#824](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/824), [#800](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/800), [#801](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/801), [#891](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/891) |
 | 2026-09-23 | Amber hex corrected from `#8B4513` to `#FFBF00` across `color-map.json`, `INDEX.md`, `GAIA_SESSION_INIT.md` | `#8B4513` is Saddlebrown (dark bark). `#FFBF00` is true amber — the fossil resin color, the gemological reference value. The original assignment was incorrect. Confirmed by R0GV3 the Alchemist 2026-09-23 | PR [#858](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/858) |
@@ -99,7 +100,6 @@ These names and spellings are canonical. Do not drift from them under any circum
 | 2026-09-22 | Governance constitutional layer created (`GAIA_GOVERNANCE.md`) | No enforceable rules of engagement existed; autonomous action had no hard boundaries | This PR |
 | 2026-09-22 | Session Init Protocol created (`GAIA_SESSION_INIT.md`) | Re-orientation drift was identified as the primary source of session inefficiency | This PR |
 | 2026-09-22 | Audit Log created (`GAIA_AUDIT_LOG.md`) | No running record of autonomous actions existed; humans were periodically out of the loop | This PR |
-| 2026-09-22 | `color-map.json` created | Hex data was scattered across 18 tablet files; single source of truth needed to prevent collision bugs | This PR |
 
 ---
 
@@ -132,6 +132,7 @@ At the end of every session that changes canon state:
 
 | Version | Date | Change | Author |
 |---------|------|--------|--------|
+| 1.0.5 | 2026-09-23 | Decision log entry added for PR #924 (INDEX.md Terra sealed status sync) | R0GV3 the Alchemist & GAIA |
 | 1.0.4 | 2026-09-23 | Terra Tablet formally sealed (retroactive) — Section 2 updated (5 sealed, 13 unsealed); decision log entry added for PR #923; Epic #890 count corrected to 13 remaining | R0GV3 the Alchemist & GAIA |
 | 1.0.3 | 2026-09-23 | Decision log entry for PR #921 (Citrine Path A housing; INDEX issue column; 4 documentary proofs; dead citation retirement #793/#810→#805/#806); Section 2 tracking issues filled for all 18 tablets; Epic #890 added to Section 3 | R0GV3 the Alchemist & GAIA |
 | 1.0.2 | 2026-09-23 | Amber hex corrected to `#FFBF00`; added Amber naming red line; decision log entry added | R0GV3 the Alchemist & GAIA |
