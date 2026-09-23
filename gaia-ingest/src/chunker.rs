@@ -17,6 +17,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
 use crate::document::DocumentChunk;
+use crate::lexicon::LexiconPlane;
 
 // ── Error type ───────────────────────────────────────────────────────────────
 
@@ -43,11 +44,15 @@ pub enum ChunkError {
 /// - Each chunk receives a freshly generated UUID v4 `id`.
 /// - `text` and `char_count` are set by the chunker; all other fields are
 ///   inherited from the `template` parameter.
+/// - `lexicon_plane` defaults to [`LexiconPlane::Bridge`]; the pipeline
+///   classify step overwrites it after ingestion.
+/// - `lexicon_voice` is `None` until the classify step runs.
 pub trait Chunker: Send + Sync {
     /// Split `text` into [`DocumentChunk`] records.
     ///
     /// `template` carries all metadata fields except `text`, `char_count`,
-    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five.
+    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five
+    /// and also sets `lexicon_plane = Bridge` and `lexicon_voice = None`.
     fn chunk(
         &self,
         text: &str,
@@ -349,6 +354,9 @@ impl Chunker for SlidingWindowChunker {
                 chunk_index:  idx as u32,
                 total_chunks: total,
                 attributes,
+                // ── lexicon fields: Bridge default; classify step overwrites ──
+                lexicon_plane: LexiconPlane::Bridge,
+                lexicon_voice: None,
                 // ── all other fields inherited verbatim from template ──
                 document_title:  template.document_title.clone(),
                 document_uri:    template.document_uri.clone(),
@@ -393,6 +401,7 @@ mod tests {
         document::{
             AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
         },
+        lexicon::LexiconPlane,
         provenance::ProvenanceReceipt,
         schema::DataSource,
     };
@@ -426,8 +435,11 @@ mod tests {
                 sha256:           "a".repeat(64),
                 license:          "CC-BY-4.0".into(),
             },
-            artifact:    None,
-            attributes:  BTreeMap::new(),
+            artifact:        None,
+            attributes:      BTreeMap::new(),
+            // lexicon defaults — classify step overwrites after ingestion
+            lexicon_plane:   LexiconPlane::Bridge,
+            lexicon_voice:   None,
         }
     }
 
