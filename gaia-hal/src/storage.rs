@@ -20,6 +20,9 @@ pub enum StorageError {
     /// Buffer size does not match block size.
     #[error("buffer size {0} != block size {1}")]
     BadBufferSize(usize, usize),
+    /// The storage mutex was poisoned by a previous panic.
+    #[error("storage mutex poisoned")]
+    Poisoned,
 }
 
 /// Metadata about a block device.
@@ -114,7 +117,9 @@ impl BlockDevice for FileBackedDevice {
             return Err(StorageError::OutOfRange(block_index, self.info.block_count));
         }
         let offset = block_index * self.info.block_size as u64;
-        let mut f = self.file.lock().unwrap();
+        // Recover from mutex poison: the File handle is always valid even if a
+        // previous holder panicked mid-write; the kernel ensures the fd is open.
+        let mut f = self.file.lock().map_err(|_| StorageError::Poisoned)?;
         f.seek(SeekFrom::Start(offset))?;
         f.read_exact(buf)?;
         Ok(())
@@ -128,7 +133,7 @@ impl BlockDevice for FileBackedDevice {
             return Err(StorageError::OutOfRange(block_index, self.info.block_count));
         }
         let offset = block_index * self.info.block_size as u64;
-        let mut f = self.file.lock().unwrap();
+        let mut f = self.file.lock().map_err(|_| StorageError::Poisoned)?;
         f.seek(SeekFrom::Start(offset))?;
         f.write_all(buf)?;
         f.flush()?;

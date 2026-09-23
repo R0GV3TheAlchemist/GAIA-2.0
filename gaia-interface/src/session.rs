@@ -222,7 +222,14 @@ impl Session {
         if text.is_empty() {
             return Err(SessionError::Usage("intent text required".into()));
         }
-        if wants_cloud(text) && !self.profile.as_ref().unwrap().cloud_opt_in {
+        // require_started() guarantees profile is Some; use ok_or to convert
+        // explicitly rather than relying on that implicit invariant.
+        let cloud_opt_in = self
+            .profile
+            .as_ref()
+            .ok_or(SessionError::NotInitialized)?
+            .cloud_opt_in;
+        if wants_cloud(text) && !cloud_opt_in {
             return Err(SessionError::CloudDenied);
         }
         let agent_id = self

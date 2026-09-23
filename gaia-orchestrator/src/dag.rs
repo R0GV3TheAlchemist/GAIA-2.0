@@ -185,7 +185,14 @@ impl Executor {
         let mut attempts = Vec::new();
 
         for id in order {
-            let node = plan.nodes.iter().find(|n| n.id == id).unwrap();
+            // topo_order only emits IDs that are present in plan.nodes;
+            // propagate an error rather than panicking if that invariant
+            // is somehow violated by a corrupted or partially-applied plan.
+            let node = plan
+                .nodes
+                .iter()
+                .find(|n| n.id == id)
+                .ok_or_else(|| format!("missing node {id} in plan"))?;
             let should_fail = self.fail_goals.iter().any(|f| node.goal.contains(f));
             let primary_budget = node.max_retries.saturating_add(1);
             let mut succeeded = false;
