@@ -15,3 +15,7 @@ thiserror             = "1"
 uuid                  = { version = "1", features = ["v4"] }
 unicode-segmentation  = "1"   # sentence-boundary detection for SlidingWindowChunker
 regex                 = "1"   # heading / code-fence / table detection
+blake3                = "1"   # content fingerprinting for ChunkId
+
+[dev-dependencies]
+tempfile              = "3"   # IngestPipeline integration tests
