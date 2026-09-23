@@ -6,10 +6,12 @@ license.workspace = true
 description = "Earth Twin ingestion schema — the single auditable boundary through which every external byte enters GAIA."
 
 [dependencies]
-gaia-earth = { path = "../gaia-earth", features = ["serde"] }
-serde      = { version = "1", features = ["derive"] }
-serde_json = "1"
-sha2       = "0.10"
-hex        = "0.4"
-thiserror  = "1"
-uuid       = { version = "1", features = ["v4"] }
+gaia-earth            = { path = "../gaia-earth", features = ["serde"] }
+serde                 = { version = "1", features = ["derive"] }
+serde_json            = "1"
+sha2                  = "0.10"
+hex                   = "0.4"
+thiserror             = "1"
+uuid                  = { version = "1", features = ["v4"] }
+unicode-segmentation  = "1"   # sentence-boundary detection for SlidingWindowChunker
+regex                 = "1"   # heading / code-fence / table detection
