@@ -1,7 +1,4 @@
-use gaia_earth::{
-    nervous::{FeedKind, IngestParams, QcTier},
-    NervousFabric, SourceKind, SystemTwin, TwinError,
-};
+use gaia_earth::{FeedKind, IngestParams, NervousFabric, QcTier, SourceKind, SystemTwin, TwinError};
 
 #[test]
 fn heterogeneous_feeds_land_with_full_metadata() {

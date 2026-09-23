@@ -1,4 +1,4 @@
-use gaia_earth::{memory::MemStoreParams, PlanetaryMemory, SourceKind, SystemTwin};
+use gaia_earth::{MemStoreParams, PlanetaryMemory, SourceKind, SystemTwin};
 
 #[test]
 fn query_returns_signed_cube_and_synthetic_models() {
