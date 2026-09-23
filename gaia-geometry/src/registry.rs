@@ -91,6 +91,11 @@ pub fn lookup(id: &str) -> Option<&'static SymbolContract> {
     REGISTRY.iter().find(|s| s.id == id)
 }
 
+/// Returns the full symbol registry slice.
+///
+/// This function is a public API sentinel used in governance tests to verify
+/// the registry is populated. It is not called from non-test production code.
+#[allow(dead_code)]
 pub fn catalog() -> &'static [SymbolContract] {
     REGISTRY
 }

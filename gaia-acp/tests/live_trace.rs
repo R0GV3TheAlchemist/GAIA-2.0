@@ -1,16 +1,16 @@
 use gaia_acp::*;
 
 fn ev(kind: TraceKind, reason: ReasonCode) -> TraceEvent {
-    from_invoke(
+    from_invoke(InvokeTraceInput {
         kind,
-        1,
-        "agent-a",
-        "intent-a",
-        "corr-a",
+        ts: 1,
+        actor_id: "agent-a",
+        intent_id: "intent-a",
+        correlation_id: "corr-a",
         reason,
-        "hash-a",
-        ClaimClass::Established,
-    )
+        request_hash: "hash-a",
+        claim_class: ClaimClass::Established,
+    })
 }
 
 #[test]
