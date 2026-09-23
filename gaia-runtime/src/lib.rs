@@ -24,7 +24,6 @@ pub use sandbox::{
 #[cfg(test)]
 mod tests {
     use super::*;
-    // Required to call trait methods on GaiaResourceLimiter from test code.
     use wasmtime::ResourceLimiter;
 
     // -------------------------------------------------------------------------
@@ -94,7 +93,7 @@ mod tests {
         };
         let mut limiter = GaiaResourceLimiter::new(quota);
         let result = limiter.memory_growing(0, 32 * 1024 * 1024, None);
-        assert_eq!(result.unwrap(), true, "request within quota must be approved");
+        assert!(result.unwrap(), "request within quota must be approved");
         assert_eq!(limiter.mem_used(), 32 * 1024 * 1024);
     }
 
@@ -108,6 +107,6 @@ mod tests {
         };
         let mut limiter = GaiaResourceLimiter::new(quota);
         let result = limiter.memory_growing(0, 128 * 1024 * 1024, None);
-        assert_eq!(result.unwrap(), false, "request over quota must be denied via Ok(false)");
+        assert!(!result.unwrap(), "request over quota must be denied via Ok(false)");
     }
 }

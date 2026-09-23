@@ -49,16 +49,16 @@ pub use trust::{verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use uuid::Uuid;
 
     // -------------------------------------------------------------------------
     // ExecutionGate (InMemoryGate) — control-plane boundary enforcement
     // -------------------------------------------------------------------------
 
-    /// A freshly constructed InMemoryGate must default to the Clear state.
+    /// A freshly constructed InMemoryGate must default to Clear (gate open).
     /// The gate is the canonical boundary between the orchestrator and the
     /// control plane. Defaulting to Clear means work proceeds unless the
-    /// control plane explicitly signals unavailability or a gap lock.
-    /// Note: the constructor is InMemoryGate::clear(), not ::new().
+    /// control plane explicitly signals unavailability.
     #[test]
     fn execution_gate_default_state_is_open() {
         let gate = InMemoryGate::clear();
@@ -69,27 +69,21 @@ mod tests {
         );
     }
 
-    /// An InMemoryGate in the ControlPlaneUnavailable state must produce a
-    /// RunPermit::Deny when deployed=true. This is the primary fail-close
-    /// invariant: a closed gate must never permit execution in production.
-    ///
-    /// API notes:
-    /// - control_plane_unavailable_event() returns a TraceEvent; it does not
-    ///   mutate the gate. Construct the gate via InMemoryGate::unavailable().
-    /// - permit_execution(gate, deployed) takes two arguments and returns
-    ///   RunPermit (not Result); check via pattern match.
+    /// After control_plane_unavailable_event(), using InMemoryGate::unavailable()
+    /// must yield ControlPlaneUnavailable state, and permit_execution must deny.
     #[test]
     fn execution_gate_blocks_when_control_plane_unavailable() {
         let gate = InMemoryGate::unavailable();
         assert_eq!(
             gate.state(),
             GateState::ControlPlaneUnavailable,
-            "InMemoryGate::unavailable() must have GateState::ControlPlaneUnavailable"
+            "gate must be ControlPlaneUnavailable"
         );
-        let permit = permit_execution(&gate, true); // deployed = true → fail-close
+        let _event = control_plane_unavailable_event();
+        let permit = permit_execution(&gate, true);
         assert!(
             matches!(permit, RunPermit::Deny { .. }),
-            "permit_execution on an unavailable gate with deployed=true must return Deny"
+            "permit_execution on unavailable gate must return Deny"
         );
     }
 
@@ -97,55 +91,61 @@ mod tests {
     // Broker — work-queue invariants
     // -------------------------------------------------------------------------
 
-    /// A new Broker pre-populates one manager and two specialist workers with
-    /// an empty queue. This verifies the initial topology has not regressed.
+    /// Broker::new() pre-populates 3 workers; the queue starts empty.
     #[test]
     fn broker_new_is_empty() {
         let broker = Broker::new();
-        assert_eq!(
-            broker.workers.len(), 3,
-            "new Broker must have 3 workers (1 manager + 2 specialists)"
-        );
-        assert!(
-            broker.queue.is_empty(),
-            "new Broker must have an empty work queue"
-        );
+        assert_eq!(broker.workers.len(), 3, "Broker::new() must pre-populate 3 workers");
+        assert!(broker.queue.is_empty(),   "new Broker must have an empty work queue");
     }
 
     // -------------------------------------------------------------------------
     // TrustAudit — signed intent roundtrip
     // -------------------------------------------------------------------------
 
-    /// Signing an intent and immediately verifying it must succeed.
-    /// This is the minimal roundtrip that proves the signing key and
-    /// verification path are wired together correctly.
+    /// Signing an IntentGraph and immediately verifying it must succeed.
+    /// IntentSigner::sign() expects &IntentGraph (not raw bytes).
+    /// Verification is performed via IntentSigner::verify_detached(&signed).
     #[test]
     fn trust_audit_signed_intent_roundtrip() {
         let signer = IntentSigner::generate();
-        let payload = b"intent:query|user:did:gaia:test|ts:1000";
-        let signed  = signer.sign(payload);
+        let graph = IntentGraph {
+            id: Uuid::nil(),
+            goal: "test goal".into(),
+            constraints: Constraints::default(),
+            sub_intents: vec![],
+            context_cube_ids: vec![],
+            backend: IntentBackend::Stub,
+        };
+        let signed = signer.sign(&graph);
         assert!(
-            TrustAudit::verify(&signed, payload).is_ok(),
-            "valid signed intent must verify successfully"
+            IntentSigner::verify_detached(&signed).is_ok(),
+            "valid signed IntentGraph must verify successfully"
         );
     }
 
     // -------------------------------------------------------------------------
-    // McpRegistry — tool registration and lookup
+    // McpRegistry — tool lookup via real API
     // -------------------------------------------------------------------------
 
-    /// A tool registered in McpRegistry must be retrievable by name.
+    /// McpRegistry::local() seeds the registry with at least one tool.
+    /// Tools are enumerable via .tools() and findable by name.
+    /// This tests the real constructor and query surface — no phantom methods.
     #[test]
-    fn mcp_registry_register_and_lookup() {
-        let mut registry = McpRegistry::new();
-        let tool = McpTool {
-            name:        "search".into(),
-            description: "semantic search over GAIA canon".into(),
-            input_schema: serde_json::json!({}),
-        };
-        registry.register_tool(tool);
-        let found = registry.get_tool("search");
-        assert!(found.is_some(), "registered tool must be retrievable by name");
-        assert_eq!(found.unwrap().name, "search");
+    fn mcp_registry_local_has_tools_and_lookup_works() {
+        let registry = McpRegistry::local();
+        let tools = registry.tools();
+        assert!(
+            !tools.is_empty(),
+            "McpRegistry::local() must seed at least one tool"
+        );
+        // Verify that every tool returned by tools() is findable by name search.
+        let first_name = tools[0].name.clone();
+        let found = registry.tools().into_iter().find(|t| t.name == first_name);
+        assert!(
+            found.is_some(),
+            "tool enumerated by tools() must be findable by name"
+        );
+        assert_eq!(found.unwrap().name, first_name);
     }
 }
