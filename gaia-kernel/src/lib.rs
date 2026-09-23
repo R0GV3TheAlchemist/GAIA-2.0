@@ -36,6 +36,7 @@ mod tests {
     };
     use crate::scheduler::select::AgentHandle;
     use std::collections::HashMap;
+    use std::sync::Arc;
     use std::time::{SystemTime, UNIX_EPOCH};
     use uuid::Uuid;
 
@@ -78,10 +79,10 @@ mod tests {
 
     #[test]
     fn executor_registers_and_pulls_noop() {
-        let broker = Broker::new();
+        let broker = Arc::new(Broker::new());
         broker.enqueue("noop", "{}");
         let p = Principal::generate(PrincipalKind::Node);
-        let exec = Executor::new(&p, Default::default(), &broker);
+        let exec = Executor::new(&p, Default::default(), broker.clone());
         let task = exec.pull_one().expect("task");
         assert_eq!(task.kind, "noop");
         assert!(exec.run_task(&task).starts_with("noop-ok"));
