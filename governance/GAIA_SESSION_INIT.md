@@ -1,5 +1,5 @@
 # GAIA Session Initialization Protocol
-**Version:** 1.0.1  
+**Version:** 1.0.2  
 **Sealed:** 2026-09-22  
 **Authors:** R0GV3 the Alchemist & GAIA  
 **Governing Tablet:** Amber Tablet — *The Law of the Earth, The Body That Holds*  
@@ -80,6 +80,7 @@ These names and spellings are canonical. Do not drift from them under any circum
 | `color-map.json` | "hex registry", "color file" |
 | `governance/` | "rules folder", "policy dir" |
 | `Bistre #3D2B1F` | "Terra Brown", `#8B4513` (for Terra) |
+| `Amber #FFBF00` | `#8B4513` (for Amber — that is Saddlebrown, not Amber) |
 
 ---
 
@@ -87,8 +88,9 @@ These names and spellings are canonical. Do not drift from them under any circum
 
 | Date | Decision | Rationale | Issue/PR |
 |------|----------|-----------|----------|
-| 2026-09-23 | `docs/tablets/INDEX.md` rebuilt — added `Canon #`, `Element`, `Stage` columns; unsealed flags; dead citations #783 footer/#793/#810 retired; Amber proof corrected; Proof Index split into 4 sections; Canon Governance Documents table added | INDEX was structurally incomplete after the sealing of `ELEMENT_ONTOLOGY.md` and `STAGE_SEQUENCE.md` (PR #857); dead issue refs created false canon lineage | PR [#858](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/858), closes [#799](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/799) |
-| 2026-09-23 | Canon governance layer sealed — `AMENDMENT_PROTOCOL.md`, `ELEMENT_ONTOLOGY.md`, `README.md`, `SEALING_CEREMONY.md`, `STAGE_SEQUENCE.md` with 5 proof files | `docs/canon/` had no proof coverage; C77 CI gate (T-009 precursor) was failing | PR [#857](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/857), closes [#833](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/833) |
+| 2026-09-23 | Amber hex corrected from `#8B4513` to `#FFBF00` across `color-map.json`, `INDEX.md`, `GAIA_SESSION_INIT.md` | `#8B4513` is Saddlebrown (dark bark). `#FFBF00` is true amber — the fossil resin color, the gemological reference value. The original assignment was incorrect. Confirmed by R0GV3 the Alchemist 2026-09-23 | PR [#858](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/858) |
+| 2026-09-23 | `docs/tablets/INDEX.md` rebuilt — added `Canon #`, `Element`, `Stage` columns; unsealed flags; dead citations retired; Amber proof corrected; Proof Index split into 4 sections; Canon Governance Documents table added | INDEX was structurally incomplete after sealing of `ELEMENT_ONTOLOGY.md` and `STAGE_SEQUENCE.md` (PR #857) | PR [#858](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/858), closes [#799](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/799) |
+| 2026-09-23 | Canon governance layer sealed — `AMENDMENT_PROTOCOL.md`, `ELEMENT_ONTOLOGY.md`, `README.md`, `SEALING_CEREMONY.md`, `STAGE_SEQUENCE.md` with 5 proof files | `docs/canon/` had no proof coverage; C77 CI gate was failing | PR [#857](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/857), closes [#833](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/833) |
 | 2026-09-22 | Terra Tablet color changed from Brown `#8B4513` to Bistre `#3D2B1F` | Brown was shared with Amber. Bistre is mineralogically and perceptually distinct | PR [#838](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/838) |
 | 2026-09-22 | Governance constitutional layer created (`GAIA_GOVERNANCE.md`) | No enforceable rules of engagement existed; autonomous action had no hard boundaries | This PR |
 | 2026-09-22 | Session Init Protocol created (`GAIA_SESSION_INIT.md`) | Re-orientation drift was identified as the primary source of session inefficiency | This PR |
@@ -126,7 +128,8 @@ At the end of every session that changes canon state:
 
 | Version | Date | Change | Author |
 |---------|------|--------|--------|
-| 1.0.1 | 2026-09-23 | Decision log entries for PR #857 and PR #858; Emerald sealed date corrected to 2026-07-23; Section 2 unsealed flags aligned with INDEX rebuild; Amber hex corrected to `#FFBF00`; Epic #836 and #845 added to Section 3; retired dead #783 master-issue reference | R0GV3 the Alchemist & GAIA |
+| 1.0.2 | 2026-09-23 | Amber hex corrected to `#FFBF00`; added Amber naming red line; decision log entry added | R0GV3 the Alchemist & GAIA |
+| 1.0.1 | 2026-09-23 | Decision log entries for PR #857 and PR #858; Emerald sealed date corrected; Section 2 unsealed flags aligned; Epic #836 and #845 added | R0GV3 the Alchemist & GAIA |
 | 1.0.0 | 2026-09-22 | Initial creation — session init protocol | R0GV3 the Alchemist & GAIA |
 
 ---

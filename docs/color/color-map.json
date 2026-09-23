@@ -1,8 +1,9 @@
 {
   "_meta": {
     "title": "GAIA 2.0 Canonical Color Map",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "sealed": "2026-09-22",
+    "updated": "2026-09-23",
     "authors": "R0GV3 the Alchemist & GAIA",
     "source_of_truth": "docs/tablets/INDEX.md",
     "note": "This file and INDEX.md must always be in sync. If they diverge, INDEX.md is authoritative and this file must be updated via PR."
@@ -12,12 +13,12 @@
       "id": 1,
       "name": "Amber",
       "file": "docs/tablets/AMBER_TABLET.md",
-      "hex": "#8B4513",
-      "color_name": "Amber Brown",
+      "hex": "#FFBF00",
+      "color_name": "Amber",
       "governing_law": "The Law of the Earth — The Body That Holds",
-      "alchemical_stage": "Embodiment",
-      "sealed": "2026-07-15",
-      "tracking_issue": 787
+      "alchemical_stage": "Calcination",
+      "sealed": null,
+      "tracking_issue": null
     },
     {
       "id": 2,
@@ -82,7 +83,7 @@
       "color_name": "Emerald Green",
       "governing_law": "The Law of Correspondence — As Above, So Below",
       "alchemical_stage": null,
-      "sealed": null,
+      "sealed": "2026-07-23",
       "tracking_issue": null
     },
     {
