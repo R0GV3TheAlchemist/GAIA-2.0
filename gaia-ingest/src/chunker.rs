@@ -17,7 +17,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
 use crate::document::DocumentChunk;
-use crate::lexicon::LexiconPlane;
+use crate::lexicon::classify_document_chunk;
 
 // ── Error type ───────────────────────────────────────────────────────────────
 
@@ -44,15 +44,17 @@ pub enum ChunkError {
 /// - Each chunk receives a freshly generated UUID v4 `id`.
 /// - `text` and `char_count` are set by the chunker; all other fields are
 ///   inherited from the `template` parameter.
-/// - `lexicon_plane` defaults to [`LexiconPlane::Bridge`]; the pipeline
-///   classify step overwrites it after ingestion.
-/// - `lexicon_voice` is `None` until the classify step runs.
+/// - `lexicon_plane` and `lexicon_voice` are inherited from `template` and
+///   then resolved by [`classify_document_chunk`] before the chunk vec is
+///   returned. If the template already carries a non-Bridge plane (explicit
+///   pre-classification), `classify_document_chunk` is a no-op for that chunk.
 pub trait Chunker: Send + Sync {
     /// Split `text` into [`DocumentChunk`] records.
     ///
     /// `template` carries all metadata fields except `text`, `char_count`,
-    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five
-    /// and also sets `lexicon_plane = Bridge` and `lexicon_voice = None`.
+    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five,
+    /// inherits `lexicon_plane` and `lexicon_voice` from the template, then
+    /// resolves Bridge chunks via [`classify_document_chunk`] before returning.
     fn chunk(
         &self,
         text: &str,
@@ -171,12 +173,10 @@ impl Chunker for SlidingWindowChunker {
         }
         self.validate()?;
 
-        let min_chars   = 800_usize;
+        let min_chars     = 800_usize;
         let overlap_chars = ((self.target_chars as f32) * self.overlap_fraction) as usize;
 
         // ── Step 1: detect code-fence spans ──
-        // We track byte offsets of code fence toggles so we never split inside
-        // a fenced block. Stored as (start_byte, end_byte) pairs.
         let mut fence_spans: Vec<(usize, usize)> = Vec::new();
         {
             let mut in_fence = false;
@@ -185,7 +185,6 @@ impl Chunker for SlidingWindowChunker {
             for line in text.lines() {
                 if Self::is_fence(line) {
                     if in_fence {
-                        // closing fence — include the fence line itself
                         let end = byte_pos + line.len();
                         fence_spans.push((fence_start, end));
                         in_fence = false;
@@ -194,9 +193,8 @@ impl Chunker for SlidingWindowChunker {
                         in_fence = true;
                     }
                 }
-                byte_pos += line.len() + 1; // +1 for the stripped newline
+                byte_pos += line.len() + 1;
             }
-            // unclosed fence — treat rest of document as fenced
             if in_fence {
                 fence_spans.push((fence_start, text.len()));
             }
@@ -206,13 +204,11 @@ impl Chunker for SlidingWindowChunker {
             fence_spans.iter().any(|(s, e)| byte >= *s && byte < *e)
         };
 
-        // ── Step 2: collect sentences (unicode word-boundary segmentation) ──
-        // Each entry is (byte_offset_in_text, sentence_str)
+        // ── Step 2: collect sentences ──
         let sentences: Vec<(usize, &str)> = {
             let mut v = Vec::new();
             let mut cursor = 0_usize;
             for sentence in text.unicode_sentences() {
-                // find actual byte position of this sentence in `text`
                 let pos = text[cursor..]
                     .find(sentence)
                     .map(|rel| cursor + rel)
@@ -228,35 +224,30 @@ impl Chunker for SlidingWindowChunker {
         }
 
         // ── Step 3: sliding window accumulation ──
-        let mut raw_chunks: Vec<(String, usize)> = Vec::new(); // (text, byte_offset_of_first_sentence)
+        let mut raw_chunks: Vec<(String, usize)> = Vec::new();
         let mut window: Vec<&str> = Vec::new();
         let mut window_chars: usize = 0;
-        let mut window_offset: usize = sentences[0].0; // byte offset of first sentence in window
+        let mut window_offset: usize = sentences[0].0;
 
         let emit = |window: &Vec<&str>, offset: usize| -> (String, usize) {
             (window.concat(), offset)
         };
 
         for (sent_idx, &(byte_off, sentence)) in sentences.iter().enumerate() {
-            // Never split inside a fenced block: if this sentence starts
-            // inside a fence, always accumulate regardless of size.
             let locked = in_fence(byte_off);
 
             window.push(sentence);
             window_chars += sentence.chars().count();
 
-            let at_target  = window_chars >= self.target_chars;
-            let at_max     = window_chars >= 3_200;
-            let last_sent  = sent_idx == sentences.len() - 1;
+            let at_target = window_chars >= self.target_chars;
+            let at_max    = window_chars >= 3_200;
+            let last_sent = sent_idx == sentences.len() - 1;
 
-            // Emit when we hit the target (and we're not locked in a fence),
-            // when we hit the hard max regardless, or on the last sentence.
             if (at_target && !locked) || at_max || last_sent {
                 if window_chars >= min_chars || last_sent {
                     raw_chunks.push(emit(&window, window_offset));
                 }
 
-                // ── Overlap: retain last `overlap_chars` worth of sentences ──
                 if !last_sent {
                     let mut carry_chars = 0_usize;
                     let mut carry_start = window.len();
@@ -270,20 +261,6 @@ impl Chunker for SlidingWindowChunker {
                     let carry: Vec<&str> = window[carry_start..].to_vec();
                     window_chars = carry.iter().map(|s| s.chars().count()).sum();
 
-                    // Correctly compute the absolute sentence index of the
-                    // first carried sentence.
-                    //
-                    // At emit time, `window` holds exactly `window.len()`
-                    // sentences ending at `sent_idx` (inclusive), so the first
-                    // sentence in the window has absolute index:
-                    //   first_in_window = (sent_idx + 1) - window.len()
-                    //
-                    // The carry begins at `carry_start` within that window, so:
-                    //   carry_absolute_idx = first_in_window + carry_start
-                    //
-                    // saturating_sub guards against the pathological case where
-                    // window.len() > sent_idx + 1 (shouldn't happen in practice
-                    // but avoids usize underflow / wrap in debug builds).
                     let first_in_window = (sent_idx + 1).saturating_sub(window.len());
                     let carry_absolute_idx = first_in_window + carry_start;
 
@@ -305,20 +282,7 @@ impl Chunker for SlidingWindowChunker {
         let mut chunks: Vec<DocumentChunk> = Vec::with_capacity(raw_chunks.len());
 
         for (idx, (chunk_text, byte_offset)) in raw_chunks.into_iter().enumerate() {
-            // Resolve heading path using the END of the raw chunk text in the
-            // source document as the probe point.
-            //
-            // Rationale: `unicode_sentences()` skips heading lines (no terminal
-            // punctuation), so `byte_offset` — the start of the first *sentence*
-            // — may be 0 for the very first chunk even when an H1 sits above it.
-            // Probing at chunk-end guarantees we always scan past any ATX
-            // heading that precedes the chunk's content, regardless of where
-            // sentences start within that chunk.
             let probe_end = if self.inject_heading_prefix {
-                // Find the byte position just after the last character of
-                // chunk_text in the source document.  text.find() gives the
-                // *first* occurrence; since chunk_text is derived from
-                // sentences in document order this will be the correct window.
                 text.find(chunk_text.as_str())
                     .map(|start| start + chunk_text.len())
                     .unwrap_or(byte_offset + chunk_text.len())
@@ -332,7 +296,6 @@ impl Chunker for SlidingWindowChunker {
                 String::new()
             };
 
-            // Prepend heading path to chunk text when present
             let final_text = if heading.is_empty() {
                 chunk_text
             } else {
@@ -341,7 +304,6 @@ impl Chunker for SlidingWindowChunker {
 
             let char_count = final_text.chars().count();
 
-            // Inherit all template fields; overwrite the five chunk-specific ones
             let mut attributes = template.attributes.clone();
             if !heading.is_empty() {
                 attributes.insert("heading_path".to_string(), heading);
@@ -354,22 +316,23 @@ impl Chunker for SlidingWindowChunker {
                 chunk_index:  idx as u32,
                 total_chunks: total,
                 attributes,
-                // ── lexicon fields: Bridge default; classify step overwrites ──
-                lexicon_plane: LexiconPlane::Bridge,
-                lexicon_voice: None,
-                // ── all other fields inherited verbatim from template ──
-                document_title:  template.document_title.clone(),
-                document_uri:    template.document_uri.clone(),
-                kind:            template.kind,
-                domain:          template.domain.clone(),
-                language:        template.language.clone(),
+                // lexicon fields inherited from template:
+                // Bridge is promoted by Step 6; non-Bridge is left untouched.
+                lexicon_plane: template.lexicon_plane,
+                lexicon_voice: template.lexicon_voice.clone(),
+                // all other fields inherited verbatim
+                document_title:   template.document_title.clone(),
+                document_uri:     template.document_uri.clone(),
+                kind:             template.kind,
+                domain:           template.domain.clone(),
+                language:         template.language.clone(),
                 authored_at_unix: template.authored_at_unix,
-                ttl_seconds:     template.ttl_seconds,
-                confidence:      template.confidence,
-                access_tier:     template.access_tier,
-                access_control:  template.access_control.clone(),
-                provenance:      template.provenance.clone(),
-                artifact:        template.artifact.clone(),
+                ttl_seconds:      template.ttl_seconds,
+                confidence:       template.confidence,
+                access_tier:      template.access_tier,
+                access_control:   template.access_control.clone(),
+                provenance:       template.provenance.clone(),
+                artifact:         template.artifact.clone(),
             });
         }
 
@@ -388,6 +351,13 @@ impl Chunker for SlidingWindowChunker {
             );
         }
 
+        // ── Step 6: lexicon classification ──
+        // Idempotent: chunks whose template carried a non-Bridge plane are
+        // skipped. Bridge chunks are promoted to Order or Chaos.
+        for chunk in &mut chunks {
+            classify_document_chunk(chunk);
+        }
+
         Ok(chunks)
     }
 }
@@ -401,14 +371,12 @@ mod tests {
         document::{
             AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
         },
-        lexicon::LexiconPlane,
+        lexicon::{LexiconPlane, LexiconVoice},
         provenance::ProvenanceReceipt,
         schema::DataSource,
     };
     use std::collections::BTreeMap;
 
-    /// Build a valid template chunk (text / char_count / chunk_index /
-    /// total_chunks / id are intentionally placeholder — the chunker overwrites them).
     fn template() -> DocumentChunk {
         DocumentChunk {
             id:              "00000000-0000-0000-0000-000000000000".into(),
@@ -437,15 +405,12 @@ mod tests {
             },
             artifact:        None,
             attributes:      BTreeMap::new(),
-            // lexicon defaults — classify step overwrites after ingestion
             lexicon_plane:   LexiconPlane::Bridge,
             lexicon_voice:   None,
         }
     }
 
-    /// Generate a plain-prose document long enough to produce multiple chunks.
     fn long_prose(sentences: usize) -> String {
-        // ~120 chars per sentence ≈ 30 tokens; 20 sentences ≈ 2 400 chars ≈ 600 tokens
         let sentence = "GAIA ingests Earth-observation data from satellites, \
                         IoT sensors, and biodiversity networks to build a \
                         living, auditable model of the planet. ";
@@ -457,7 +422,7 @@ mod tests {
     #[test]
     fn chunk_plain_prose_all_valid() {
         let chunker = SlidingWindowChunker::default();
-        let text = long_prose(30); // ~3 600 chars → expect 2+ chunks
+        let text = long_prose(30);
         let chunks = chunker.chunk(&text, template()).unwrap();
         assert!(!chunks.is_empty(), "expected at least one chunk");
         for c in &chunks {
@@ -481,14 +446,8 @@ mod tests {
     #[test]
     fn chunk_no_chunk_below_minimum_chars() {
         let chunker = SlidingWindowChunker::default();
-        // Even the last (potentially short) chunk must be ≥ 800 chars or merged
-        // For a document that produces a single chunk, it may be < 800 chars
-        // only if it's the sole chunk (the whole document is short).
-        // Here we test a long document: every chunk except possibly the last
-        // must be >= min.
         let text = long_prose(40);
         let chunks = chunker.chunk(&text, template()).unwrap();
-        // All chunks except the last must meet minimum
         for c in chunks.iter().take(chunks.len().saturating_sub(1)) {
             assert!(
                 c.char_count >= 800,
@@ -514,23 +473,62 @@ mod tests {
         }
     }
 
+    // ── Lexicon classify step ──
+
+    #[test]
+    fn chunk_classify_step_runs_after_chunk() {
+        let chunker = SlidingWindowChunker::default();
+        let text = long_prose(20);
+        let chunks = chunker.chunk(&text, template()).unwrap();
+        for c in &chunks {
+            assert_eq!(
+                c.lexicon_plane,
+                LexiconPlane::Order,
+                "chunk {} should be Order after classify step, got {:?}",
+                c.chunk_index,
+                c.lexicon_plane
+            );
+            assert_eq!(
+                c.lexicon_voice,
+                Some(LexiconVoice::Institutional),
+                "chunk {} should have Institutional voice",
+                c.chunk_index
+            );
+        }
+    }
+
+    #[test]
+    fn chunk_classify_respects_preexisting_plane() {
+        let mut tmpl = template();
+        tmpl.lexicon_plane = LexiconPlane::Chaos;
+        tmpl.lexicon_voice = Some(LexiconVoice::HumanVoice);
+        let chunker = SlidingWindowChunker::default();
+        let text = long_prose(20);
+        let chunks = chunker.chunk(&text, tmpl).unwrap();
+        for c in &chunks {
+            assert_eq!(
+                c.lexicon_plane,
+                LexiconPlane::Chaos,
+                "pre-classified Chaos plane must survive chunk() + classify"
+            );
+            assert_eq!(c.lexicon_voice, Some(LexiconVoice::HumanVoice));
+        }
+    }
+
     // ── Heading prefix ──
 
     #[test]
     fn chunk_markdown_heading_prefix_injected() {
         let chunker = SlidingWindowChunker::default();
-        // Build a Markdown document with a clear H1 and enough body text
         let sentence = "This section describes the ingestion pipeline in detail. ";
         let body = sentence.repeat(25);
         let text = format!("# Ingestion Design\n\n{body}");
         let chunks = chunker.chunk(&text, template()).unwrap();
-        // At least one chunk should carry the heading
         let with_heading = chunks
             .iter()
             .filter(|c| c.attributes.contains_key("heading_path"))
             .count();
         assert!(with_heading > 0, "no chunks carried a heading_path attribute");
-        // The heading text should appear somewhere in those chunks
         let heading_in_text = chunks
             .iter()
             .any(|c| c.text.contains("Ingestion Design"));
@@ -573,7 +571,7 @@ mod tests {
     #[test]
     fn chunk_rejects_invalid_config() {
         let bad_target = SlidingWindowChunker {
-            target_chars: 100, // below 800 minimum
+            target_chars: 100,
             ..Default::default()
         };
         assert!(matches!(
@@ -582,7 +580,7 @@ mod tests {
         ));
 
         let bad_overlap = SlidingWindowChunker {
-            overlap_fraction: 0.50, // above 0.20 maximum
+            overlap_fraction: 0.50,
             ..Default::default()
         };
         assert!(matches!(
@@ -596,10 +594,6 @@ mod tests {
     #[test]
     fn code_block_not_split_mid_fence() {
         let chunker = SlidingWindowChunker::default();
-        // Build a document where a fenced code block sits inside a larger body.
-        // The code block itself is short; what we verify is that the fence
-        // markers end up in the same chunk (the chunker does not split inside
-        // a fenced region).
         let preamble = "This document describes how provenance is sealed. \
                         Every ingested record carries a cryptographic receipt. \
                         The receipt is computed over the raw source bytes. \
@@ -607,14 +601,10 @@ mod tests {
         let code = "```rust\nfn seal(data: &[u8]) -> String {\n    hex::encode(Sha256::digest(data))\n}\n```";
         let postamble = "After sealing, the receipt is stored alongside the record. \
                          Any downstream consumer can verify the hash independently. ";
-        // Repeat preamble to push past target so the chunker must emit before code
         let text = format!("{}{}{}", preamble.repeat(10), code, postamble.repeat(10));
         let chunks = chunker.chunk(&text, template()).unwrap();
-        // Verify no chunk contains only an opening ``` without a closing ```
         for c in &chunks {
-            let opens  = c.text.matches("```").count();
-            // Either 0 fence markers, or an even number (open+close pairs)
-            // A lone opening fence would give 1 — that is the bug we're guarding.
+            let opens = c.text.matches("```").count();
             assert!(
                 opens % 2 == 0,
                 "chunk {} contains an odd number of fence markers ({}): possible mid-block split",
