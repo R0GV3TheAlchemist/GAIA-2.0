@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gaia-spec/knowledge/music_schema.json",
+  "title": "MusicRow",
+  "description": "Schema for a single row in music.csv. All rows carry claim_class=listed-only. No field grants tools, memory, autonomy, medical protocol, or network access. The database annotates GFI dimension signals in existing works — it does not assert that music causes any effect.",
+  "type": "object",
+  "required": [
+    "id",
+    "label",
+    "artist",
+    "year",
+    "key",
+    "mode",
+    "bpm",
+    "gfi_primary",
+    "gfi_secondary",
+    "gfi_tertiary",
+    "semantic_summary",
+    "source_url",
+    "license",
+    "claim_class"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Lowercase hyphenated canonical identifier. Must be unique across the catalog.",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+    },
+    "label": {
+      "type": "string",
+      "description": "Song title as commonly known."
+    },
+    "artist": {
+      "type": "string",
+      "description": "Primary artist or composer. For traditional works, use 'Traditional' with arranger noted."
+    },
+    "year": {
+      "type": "integer",
+      "description": "Year of original composition or earliest known recording.",
+      "minimum": 1
+    },
+    "key": {
+      "type": "string",
+      "description": "Root note of the primary key (e.g. C, F#, Bb). Use standard pitch-class notation."
+    },
+    "mode": {
+      "type": "string",
+      "description": "Modal quality of the primary key.",
+      "enum": [
+        "major",
+        "minor",
+        "dorian",
+        "phrygian",
+        "lydian",
+        "mixolydian",
+        "aeolian",
+        "locrian",
+        "chromatic",
+        "pentatonic",
+        "blues",
+        "modal",
+        "atonal",
+        "mixed"
+      ]
+    },
+    "bpm": {
+      "type": "integer",
+      "description": "Approximate tempo in beats per minute. Use the dominant section tempo.",
+      "minimum": 1,
+      "maximum": 400
+    },
+    "gfi_primary": {
+      "type": "string",
+      "description": "Dominant GFI dimension signal carried by this work's lyric and sonic field.",
+      "enum": [
+        "crown",
+        "third-eye",
+        "throat",
+        "heart",
+        "solar-plexus",
+        "sacral",
+        "root",
+        "none"
+      ]
+    },
+    "gfi_secondary": {
+      "type": "string",
+      "description": "Secondary GFI dimension, or 'none'.",
+      "enum": [
+        "crown",
+        "third-eye",
+        "throat",
+        "heart",
+        "solar-plexus",
+        "sacral",
+        "root",
+        "none"
+      ]
+    },
+    "gfi_tertiary": {
+      "type": "string",
+      "description": "Tertiary GFI dimension, or 'none'.",
+      "enum": [
+        "crown",
+        "third-eye",
+        "throat",
+        "heart",
+        "solar-plexus",
+        "sacral",
+        "root",
+        "none"
+      ]
+    },
+    "semantic_summary": {
+      "type": "string",
+      "description": "Researcher-authored analysis of the work's GFI signal. Must not reproduce lyric text beyond 8-word identification phrases. Must not assert the work causes any physical, psychological, or metaphysical effect.",
+      "minLength": 20
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Reference URL (Genius, Wikipedia, CC license page, etc.). The database cites, does not host.",
+      "format": "uri"
+    },
+    "license": {
+      "type": "string",
+      "description": "Copyright status of the original work.",
+      "enum": [
+        "public-domain",
+        "cc-by",
+        "cc-by-sa",
+        "cc-by-nc",
+        "cc0",
+        "copyright"
+      ]
+    },
+    "claim_class": {
+      "type": "string",
+      "description": "Always listed-only. Any other value is a schema violation.",
+      "const": "listed-only"
+    }
+  }
+}
