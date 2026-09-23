@@ -68,8 +68,5 @@ fn prohibited_claim_is_tagged() {
     });
     sink.emit(ev);
     assert_eq!(sink.events.len(), 1);
-    assert_eq!(
-        sink.events[0].claim_class,
-        ClaimClass::Prohibited.to_string()
-    );
+    assert_eq!(sink.events[0].claim_class, ClaimClass::Prohibited);
 }
