@@ -82,6 +82,7 @@ impl FileBackedDevice {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(false)
             .open(&path)?;
         // Ensure the file is at least `capacity` bytes.
         if file.metadata()?.len() < capacity {
