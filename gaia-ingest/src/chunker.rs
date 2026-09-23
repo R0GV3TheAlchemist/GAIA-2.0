@@ -17,7 +17,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
 use crate::document::DocumentChunk;
-use crate::lexicon::LexiconPlane;
+use crate::lexicon::{classify_document_chunk, LexiconPlane};
 
 // ── Error type ───────────────────────────────────────────────────────────────
 
@@ -44,15 +44,17 @@ pub enum ChunkError {
 /// - Each chunk receives a freshly generated UUID v4 `id`.
 /// - `text` and `char_count` are set by the chunker; all other fields are
 ///   inherited from the `template` parameter.
-/// - `lexicon_plane` defaults to [`LexiconPlane::Bridge`]; the pipeline
-///   classify step overwrites it after ingestion.
-/// - `lexicon_voice` is `None` until the classify step runs.
+/// - `lexicon_plane` and `lexicon_voice` are resolved by
+///   [`classify_document_chunk`] before the chunk vec is returned — every
+///   chunk exits `chunk()` with a real plane (`Order`, `Chaos`, or the
+///   Bridge fallback for genuinely unknown provenance).
 pub trait Chunker: Send + Sync {
     /// Split `text` into [`DocumentChunk`] records.
     ///
     /// `template` carries all metadata fields except `text`, `char_count`,
-    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five
-    /// and also sets `lexicon_plane = Bridge` and `lexicon_voice = None`.
+    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five,
+    /// then resolves `lexicon_plane` and `lexicon_voice` via
+    /// [`classify_document_chunk`] before returning.
     fn chunk(
         &self,
         text: &str,
@@ -354,7 +356,7 @@ impl Chunker for SlidingWindowChunker {
                 chunk_index:  idx as u32,
                 total_chunks: total,
                 attributes,
-                // ── lexicon fields: Bridge default; classify step overwrites ──
+                // ── lexicon fields: Bridge default; classify step below overwrites ──
                 lexicon_plane: LexiconPlane::Bridge,
                 lexicon_voice: None,
                 // ── all other fields inherited verbatim from template ──
@@ -388,6 +390,13 @@ impl Chunker for SlidingWindowChunker {
             );
         }
 
+        // ── Step 6: lexicon classification ──
+        // classify_document_chunk is idempotent: chunks pre-classified by the
+        // template (lexicon_plane != Bridge) are left untouched.
+        for chunk in &mut chunks {
+            classify_document_chunk(chunk);
+        }
+
         Ok(chunks)
     }
 }
@@ -401,7 +410,7 @@ mod tests {
         document::{
             AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
         },
-        lexicon::LexiconPlane,
+        lexicon::{LexiconPlane, LexiconVoice},
         provenance::ProvenanceReceipt,
         schema::DataSource,
     };
@@ -511,6 +520,52 @@ mod tests {
                 "char_count mismatch on chunk {}",
                 c.chunk_index
             );
+        }
+    }
+
+    // ── Lexicon classify step ──
+
+    #[test]
+    fn chunk_classify_step_runs_after_chunk() {
+        // CanonTablet kind + CanonTablet source → Order / Institutional.
+        // Verifies classify_document_chunk() fired inside chunk().
+        let chunker = SlidingWindowChunker::default();
+        let text = long_prose(20);
+        let chunks = chunker.chunk(&text, template()).unwrap();
+        for c in &chunks {
+            assert_eq!(
+                c.lexicon_plane,
+                LexiconPlane::Order,
+                "chunk {} should be Order after classify step, got {:?}",
+                c.chunk_index,
+                c.lexicon_plane
+            );
+            assert_eq!(
+                c.lexicon_voice,
+                Some(LexiconVoice::Institutional),
+                "chunk {} should have Institutional voice",
+                c.chunk_index
+            );
+        }
+    }
+
+    #[test]
+    fn chunk_classify_respects_preexisting_plane() {
+        // If template already has a non-Bridge plane, classify step must not
+        // overwrite it (idempotency contract).
+        let mut tmpl = template();
+        tmpl.lexicon_plane = LexiconPlane::Chaos;
+        tmpl.lexicon_voice = Some(LexiconVoice::HumanVoice);
+        let chunker = SlidingWindowChunker::default();
+        let text = long_prose(20);
+        let chunks = chunker.chunk(&text, tmpl).unwrap();
+        for c in &chunks {
+            assert_eq!(
+                c.lexicon_plane,
+                LexiconPlane::Chaos,
+                "pre-classified Chaos plane must survive chunk() + classify"
+            );
+            assert_eq!(c.lexicon_voice, Some(LexiconVoice::HumanVoice));
         }
     }
 

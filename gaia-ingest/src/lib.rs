@@ -25,9 +25,10 @@
 //! Every `DocumentChunk` carries a `lexicon_plane` field (`Order`, `Chaos`,
 //! or `Bridge`) so the RAG pipeline always knows which ontological plane it
 //! is pulling from. `Bridge` is the safe default — it signals unresolved
-//! provenance, not an error. The ingestion pipeline promotes chunks via
-//! `lexicon::classify_chunk()`. The retrieval layer must refuse implicit
-//! cross-plane lookups (C30: no silent failures).
+//! provenance, not an error. `SlidingWindowChunker::chunk()` calls
+//! `classify_document_chunk()` on every emitted chunk so that `lexicon_plane`
+//! and `lexicon_voice` are resolved at ingest time. The retrieval layer must
+//! refuse implicit cross-plane lookups (C30: no silent failures).
 
 pub mod artifact;
 pub mod chunker;
@@ -42,7 +43,7 @@ pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
 pub use lexicon::{
-    classify_chunk, LexiconPlane, LexiconSignals, LexiconVoice,
+    classify_chunk, classify_document_chunk, LexiconPlane, LexiconSignals, LexiconVoice,
 };
 pub use provenance::{ProvenanceBuilder, ProvenanceReceipt};
 pub use schema::{
