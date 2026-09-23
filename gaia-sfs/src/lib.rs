@@ -104,7 +104,7 @@ impl Sfs {
         self.index
             .get(&rel)
             .cloned()
-            .ok_or_else(|| SfsError::NotFound(rel))
+            .ok_or(SfsError::NotFound(rel))
     }
 
     pub fn read(&self, path: &str) -> Result<Vec<u8>> {
