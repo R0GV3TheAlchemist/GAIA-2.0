@@ -13,8 +13,6 @@
 //! The [`Chunker`] trait is the public interface. [`SlidingWindowChunker`]
 //! is the reference implementation named in the chunking standard.
 
-use std::collections::BTreeMap;
-
 use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
@@ -256,8 +254,28 @@ impl Chunker for SlidingWindowChunker {
                     }
                     let carry: Vec<&str> = window[carry_start..].to_vec();
                     window_chars = carry.iter().map(|s| s.chars().count()).sum();
-                    // byte offset of the first carried sentence
-                    let carry_absolute_idx = sent_idx + 1 - (window.len() - carry_start);
+
+                    // FIX: correctly compute the absolute sentence index of the
+                    // first carried sentence.
+                    //
+                    // At emit time, `window` holds exactly `window.len()`
+                    // sentences ending at `sent_idx` (inclusive), so the first
+                    // sentence in the window has absolute index:
+                    //   first_in_window = (sent_idx + 1) - window.len()
+                    //
+                    // The carry begins at `carry_start` within that window, so:
+                    //   carry_absolute_idx = first_in_window + carry_start
+                    //
+                    // The previous formula `sent_idx + 1 - (window.len() - carry_start)`
+                    // is algebraically equivalent but evaluates incorrectly in
+                    // Rust because the intermediate subtraction `window.len() - carry_start`
+                    // can exceed `sent_idx + 1`, causing a usize underflow / wrap,
+                    // and in practice resolves to byte offset 0 or a pre-heading
+                    // position, making `heading_path_at` return an empty string
+                    // and leaving `heading_path` absent from every chunk's attributes.
+                    let first_in_window = (sent_idx + 1).saturating_sub(window.len());
+                    let carry_absolute_idx = first_in_window + carry_start;
+
                     window_offset = sentences
                         .get(carry_absolute_idx)
                         .map(|(off, _)| *off)
