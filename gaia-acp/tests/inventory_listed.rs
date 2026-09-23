@@ -1,5 +1,7 @@
-use gaia_acp::trace::{from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, TraceKind, TraceSink};
-use gaia_acp::types::ReasonCode;
+use gaia_acp::{
+    ClaimClass, InvokeTraceInput, MemoryTraceSink, ReasonCode, TraceKind, TraceSink,
+    from_invoke,
+};
 
 #[test]
 fn untrusted_authority_is_logged() {
