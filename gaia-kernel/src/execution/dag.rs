@@ -103,13 +103,21 @@ impl TaskDAG {
             let mut tier = Vec::with_capacity(tier_size);
 
             for _ in 0..tier_size {
-                let id = queue.pop_front().unwrap();
+                // Safety: the outer while-guard and the fixed `tier_size`
+                // iteration count guarantee the queue is non-empty here.
+                // Use expect() to document the invariant rather than silently
+                // swallowing a logic bug with unwrap_or.
+                let id = queue
+                    .pop_front()
+                    .expect("queue must be non-empty inside tier_size loop");
                 tier.push(self.tasks[&id].clone());
                 visited += 1;
 
                 if let Some(deps) = dependents.get(&id) {
                     for dep in deps {
-                        let deg = in_degree.get_mut(dep).unwrap();
+                        let deg = in_degree
+                            .get_mut(dep)
+                            .expect("every dep must be present in in_degree");
                         *deg -= 1;
                         if *deg == 0 {
                             queue.push_back(*dep);

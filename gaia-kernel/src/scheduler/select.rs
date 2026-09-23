@@ -6,6 +6,7 @@
 //!
 //! The full capability graph and load-aware selection are tracked in #721.
 
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 /// A registered agent handle.
@@ -60,10 +61,16 @@ impl AgentRegistry {
 
     /// Stage 5 — pick the lowest-load agent from the candidate list.
     /// Falls back to the first if all loads are equal.
+    /// NaN load scores are treated as equal (Ordering::Equal) so a
+    /// malformed score can never panic the scheduler.
     pub fn select(&self, candidates: Vec<AgentHandle>) -> AgentHandle {
         candidates
             .into_iter()
-            .min_by(|a, b| a.load_score.partial_cmp(&b.load_score).unwrap())
+            .min_by(|a, b| {
+                a.load_score
+                    .partial_cmp(&b.load_score)
+                    .unwrap_or(Ordering::Equal)
+            })
             .expect("select called with empty candidate list")
     }
 }

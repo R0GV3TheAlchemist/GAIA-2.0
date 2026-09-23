@@ -49,18 +49,20 @@ impl SensorBus {
 
     /// Push a new event onto the bus (called by drivers or mock sources).
     pub fn push(&self, event: SensorEvent) {
-        self.queue.lock().unwrap().push(event);
+        // Recover from mutex poison: the inner Vec is always valid even if
+        // a previous holder panicked, so we can safely continue.
+        self.queue.lock().unwrap_or_else(|p| p.into_inner()).push(event);
     }
 
     /// Drain all queued events and return them.
     pub fn drain(&self) -> Vec<SensorEvent> {
-        let mut q = self.queue.lock().unwrap();
+        let mut q = self.queue.lock().unwrap_or_else(|p| p.into_inner());
         std::mem::take(&mut *q)
     }
 
     /// Return the number of pending events without consuming them.
     pub fn pending(&self) -> usize {
-        self.queue.lock().unwrap().len()
+        self.queue.lock().unwrap_or_else(|p| p.into_inner()).len()
     }
 }
 
