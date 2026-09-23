@@ -98,18 +98,10 @@ pub enum PipelineError {
 ///     },
 /// };
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct IngestPipeline {
     /// The chunking strategy to apply after reading the file.
     pub chunker: SlidingWindowChunker,
-}
-
-impl Default for IngestPipeline {
-    fn default() -> Self {
-        Self {
-            chunker: SlidingWindowChunker::default(),
-        }
-    }
 }
 
 impl IngestPipeline {
