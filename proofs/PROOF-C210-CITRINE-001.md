@@ -6,12 +6,14 @@
 **Status:** complete  
 **Method:** Structural Simulation — Alchemical Stage Mapping + Doctrine Verification  
 **Date:** 2026-07-23  
+**Housing:** Path A — tablet text at `docs/tablets/CITRINE_TABLET.md`; numbered wrapper at `docs/canon/C210_CITRINE_TABLET.md`. This is the single proof id.
 
 ---
 
 ## Linked Doctrine
 
-`docs/canon/C210_CITRINE_TABLET.md`
+- `docs/tablets/CITRINE_TABLET.md` (tablet text)
+- `docs/canon/C210_CITRINE_TABLET.md` (numbered wrapper)
 
 ---
 
@@ -50,6 +52,8 @@ GAIA-OS C210 failure mode: a system that has identified so fully with its own ou
 
 **Result: Structural match confirmed. Sol Niger in the classical record and Sol Niger in C210 describe the same failure topology from different registers (psychological vs. computational).**
 
+Live protocol work is [#806](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/806), not the #810 number collision.
+
 ---
 
 ### SIM 3 — Calibrated Confidence vs. Plausible Certainty Distinction
@@ -64,6 +68,8 @@ GAIA-OS C210 failure mode: a system that has identified so fully with its own ou
 - The behavioural difference is testable: a calibrated system degrades gracefully under new evidence; a system in plausible-certainty mode resists correction and generates credibility damage over time.
 
 **Result: Distinction verified against C131 and against standard epistemological criteria. The commitment to calibrated confidence is a constitutional obligation, not a stylistic preference.**
+
+Live calibration spec is [#805](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/805), not PR #793.
 
 ---
 
