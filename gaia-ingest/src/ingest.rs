@@ -132,7 +132,12 @@ impl IngestPipeline {
 
         // ── 3. Timestamps ─────────────────────────────────────────────────────
         let fetched_at = unix_now();
-        let observed_at = mtime_unix(path).unwrap_or(fetched_at);
+        // Clamp observed_at to fetched_at: on CI runners freshly checked-out
+        // files can have an mtime equal to or slightly ahead of the wall clock,
+        // which would cause ProvenanceBuilder::seal() to return
+        // FetchedBeforeObserved.  For real production files mtime is always in
+        // the past, so clamping here is semantically correct in all cases.
+        let observed_at = mtime_unix(path).unwrap_or(fetched_at).min(fetched_at);
 
         // ── 4. Derive metadata from the path ──────────────────────────────────
         let canonical = path
