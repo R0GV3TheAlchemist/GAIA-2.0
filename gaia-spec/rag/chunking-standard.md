@@ -1,7 +1,7 @@
 # GAIA RAG Chunking Standard
 
 > **Status:** Accepted  
-> **Implements:** #909 (`DocumentChunk` design)  
+> **Implements:** #909 (`DocumentChunk` design), #911 (`SemanticChunker` / FM-1)  
 > **Tier:** 1 — Foundation  
 > **Owner:** gaia-ingest  
 
@@ -138,4 +138,22 @@ full required-attribute taxonomy.  At minimum, every chunk **must** populate:
 - Gao, Y. et al. (2023). *Retrieval-Augmented Generation for Large Language
   Models: A Survey.* arXiv:2312.10997.
 - GAIA issue #909 — `DocumentChunk` design.
+- GAIA issue #911 — `SemanticChunker` / FM-1 implementation.
 - GAIA issue #906 — RAG Reliability Epic.
+
+---
+
+## 8. Reference Implementation
+
+`SlidingWindowChunker` in `gaia-ingest/src/chunker.rs` is the reference
+implementation of this standard. Its defaults are:
+
+| Parameter | Default value | Maps to standard |
+|---|---|---|
+| `target_chars` | 2 000 | ~500 tokens @ 4 chars/token |
+| `overlap_fraction` | 0.15 | 15 % overlap |
+| `inject_heading_prefix` | `true` | § 2.1 heading prefix rule |
+
+Alternative chunker implementations (e.g. tokenizer-based chunking once
+`EMBEDDING_REGISTRY` exists for FM-2) must implement the [`Chunker`] trait
+and pass the same acceptance criteria as `SlidingWindowChunker`.

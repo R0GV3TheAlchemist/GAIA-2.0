@@ -22,11 +22,13 @@
 //! (#909).
 
 pub mod artifact;
+pub mod chunker;
 pub mod document;
 pub mod provenance;
 pub mod schema;
 
 pub use artifact::{ArtifactStore, IngestError, RawArtifactRef};
+pub use chunker::{ChunkError, Chunker, SlidingWindowChunker};
 pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
