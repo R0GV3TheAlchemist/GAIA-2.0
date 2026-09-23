@@ -16,6 +16,7 @@ pub mod erasure;
 pub mod episode_store;
 pub mod isolation;
 pub mod persist;
+pub mod retrieval_guard;
 pub mod screenpipe;
 pub mod sync;
 
@@ -25,6 +26,7 @@ pub use erasure::ErasureReceipt;
 pub use episode_store::EpisodeStore;
 pub use isolation::UserScope;
 pub use persist::MemStore;
+pub use retrieval_guard::{guard_chunk, guard_chunks, LexiconPlaneMismatch, QueryPlane};
 pub use screenpipe::ScreenpipeStub;
 pub use sync::{export as sync_export, merge as sync_merge, SyncBundle};
 
@@ -36,6 +38,8 @@ pub enum MemosError {
     NotFound(Uuid),
     #[error("persist: {0}")]
     Persist(#[from] persist::PersistError),
+    #[error("retrieval guard: {0}")]
+    RetrievalGuard(#[from] LexiconPlaneMismatch),
 }
 
 pub type Result<T> = std::result::Result<T, MemosError>;
@@ -254,9 +258,6 @@ impl MemOs {
 
     /// Convenience wrapper around [`recall`] that discards scores and returns
     /// up to 20 matching [`MemCube`]s.
-    ///
-    /// Intended for callers (e.g. `ExecutionEngine`) that need to verify a
-    /// cube exists after writing but do not need ranked scores.
     pub fn search(&mut self, query: &str) -> Vec<MemCube> {
         self.recall(query, 20)
             .into_iter()
@@ -422,7 +423,7 @@ mod tests {
         assert_eq!(restored.content, "alice identity");
     }
 
-    // ── New production tests ─────────────────────────────────────────────────
+    // ── Production tests ─────────────────────────────────────────────────────
 
     #[test]
     fn persist_survives_restart() {
@@ -432,7 +433,6 @@ mod tests {
             let mut mem = MemOs::open(&path, "did:key:gaia:user-a").unwrap();
             cube_id = mem.put(MemCube::new(CubeType::Episodic, "restart survival test", "test"));
         }
-        // Re-open — simulates a process restart.
         let mem2 = MemOs::open(&path, "did:key:gaia:user-a").unwrap();
         let restored = mem2.get(cube_id).unwrap();
         assert_eq!(restored.content, "restart survival test");
@@ -446,7 +446,6 @@ mod tests {
             let mut a = MemOs::open(&path, "did:key:gaia:user-a").unwrap();
             cube_id   = a.put(MemCube::new(CubeType::Plaintext, "alice secret", "a"));
         }
-        // User B opens the same DB file — must not see User A's cube.
         let b = MemOs::open(&path, "did:key:gaia:user-b").unwrap();
         assert!(b.get(cube_id).is_err(), "User B must not read User A's cube");
     }
@@ -474,7 +473,6 @@ mod tests {
         let mut bob   = UserScope::new("did:key:gaia:bob");
         let aid = alice.remember("alice memory", "test");
         let bid = bob.remember("bob memory",   "test");
-        // Each scope sees only its own cube.
         assert!(alice.get(aid).is_ok());
         assert!(alice.get(bid).is_err(),  "alice must not read bob's cube");
         assert!(bob.get(bid).is_ok());
@@ -485,20 +483,12 @@ mod tests {
     fn cross_device_sync_merge_respects_version() {
         let mut home   = MemOs::new();
         let mut mobile = MemOs::new();
-
-        // Home writes a cube at version 1.
         let cube = MemCube::new(CubeType::Episodic, "home memory", "home");
         let id   = home.put(cube);
-
-        // Export from home and merge into mobile.
         let bundle  = sync_export(&home, "did:key:gaia:home-node");
         let written = sync_merge(&mut mobile, bundle);
         assert_eq!(written, 1);
-
-        // Mobile now has the cube.
         assert_eq!(mobile.get(id).unwrap().content, "home memory");
-
-        // Merging again (same version) must be a no-op.
         let bundle2  = sync_export(&home, "did:key:gaia:home-node");
         let written2 = sync_merge(&mut mobile, bundle2);
         assert_eq!(written2, 0, "re-merge of same version must be no-op");
@@ -523,7 +513,6 @@ mod tests {
         mem.put(MemCube::new(CubeType::Plaintext, "search convenience wrapper test", "t"));
         let results = mem.search("convenience wrapper");
         assert!(!results.is_empty(), "search must find the cube");
-        // Confirm the return type is Vec<MemCube> (no score tuple).
         let _ : Vec<MemCube> = results;
     }
 }
