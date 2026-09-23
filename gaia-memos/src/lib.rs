@@ -215,7 +215,9 @@ impl MemOs {
     }
 
     /// Hybrid recall: 55 % semantic (cosine) + 25 % BM25 (term overlap)
-    /// + 20 % importance.  Recency bonus (+0.1) applied to cubes accessed
+    /// + 20 % importance.
+    ///
+    /// Recency bonus (+0.1) applied to cubes accessed
     /// within the last tick via `access_count > 0`.
     pub fn recall(&mut self, query: &str, k: usize) -> Vec<(f32, MemCube)> {
         let q = embed(query);
