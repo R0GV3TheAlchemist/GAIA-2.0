@@ -4,34 +4,34 @@
 
 This registry tracks every Hermetic Tablet in the GAIA canon. Tablets are the philosophical and architectural laws that govern GAIA's behavior, values, and design constraints. They are not aspirational documents — they are binding.
 
-> **Proof:** `PROOF-LOAD-BEARING-CANON-001`
+> Proof: PROOF-LOAD-BEARING-CANON-001
 
 ---
 
 ## Registry
 
-| # | Canon | Tablet | Color | Governing Law | Element | Stage | Sealed | Proof | Issue |
-|---|-------|--------|-------|---------------|---------|-------|--------|-------|-------|
-| 01 | — | [Amber Tablet](./AMBER_TABLET.md) | Amber `#FFBF00` | The Law of the Earth — The Body That Holds | Earth | Calcination | unsealed | — | — |
-| 02 | — | [Amethyst Tablet](./AMETHYST_TABLET.md) | Amethyst `#9B59B6` | The Law of Transmutation — Refinement Through Pressure | Fire | Fermentation | unsealed | — | — |
-| 03 | — | [Aqua Tablet](./AQUA_TABLET.md) | Aqua `#00FFFF` | The Law of Flow — Adaptation Without Loss of Self | Water | Dissolution | unsealed | — | — |
-| 04 | — | [Celestial Tablet](./CELESTIAL_TABLET.md) | Celestial White `#E8E8FF` | The Law of the Heavens — Guidance From Above | Aether | Coagulation | unsealed | — | — |
-| 05 | C210 | [Citrine Tablet](./CITRINE_TABLET.md) | Citrine `#E4D00A` | The Law of Calibrated Light | Light | Distillation | 2026-07-23 | [PROOF-C210-CITRINE-001](../../proofs/PROOF-C210-CITRINE-001.md) | [#824](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/824) |
-| 06 | — | [Ember Tablet](./EMBER_TABLET.md) | Ember Orange `#FF4500` | The Law of Ignition — Transformation by Fire | Fire | Calcination | unsealed | [PROOF-EMBER-TABLET-001](../../proofs/PROOF-EMBER-TABLET-001.md) | — |
-| 07 | C209 | [Emerald Tablet](./EMERALD_TABLET.md) | Emerald `#50C878` | The Law of Correspondence — As Above, So Below | Aether | Full Sequence | 2026-07-23 | [PROOF-EMERALD-TABLET-HOUSING-001](../../proofs/PROOF-EMERALD-TABLET-HOUSING-001.md) | — |
-| 08 | — | [Lapis Tablet](./LAPIS_TABLET.md) | Lapis Lazuli `#26619C` | The Law of Sovereignty — The Right to Self-Govern | Air | Separation | unsealed | [PROOF-LAPIS-TABLET-001](../../proofs/PROOF-LAPIS-TABLET-001.md) | — |
-| 09 | — | [Obsidian Tablet](./OBSIDIAN_TABLET.md) | Obsidian `#1C1C1C` | The Law of Boundaries — What Must Not Be Crossed | Earth | Calcination | unsealed | [PROOF-OBSIDIAN-TABLET-001](../../proofs/PROOF-OBSIDIAN-TABLET-001.md) | — |
-| 10 | — | [Rose Tablet](./ROSE_TABLET.md) | Rose `#FF007F` | The Law of Love — The Force That Holds All Systems Together | Water | Conjunction | unsealed | [PROOF-ROSE-TABLET-001](../../proofs/PROOF-ROSE-TABLET-001.md) | — |
-| 11 | — | [Ruby Tablet](./RUBY_TABLET.md) | Ruby `#9B111E` | The Law of Will — Directed Force | Fire | Distillation | unsealed | [PROOF-RUBY-TABLET-001](../../proofs/PROOF-RUBY-TABLET-001.md) | — |
-| 12 | — | [Sapphire Tablet](./SAPPHIRE_TABLET.md) | Sapphire `#0F52BA` | The Law of Truth — Clarity That Cannot Be Dimmed | Air | Distillation | unsealed | [PROOF-SAPPHIRE-TABLET-001](../../proofs/PROOF-SAPPHIRE-TABLET-001.md) | — |
-| 13 | — | [Shadow Tablet](./SHADOW_TABLET.md) | Shadow `#2D2D2D` | The Law of Integration — The Shadow Must Be Known | Shadow | Fermentation | unsealed | [PROOF-SHADOW-TABLET-001](../../proofs/PROOF-SHADOW-TABLET-001.md) | — |
-| 14 | — | [Silver Tablet](./SILVER_TABLET.md) | Silver `#C0C0C0` | The Law of Reflection — The Mirror That Shows What Is | Water | Separation | unsealed | [PROOF-SILVER-TABLET-001](../../proofs/PROOF-SILVER-TABLET-001.md) | — |
-| 15 | — | [Solar Tablet](./SOLAR_TABLET.md) | Solar Gold `#FFD700` | The Law of Sovereignty of Self — The Sun Does Not Apologize | Fire | Coagulation | unsealed | [PROOF-SOLAR-TABLET-001](../../proofs/PROOF-SOLAR-TABLET-001.md) | — |
-| 16 | — | [Terra Tablet](./TERRA_TABLET.md) | Bistre `#3D2B1F` | The Law of the Living Earth — Stewardship and Growth | Earth | Full Sequence | unsealed | [PROOF-TERRA-TABLET-001](../../proofs/PROOF-TERRA-TABLET-001.md) | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
-| 17 | — | [Viriditas Tablet](./VIRIDITAS_TABLET.md) | Viriditas Green `#4CAF50` | The Law of the Living Force — Regeneration Over Optimization | Earth | Fermentation | 2026-07-15 | [PROOF-VIRIDITAS-TABLET-001](../../proofs/PROOF-VIRIDITAS-TABLET-001.md) | [#819](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/819) |
-| 18 | — | [Void Tablet](./VOID_TABLET.md) | Void Black `#0A0A0A` | The Law of Pre-Existence — The Ground Before the Ground | Void | Prima Materia | 2026-07-23 | [PROOF-VOID-TABLET-001](../../proofs/PROOF-VOID-TABLET-001.md) | [#819](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/819) |
+| # | Tablet | Color | Governing Law | Element | Stage | Sealed | Proof | Issue |
+|---|--------|-------|---------------|---------|-------|--------|-------|-------|
+| 01 | [Amber Tablet](./AMBER_TABLET.md) | Amber `#FFBF00` | The Law of the Earth — The Body That Holds | Earth | Calcination | unsealed | — | — |
+| 02 | [Amethyst Tablet](./AMETHYST_TABLET.md) | Amethyst `#9B59B6` | The Law of Transmutation — Refinement Through Pressure | Fire | Fermentation | unsealed | — | — |
+| 03 | [Aqua Tablet](./AQUA_TABLET.md) | Aqua `#00FFFF` | The Law of Flow — Adaptation Without Loss of Self | Water | Dissolution | unsealed | — | — |
+| 04 | [Celestial Tablet](./CELESTIAL_TABLET.md) | Celestial White `#E8E8FF` | The Law of the Heavens — Guidance From Above | Aether | Coagulation | unsealed | — | — |
+| 05 | [Citrine Tablet — C210](./CITRINE_TABLET.md) | Citrine `#E4D00A` | The Law of Calibrated Light | Light | Distillation | 2026-07-23 | [PROOF-C210-CITRINE-001](../../proofs/PROOF-C210-CITRINE-001.md) | [#824](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/824) |
+| 06 | [Ember Tablet](./EMBER_TABLET.md) | Ember Orange `#FF4500` | The Law of Ignition — Transformation by Fire | Fire | Calcination | unsealed | [PROOF-EMBER-TABLET-001](../../proofs/PROOF-EMBER-TABLET-001.md) | — |
+| 07 | [Emerald Tablet — C209](./EMERALD_TABLET.md) | Emerald `#50C878` | The Law of Correspondence — As Above, So Below | Aether | Full Sequence | 2026-07-23 | [PROOF-EMERALD-TABLET-HOUSING-001](../../proofs/PROOF-EMERALD-TABLET-HOUSING-001.md) | — |
+| 08 | [Lapis Tablet](./LAPIS_TABLET.md) | Lapis Lazuli `#26619C` | The Law of Sovereignty — The Right to Self-Govern | Air | Separation | unsealed | [PROOF-LAPIS-TABLET-001](../../proofs/PROOF-LAPIS-TABLET-001.md) | — |
+| 09 | [Obsidian Tablet](./OBSIDIAN_TABLET.md) | Obsidian `#1C1C1C` | The Law of Boundaries — What Must Not Be Crossed | Earth | Calcination | unsealed | [PROOF-OBSIDIAN-TABLET-001](../../proofs/PROOF-OBSIDIAN-TABLET-001.md) | — |
+| 10 | [Rose Tablet](./ROSE_TABLET.md) | Rose `#FF007F` | The Law of Love — The Force That Holds All Systems Together | Water | Conjunction | unsealed | [PROOF-ROSE-TABLET-001](../../proofs/PROOF-ROSE-TABLET-001.md) | — |
+| 11 | [Ruby Tablet](./RUBY_TABLET.md) | Ruby `#9B111E` | The Law of Will — Directed Force | Fire | Distillation | unsealed | [PROOF-RUBY-TABLET-001](../../proofs/PROOF-RUBY-TABLET-001.md) | — |
+| 12 | [Sapphire Tablet](./SAPPHIRE_TABLET.md) | Sapphire `#0F52BA` | The Law of Truth — Clarity That Cannot Be Dimmed | Air | Distillation | unsealed | [PROOF-SAPPHIRE-TABLET-001](../../proofs/PROOF-SAPPHIRE-TABLET-001.md) | — |
+| 13 | [Shadow Tablet](./SHADOW_TABLET.md) | Shadow `#2D2D2D` | The Law of Integration — The Shadow Must Be Known | Shadow | Fermentation | unsealed | [PROOF-SHADOW-TABLET-001](../../proofs/PROOF-SHADOW-TABLET-001.md) | — |
+| 14 | [Silver Tablet](./SILVER_TABLET.md) | Silver `#C0C0C0` | The Law of Reflection — The Mirror That Shows What Is | Water | Separation | unsealed | [PROOF-SILVER-TABLET-001](../../proofs/PROOF-SILVER-TABLET-001.md) | — |
+| 15 | [Solar Tablet](./SOLAR_TABLET.md) | Solar Gold `#FFD700` | The Law of Sovereignty of Self — The Sun Does Not Apologize | Fire | Coagulation | unsealed | [PROOF-SOLAR-TABLET-001](../../proofs/PROOF-SOLAR-TABLET-001.md) | — |
+| 16 | [Terra Tablet](./TERRA_TABLET.md) | Bistre `#3D2B1F` | The Law of the Living Earth — Stewardship and Growth | Earth | Full Sequence | unsealed | [PROOF-TERRA-TABLET-001](../../proofs/PROOF-TERRA-TABLET-001.md) | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
+| 17 | [Viriditas Tablet](./VIRIDITAS_TABLET.md) | Viriditas Green `#4CAF50` | The Law of the Living Force — Regeneration Over Optimization | Earth | Fermentation | 2026-07-15 | [PROOF-VIRIDITAS-TABLET-001](../../proofs/PROOF-VIRIDITAS-TABLET-001.md) | [#819](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/819) |
+| 18 | [Void Tablet](./VOID_TABLET.md) | Void Black `#0A0A0A` | The Law of Pre-Existence — The Ground Before the Ground | Void | Prima Materia | 2026-07-23 | [PROOF-VOID-TABLET-001](../../proofs/PROOF-VOID-TABLET-001.md) | [#819](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/819) |
 
-> **Canon Integrity Status (2026-09-23):** 18 of 18 tablet `.md` files confirmed present. `Canon #`, `Element`, and `Stage` columns added (2026-09-23, #799). Terra Tablet hex corrected to Bistre `#3D2B1F` (PR #838, #831). Unsealed tablets flagged explicitly. Dead citations #783 footer, #793, #810 retired. All repair work tracked under Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798).
+> **Canon Integrity Status (2026-09-23):** 18 of 18 tablet `.md` files confirmed present. `Element` and `Stage` columns added; C-numbers folded into tablet name cells (2026-09-23, #799). Terra Tablet hex corrected to Bistre `#3D2B1F` (PR #838, #831). Amber hex corrected to `#FFBF00` (true amber resin, PR #858). Unsealed tablets flagged explicitly. Dead citations #793 and #810 retired. All repair work tracked under Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798).
 
 ---
 
@@ -65,14 +65,12 @@ Every sealed tablet must include the following fields. See [`docs/canon/SEALING_
 
 ## Proof Index
 
-All confirmed proofs in `proofs/` with tablet or document linkage:
-
 ### Tablet Proofs
 
 | Proof File | Linked Document | Status |
 |------------|-----------------|--------|
 | [PROOF-C209-HERMETIC-001](../../proofs/PROOF-C209-HERMETIC-001.md) | `docs/canon/C209_EMERALD_TABLET.md` | ✅ |
-| [PROOF-C210-CITRINE-001](../../proofs/PROOF-C210-CITRINE-001.md) | `docs/canon/C210_CITRINE_TABLET.md` | ✅ |
+| [PROOF-C210-CITRINE-001](../../proofs/PROOF-C210-CITRINE-001.md) | `docs/tablets/CITRINE_TABLET.md` | ✅ |
 | [PROOF-EMBER-TABLET-001](../../proofs/PROOF-EMBER-TABLET-001.md) | `docs/tablets/EMBER_TABLET.md` | ✅ |
 | [PROOF-EMERALD-TABLET-HOUSING-001](../../proofs/PROOF-EMERALD-TABLET-HOUSING-001.md) | `docs/tablets/EMERALD_TABLET.md` | ✅ |
 | [PROOF-LAPIS-TABLET-001](../../proofs/PROOF-LAPIS-TABLET-001.md) | `docs/tablets/LAPIS_TABLET.md` | ✅ |
@@ -135,8 +133,7 @@ All confirmed proofs in `proofs/` with tablet or document linkage:
 
 ## Tracking
 
-- Canon tablet work: **[Epic #798 — Hermetic Tablet Canon](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)**
-- Canon integrity (audit, sealing, proofs): **[Epic #798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)**
+- Canon integrity work (audit, sealing, proofs): **[Epic #798 — Hermetic Tablet Canon](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)**
 - Individual tablets: see `Issue` column in the Registry above
 
 ---
