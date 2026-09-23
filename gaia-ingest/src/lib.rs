@@ -29,19 +29,28 @@
 //! `classify_document_chunk()` on every emitted chunk so that `lexicon_plane`
 //! and `lexicon_voice` are resolved at ingest time. The retrieval layer must
 //! refuse implicit cross-plane lookups (C30: no silent failures).
+//!
+//! ## Text ingestion
+//! Use [`IngestPipeline::from_path`] to ingest a local file in one call.
+//! Use [`ChunkId`] to fingerprint individual chunks for deduplication and
+//! cache keying.
 
 pub mod artifact;
+pub mod chunk_id;
 pub mod chunker;
 pub mod document;
+pub mod ingest;
 pub mod lexicon;
 pub mod provenance;
 pub mod schema;
 
 pub use artifact::{ArtifactStore, IngestError, RawArtifactRef};
+pub use chunk_id::ChunkId;
 pub use chunker::{ChunkError, Chunker, SlidingWindowChunker};
 pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
+pub use ingest::{IngestError as IngestPipelineError, IngestPipeline};
 pub use lexicon::{
     classify_chunk, classify_document_chunk, LexiconPlane, LexiconSignals, LexiconVoice,
 };
