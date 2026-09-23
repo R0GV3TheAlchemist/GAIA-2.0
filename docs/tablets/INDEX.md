@@ -33,11 +33,11 @@ Citrine follows Emerald: the **tablet text** lives at [`docs/tablets/CITRINE_TAB
 | 13 | [Shadow Tablet](./SHADOW_TABLET.md) | Shadow `#2D2D2D` | The Law of Integration — The Shadow Must Be Known | Shadow | Fermentation | unsealed | [PROOF-SHADOW-TABLET-001](../../proofs/PROOF-SHADOW-TABLET-001.md) | [#885](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/885) |
 | 14 | [Silver Tablet](./SILVER_TABLET.md) | Silver `#C0C0C0` | The Law of Reflection — The Mirror That Shows What Is | Water | Separation | unsealed | [PROOF-SILVER-TABLET-001](../../proofs/PROOF-SILVER-TABLET-001.md) | [#886](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/886) |
 | 15 | [Solar Tablet](./SOLAR_TABLET.md) | Solar Gold `#FFD700` | The Law of Sovereignty of Self — The Sun Does Not Apologize | Fire | Coagulation | unsealed | [PROOF-SOLAR-TABLET-001](../../proofs/PROOF-SOLAR-TABLET-001.md) | [#887](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/887) |
-| 16 | [Terra Tablet](./TERRA_TABLET.md) | Bistre `#3D2B1F` | The Law of the Living Earth — Stewardship and Growth | Earth | Full Sequence | unsealed | [PROOF-TERRA-TABLET-001](../../proofs/PROOF-TERRA-TABLET-001.md) | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
+| 16 | [Terra Tablet](./TERRA_TABLET.md) | Bistre `#3D2B1F` | The Law of the Living Earth — Stewardship and Growth | Earth | Full Sequence | 2026-07-23 | [PROOF-TERRA-TABLET-001](../../proofs/PROOF-TERRA-TABLET-001.md) | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
 | 17 | [Viriditas Tablet](./VIRIDITAS_TABLET.md) | Viriditas Green `#4CAF50` | The Law of the Living Force — Regeneration Over Optimization | Earth | Fermentation | 2026-07-15 | [PROOF-VIRIDITAS-TABLET-001](../../proofs/PROOF-VIRIDITAS-TABLET-001.md) | [#888](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/888) |
 | 18 | [Void Tablet](./VOID_TABLET.md) | Void Black `#0A0A0A` | The Law of Pre-Existence — The Ground Before the Ground | Void | Prima Materia | 2026-07-23 | [PROOF-VOID-TABLET-001](../../proofs/PROOF-VOID-TABLET-001.md) | [#889](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/889) |
 
-> **Canon Integrity Status (2026-09-23):** 18 of 18 tablet `.md` files confirmed present. Issue column filled via #891 (trackers #874–#889; Citrine #824; Terra #831). Citrine housing Path A documented above (#800). Amber / Amethyst / Aqua / Celestial proofs added (#801). Proof presence is **not** a sealing ceremony — unsealed tablets stay unsealed until #890. Dead citations #783 / #793 / #810 retired. Master tracker: Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798).
+> **Canon Integrity Status (2026-09-23):** 18 of 18 tablet `.md` files confirmed present. Issue column filled via #891 (trackers #874–#889; Citrine #824; Terra #831). Citrine housing Path A documented above (#800). Amber / Amethyst / Aqua / Celestial proofs added (#801). Terra formally sealed (retroactive) via PR [#923](https://github.com/R0GV3TheAvatar/GAIA-2.0/pull/923), closes [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831). Proof presence is **not** a sealing ceremony — unsealed tablets stay unsealed until #890. Dead citations #783 / #793 / #810 retired. Master tracker: Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798).
 
 ---
 
@@ -45,8 +45,8 @@ Citrine follows Emerald: the **tablet text** lives at [`docs/tablets/CITRINE_TAB
 
 | Status | Count | Tablets |
 |--------|-------|---------|
-| ✅ Sealed | 4 | Citrine (C210), Emerald (C209), Viriditas, Void |
-| ⏳ Unsealed | 14 | Amber, Amethyst, Aqua, Celestial, Ember, Lapis, Obsidian, Rose, Ruby, Sapphire, Shadow, Silver, Solar, Terra |
+| ✅ Sealed | 5 | Citrine (C210), Emerald (C209), Terra, Viriditas, Void |
+| ⏳ Unsealed | 13 | Amber, Amethyst, Aqua, Celestial, Ember, Lapis, Obsidian, Rose, Ruby, Sapphire, Shadow, Silver, Solar |
 
 Unsealed tablets with proof files are **complete in substance** but have not been through the formal sealing ceremony defined in [`docs/canon/SEALING_CEREMONY.md`](../canon/SEALING_CEREMONY.md). Sealing is tracked under [#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890) and Epic [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798).
 
@@ -144,7 +144,7 @@ Every sealed tablet must include the following fields. See [`docs/canon/SEALING_
 ## Tracking
 
 - Canon integrity work (audit, sealing, proofs): **[Epic #798 — Hermetic Tablet Canon](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)**
-- Formal sealing wave for the 14 unsealed tablets: **[#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890)**
+- Formal sealing wave for the 13 unsealed tablets: **[#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890)**
 - Individual tablets: see `Issue` column in the Registry above
 
 ---
