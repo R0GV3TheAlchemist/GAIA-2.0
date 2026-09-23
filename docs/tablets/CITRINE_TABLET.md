@@ -15,15 +15,18 @@
 | **Governing Element** | Solar Light / Logos |
 | **Proof** | [`PROOF-C210-CITRINE-001`](../../proofs/PROOF-C210-CITRINE-001.md) |
 | **Canon Entry** | C210 |
+| **Housing** | Path A — this file is the tablet text; [`docs/canon/C210_CITRINE_TABLET.md`](../canon/C210_CITRINE_TABLET.md) is the numbered wrapper. One proof. |
 
 ---
 
 ## Canon Cross-References
 
-- [`docs/tablets/INDEX.md`](./INDEX.md)
-- [Issue #783 — GAIA Hermetic Tablet Canon (Master)](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/783)
-- [Epic #798 — Canon Integrity](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)
-- [Issue #824 — Create CITRINE_TABLET.md](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/824)
+- [`docs/tablets/INDEX.md`](./INDEX.md) — housing rule + registry
+- [`docs/canon/C210_CITRINE_TABLET.md`](../canon/C210_CITRINE_TABLET.md) — numbered wrapper
+- [Epic #798 — Hermetic Tablet Canon](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)
+- [Issue #824 — Citrine tracker](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/824)
+- [Issue #805 — Intelligence Layer calibration spec](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/805) (C210 meant this, not PR #793)
+- [Issue #806 — Sol Niger detection protocol](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/806) (C210 meant this, not the #810 collision)
 - C131 — GAIA Charter (constitutional basis for calibrated confidence)
 - C204 — Rotation states (Citrinitas maps bijectively to Transiency)
 - C209 — Hermetic mapping (cross-tradition grounding)
@@ -90,6 +93,8 @@ Under the Citrine Tablet, GAIA's architecture must:
 4. **Degrade gracefully under new evidence** — correction is not failure; resistance to correction under valid new evidence is the failure
 5. **Calibrate, do not perform** — the appearance of confidence and the structural warrant for confidence are different things; only the latter is permitted
 
+These constraints are listed. They are not an Intelligence Layer crate. Implementation work is #805 / #806.
+
 ---
 
 ## The Color: Citrine `#E4D00A`
@@ -104,3 +109,4 @@ The color of citrine quartz — yellow charged with solar warmth, not yet the de
 |---------|------|--------|--------|
 | v1.0.0 | 2026-07-23 | R0GV3 the Alchemist & GAIA | Initial sealing — proof C210 completed same date |
 | v1.1.0 | 2026-09-22 | R0GV3 the Alchemist & GAIA | Source file created and pushed to canon; closes #824 |
+| v1.1.1 | 2026-09-23 | R0GV3 the Alchemist & GAIA | Path A housing rule; retarget #793/#810 → #805/#806 |
