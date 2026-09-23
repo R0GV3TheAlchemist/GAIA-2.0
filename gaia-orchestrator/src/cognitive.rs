@@ -518,7 +518,7 @@ impl FailureRecovery {
         let mut actions = Vec::new();
         let mut skip_count = 0usize;
 
-        for (&id, _reason) in failed_nodes {
+        for &id in failed_nodes.keys() {
             let node = plan
                 .nodes
                 .iter()
@@ -578,19 +578,11 @@ pub struct PlanOutcome {
 /// In production this will feed a local fine-tuning loop or a retrieval store.
 /// For now it accumulates `PlanOutcome` records in memory and exposes a
 /// `score` function so the planner can rank historical agent→goal pairings.
+#[derive(Default)]
 pub struct AdaptationEngine {
     outcomes: Vec<PlanOutcome>,
     /// Tracks success rate per agent name.
     agent_scores: HashMap<String, (u32, u32)>, // (successes, total)
-}
-
-impl Default for AdaptationEngine {
-    fn default() -> Self {
-        Self {
-            outcomes: Vec::new(),
-            agent_scores: HashMap::new(),
-        }
-    }
 }
 
 impl AdaptationEngine {
