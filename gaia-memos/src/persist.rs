@@ -19,7 +19,7 @@ use rusqlite::{params, Connection, Result as SqlResult};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{Lifecycle, MemCube};
+use crate::MemCube;
 
 // ── ChunkRow ─────────────────────────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ pub const CHUNK_COLUMNS: &str = "\
     ttl_seconds\
 ";
 
-// ── PersistError ─────────────────────────────────────────────────────────────
+// ── PersistError ──────────────────────────────────────────────────────────────
 
 /// Errors surfaced by [`MemStore`].
 #[derive(Debug, Error)]
@@ -304,7 +304,7 @@ mod tests {
 
     #[test]
     fn serde_omits_none_lexicon_voice() {
-        let row = bridge_row(); // lexicon_voice = None
+        let row = bridge_row();
         let json = serde_json::to_string(&row).expect("serialize");
         assert!(
             !json.contains("lexicon_voice"),
