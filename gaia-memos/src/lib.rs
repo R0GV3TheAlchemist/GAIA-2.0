@@ -126,15 +126,10 @@ impl MemCube {
 ///
 /// * `MemOs::new()`                      — in-process only (tests, embeddings)
 /// * `MemOs::open(path, user_did)`        — SQLite-backed persistence
+#[derive(Default)]
 pub struct MemOs {
     cubes:    HashMap<Uuid, MemCube>,
     store:    Option<(MemStore, String)>,   // (MemStore, user_did)
-}
-
-impl Default for MemOs {
-    fn default() -> Self {
-        Self { cubes: HashMap::new(), store: None }
-    }
 }
 
 impl MemOs {
