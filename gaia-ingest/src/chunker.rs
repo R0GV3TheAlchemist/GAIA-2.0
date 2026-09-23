@@ -44,17 +44,17 @@ pub enum ChunkError {
 /// - Each chunk receives a freshly generated UUID v4 `id`.
 /// - `text` and `char_count` are set by the chunker; all other fields are
 ///   inherited from the `template` parameter.
-/// - `lexicon_plane` and `lexicon_voice` are resolved by
-///   [`classify_document_chunk`] before the chunk vec is returned — every
-///   chunk exits `chunk()` with a real plane (`Order`, `Chaos`, or the
-///   Bridge fallback for genuinely unknown provenance).
+/// - `lexicon_plane` and `lexicon_voice` are inherited from `template` and
+///   then resolved by [`classify_document_chunk`] before the chunk vec is
+///   returned. If the template already carries a non-Bridge plane (explicit
+///   pre-classification), `classify_document_chunk` is a no-op for that chunk.
 pub trait Chunker: Send + Sync {
     /// Split `text` into [`DocumentChunk`] records.
     ///
     /// `template` carries all metadata fields except `text`, `char_count`,
     /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five,
-    /// then resolves `lexicon_plane` and `lexicon_voice` via
-    /// [`classify_document_chunk`] before returning.
+    /// inherits `lexicon_plane` and `lexicon_voice` from the template, then
+    /// resolves Bridge chunks via [`classify_document_chunk`] before returning.
     fn chunk(
         &self,
         text: &str,
@@ -173,7 +173,7 @@ impl Chunker for SlidingWindowChunker {
         }
         self.validate()?;
 
-        let min_chars   = 800_usize;
+        let min_chars     = 800_usize;
         let overlap_chars = ((self.target_chars as f32) * self.overlap_fraction) as usize;
 
         // ── Step 1: detect code-fence spans ──
@@ -247,9 +247,9 @@ impl Chunker for SlidingWindowChunker {
             window.push(sentence);
             window_chars += sentence.chars().count();
 
-            let at_target  = window_chars >= self.target_chars;
-            let at_max     = window_chars >= 3_200;
-            let last_sent  = sent_idx == sentences.len() - 1;
+            let at_target = window_chars >= self.target_chars;
+            let at_max    = window_chars >= 3_200;
+            let last_sent = sent_idx == sentences.len() - 1;
 
             // Emit when we hit the target (and we're not locked in a fence),
             // when we hit the hard max regardless, or on the last sentence.
@@ -343,7 +343,11 @@ impl Chunker for SlidingWindowChunker {
 
             let char_count = final_text.chars().count();
 
-            // Inherit all template fields; overwrite the five chunk-specific ones
+            // Inherit all template fields; overwrite the five chunk-specific ones.
+            // lexicon_plane and lexicon_voice are inherited from the template so
+            // that explicitly pre-classified chunks (plane != Bridge) survive the
+            // classify_document_chunk idempotency guard in Step 6 unchanged.
+            // Bridge chunks (the default) are promoted by Step 6.
             let mut attributes = template.attributes.clone();
             if !heading.is_empty() {
                 attributes.insert("heading_path".to_string(), heading);
@@ -356,22 +360,24 @@ impl Chunker for SlidingWindowChunker {
                 chunk_index:  idx as u32,
                 total_chunks: total,
                 attributes,
-                // ── lexicon fields: Bridge default; classify step below overwrites ──
-                lexicon_plane: LexiconPlane::Bridge,
-                lexicon_voice: None,
+                // ── lexicon fields: inherited from template ──────────────────
+                // Bridge (the default) is promoted by classify_document_chunk()
+                // in Step 6. Non-Bridge values are left untouched (idempotency).
+                lexicon_plane: template.lexicon_plane,
+                lexicon_voice: template.lexicon_voice.clone(),
                 // ── all other fields inherited verbatim from template ──
-                document_title:  template.document_title.clone(),
-                document_uri:    template.document_uri.clone(),
-                kind:            template.kind,
-                domain:          template.domain.clone(),
-                language:        template.language.clone(),
+                document_title:   template.document_title.clone(),
+                document_uri:     template.document_uri.clone(),
+                kind:             template.kind,
+                domain:           template.domain.clone(),
+                language:         template.language.clone(),
                 authored_at_unix: template.authored_at_unix,
-                ttl_seconds:     template.ttl_seconds,
-                confidence:      template.confidence,
-                access_tier:     template.access_tier,
-                access_control:  template.access_control.clone(),
-                provenance:      template.provenance.clone(),
-                artifact:        template.artifact.clone(),
+                ttl_seconds:      template.ttl_seconds,
+                confidence:       template.confidence,
+                access_tier:      template.access_tier,
+                access_control:   template.access_control.clone(),
+                provenance:       template.provenance.clone(),
+                artifact:         template.artifact.clone(),
             });
         }
 
@@ -390,9 +396,10 @@ impl Chunker for SlidingWindowChunker {
             );
         }
 
-        // ── Step 6: lexicon classification ──
-        // classify_document_chunk is idempotent: chunks pre-classified by the
-        // template (lexicon_plane != Bridge) are left untouched.
+        // ── Step 6: lexicon classification ──────────────────────────────────
+        // classify_document_chunk is idempotent: chunks whose template carried
+        // a non-Bridge plane (inherited in Step 4) are skipped. Bridge chunks
+        // are promoted to Order or Chaos based on provenance signals.
         for chunk in &mut chunks {
             classify_document_chunk(chunk);
         }
@@ -490,14 +497,8 @@ mod tests {
     #[test]
     fn chunk_no_chunk_below_minimum_chars() {
         let chunker = SlidingWindowChunker::default();
-        // Even the last (potentially short) chunk must be ≥ 800 chars or merged
-        // For a document that produces a single chunk, it may be < 800 chars
-        // only if it's the sole chunk (the whole document is short).
-        // Here we test a long document: every chunk except possibly the last
-        // must be >= min.
         let text = long_prose(40);
         let chunks = chunker.chunk(&text, template()).unwrap();
-        // All chunks except the last must meet minimum
         for c in chunks.iter().take(chunks.len().saturating_sub(1)) {
             assert!(
                 c.char_count >= 800,
@@ -551,8 +552,10 @@ mod tests {
 
     #[test]
     fn chunk_classify_respects_preexisting_plane() {
-        // If template already has a non-Bridge plane, classify step must not
-        // overwrite it (idempotency contract).
+        // If template already has a non-Bridge plane, the classify step must
+        // not overwrite it (idempotency contract).
+        // The template plane is now inherited in Step 4, so classify_document_chunk
+        // sees a non-Bridge chunk and returns immediately.
         let mut tmpl = template();
         tmpl.lexicon_plane = LexiconPlane::Chaos;
         tmpl.lexicon_voice = Some(LexiconVoice::HumanVoice);
@@ -574,18 +577,15 @@ mod tests {
     #[test]
     fn chunk_markdown_heading_prefix_injected() {
         let chunker = SlidingWindowChunker::default();
-        // Build a Markdown document with a clear H1 and enough body text
         let sentence = "This section describes the ingestion pipeline in detail. ";
         let body = sentence.repeat(25);
         let text = format!("# Ingestion Design\n\n{body}");
         let chunks = chunker.chunk(&text, template()).unwrap();
-        // At least one chunk should carry the heading
         let with_heading = chunks
             .iter()
             .filter(|c| c.attributes.contains_key("heading_path"))
             .count();
         assert!(with_heading > 0, "no chunks carried a heading_path attribute");
-        // The heading text should appear somewhere in those chunks
         let heading_in_text = chunks
             .iter()
             .any(|c| c.text.contains("Ingestion Design"));
@@ -651,10 +651,6 @@ mod tests {
     #[test]
     fn code_block_not_split_mid_fence() {
         let chunker = SlidingWindowChunker::default();
-        // Build a document where a fenced code block sits inside a larger body.
-        // The code block itself is short; what we verify is that the fence
-        // markers end up in the same chunk (the chunker does not split inside
-        // a fenced region).
         let preamble = "This document describes how provenance is sealed. \
                         Every ingested record carries a cryptographic receipt. \
                         The receipt is computed over the raw source bytes. \
@@ -662,14 +658,10 @@ mod tests {
         let code = "```rust\nfn seal(data: &[u8]) -> String {\n    hex::encode(Sha256::digest(data))\n}\n```";
         let postamble = "After sealing, the receipt is stored alongside the record. \
                          Any downstream consumer can verify the hash independently. ";
-        // Repeat preamble to push past target so the chunker must emit before code
         let text = format!("{}{}{}", preamble.repeat(10), code, postamble.repeat(10));
         let chunks = chunker.chunk(&text, template()).unwrap();
-        // Verify no chunk contains only an opening ``` without a closing ```
         for c in &chunks {
-            let opens  = c.text.matches("```").count();
-            // Either 0 fence markers, or an even number (open+close pairs)
-            // A lone opening fence would give 1 — that is the bug we're guarding.
+            let opens = c.text.matches("```").count();
             assert!(
                 opens % 2 == 0,
                 "chunk {} contains an odd number of fence markers ({}): possible mid-block split",
