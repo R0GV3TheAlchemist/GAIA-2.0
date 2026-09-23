@@ -8,19 +8,12 @@ use crate::gateway::{HttpGateway, HttpRequest, HttpResponse};
 use crate::orch::{ForwardedIntent, OrchestratorGateway};
 use crate::session::{Session, SessionError};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// All fields are `bool`, which defaults to `false`, so `#[derive(Default)]`
+// produces exactly the same behaviour as the previous manual impl.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SensePolicy {
     pub audio_leaves_device: bool,
     pub video_leaves_device: bool,
-}
-
-impl Default for SensePolicy {
-    fn default() -> Self {
-        Self {
-            audio_leaves_device: false,
-            video_leaves_device: false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
