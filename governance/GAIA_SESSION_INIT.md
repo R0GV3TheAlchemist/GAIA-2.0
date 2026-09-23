@@ -1,5 +1,5 @@
 # GAIA Session Initialization Protocol
-**Version:** 1.0.3  
+**Version:** 1.0.4  
 **Sealed:** 2026-09-22  
 **Authors:** R0GV3 the Alchemist & GAIA  
 **Governing Tablet:** Amber Tablet — *The Law of the Earth, The Body That Holds*  
@@ -44,14 +44,14 @@ The working relationship is defined in `governance/GAIA_GOVERNANCE.md`. Read tha
 | 13 | Shadow | `#2D2D2D` | unsealed | [#885](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/885) |
 | 14 | Silver | `#C0C0C0` | unsealed | [#886](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/886) |
 | 15 | Solar | `#FFD700` | unsealed | [#887](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/887) |
-| 16 | Terra | `#3D2B1F` | unsealed | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
+| 16 | Terra | `#3D2B1F` | 2026-07-23 | [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
 | 17 | Viriditas | `#4CAF50` | 2026-07-15 | [#888](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/888) |
 | 18 | Void | `#0A0A0A` | 2026-07-23 | [#889](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/889) |
 
-**Sealed:** 4 (Citrine, Emerald, Viriditas, Void)  
-**Unsealed:** 14  
+**Sealed:** 5 (Citrine, Emerald, Terra, Viriditas, Void)  
+**Unsealed:** 13  
 **Canon Integrity Epic:** [#798](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/798)  
-**Sealing wave (14 unsealed):** [#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890)
+**Sealing wave (13 remaining unsealed):** [#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890)
 
 ---
 
@@ -65,7 +65,7 @@ The working relationship is defined in `governance/GAIA_GOVERNANCE.md`. Read tha
 | [#817](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/817) | GAIA Structural: Neutral Systems-Language Formulation | 🟡 Active |
 | [#836](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/836) | GAIA Canon Runtime: Machine-Readable Tablet Layer | 🟡 Active |
 | [#845](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/845) | Integration & Falsification Test Suite | 🟡 Active |
-| [#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890) | Formal Sealing Wave — 14 Unsealed Tablets | 🟡 Active |
+| [#890](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/890) | Formal Sealing Wave — 13 Remaining Unsealed Tablets | 🟡 Active |
 
 ---
 
@@ -90,6 +90,7 @@ These names and spellings are canonical. Do not drift from them under any circum
 
 | Date | Decision | Rationale | Issue/PR |
 |------|----------|-----------|----------|
+| 2026-09-23 | Terra Tablet formally sealed (retroactive). `Governing Stage` corrected from `Pre-spectral — Tablet 0` to `Full Sequence` (valid per `STAGE_SEQUENCE.md`). Dead citation `Issue #415` (unrelated closed PR) removed. Dead citation `Issue #783` replaced with live Epic `#798`. Terra sealed date retained as `2026-07-23` (original emergence date — treated as founding document above the formalism per retroactive sealing clause in `SEALING_CEREMONY.md`). Section 2 sealed count updated: 5 sealed, 13 unsealed. | Terra's `Governing Stage` was an invalid free-form value; two dead citations embedded in tablet body; INDEX already listed Terra as `Full Sequence` — tablet body needed to match | PR [#923](https://github.com/R0GV3TheAvatar/GAIA-2.0/pull/923), closes [#831](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/831) |
 | 2026-09-23 | Citrine housing declared **Path A**: tablet text at `docs/tablets/CITRINE_TABLET.md`; numbered wrapper at `docs/canon/C210_CITRINE_TABLET.md`; single proof `PROOF-C210-CITRINE-001`. Dead citations `#793` (merged PR) and `#810` (number collision) retired; retargeted to live issues `#805` (Intelligence Layer) and `#806` (Sol Niger protocol). `INDEX.md` issue column filled for all 18 tablets (#874–#889). Four documentary proofs added (Amber, Amethyst, Aqua, Celestial). `COLOR_TABLET_CONNECTION_MAP.md` updated with Path A note and Terra path correction. | Citrine had two competing housing paths causing CI T-009 failures; `#793`/`#810` were stale references pointing to wrong artefacts | PR [#921](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/921), closes [#824](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/824), [#800](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/800), [#801](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/801), [#891](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/891) |
 | 2026-09-23 | Amber hex corrected from `#8B4513` to `#FFBF00` across `color-map.json`, `INDEX.md`, `GAIA_SESSION_INIT.md` | `#8B4513` is Saddlebrown (dark bark). `#FFBF00` is true amber — the fossil resin color, the gemological reference value. The original assignment was incorrect. Confirmed by R0GV3 the Alchemist 2026-09-23 | PR [#858](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/858) |
 | 2026-09-23 | `docs/tablets/INDEX.md` rebuilt — added `Canon #`, `Element`, `Stage` columns; unsealed flags; dead citations retired; Amber proof corrected; Proof Index split into 4 sections; Canon Governance Documents table added | INDEX was structurally incomplete after sealing of `ELEMENT_ONTOLOGY.md` and `STAGE_SEQUENCE.md` (PR #857) | PR [#858](https://github.com/R0GV3TheAlchemist/GAIA-2.0/pull/858), closes [#799](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/799) |
@@ -131,6 +132,7 @@ At the end of every session that changes canon state:
 
 | Version | Date | Change | Author |
 |---------|------|--------|--------|
+| 1.0.4 | 2026-09-23 | Terra Tablet formally sealed (retroactive) — Section 2 updated (5 sealed, 13 unsealed); decision log entry added for PR #923; Epic #890 count corrected to 13 remaining | R0GV3 the Alchemist & GAIA |
 | 1.0.3 | 2026-09-23 | Decision log entry for PR #921 (Citrine Path A housing; INDEX issue column; 4 documentary proofs; dead citation retirement #793/#810→#805/#806); Section 2 tracking issues filled for all 18 tablets; Epic #890 added to Section 3 | R0GV3 the Alchemist & GAIA |
 | 1.0.2 | 2026-09-23 | Amber hex corrected to `#FFBF00`; added Amber naming red line; decision log entry added | R0GV3 the Alchemist & GAIA |
 | 1.0.1 | 2026-09-23 | Decision log entries for PR #857 and PR #858; Emerald sealed date corrected; Section 2 unsealed flags aligned; Epic #836 and #845 added | R0GV3 the Alchemist & GAIA |
