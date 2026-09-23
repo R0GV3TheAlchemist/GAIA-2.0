@@ -32,10 +32,11 @@
 //! | `provenance.sha256` | SHA-256 of raw file bytes |
 //! | `provenance.fetched_at_unix` | Current Unix time |
 //! | `provenance.observed_at_unix` | File `mtime` (falls back to `fetched_at_unix`) |
+//! | `authored_at_unix` | `Some(mtime)` — `None` when mtime is unavailable |
 //! | `lexicon_plane` | `LexiconPlane::Bridge` (resolved by chunker after splitting) |
-//! | `lexicon_voice` | `LexiconVoice::Logos` |
-//! | `confidence` | `ConfidenceTier::High` |
-//! | `access_tier` | `AccessTier::Internal` |
+//! | `lexicon_voice` | `None` (resolved by `classify_document_chunk()`) |
+//! | `confidence` | `ConfidenceTier::Canon` |
+//! | `access_tier` | `AccessTier::Public` |
 
 use std::{
     collections::BTreeMap,
@@ -48,7 +49,7 @@ use crate::{
     document::{
         AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
     },
-    lexicon::{LexiconPlane, LexiconVoice},
+    lexicon::LexiconPlane,
     provenance::ProvenanceBuilder,
     schema::DataSource,
 };
@@ -185,14 +186,14 @@ impl IngestPipeline {
             kind:            doc_kind,
             domain:          ext,
             language:        "en".into(),
-            authored_at_unix: observed_at,
+            authored_at_unix: Some(observed_at),
             ttl_seconds:     None,
-            confidence:      ConfidenceTier::High,
-            access_tier:     AccessTier::Internal,
+            confidence:      ConfidenceTier::Canon,
+            access_tier:     AccessTier::Public,
             access_control:  Vec::new(),
             attributes:      BTreeMap::new(),
             lexicon_plane:   LexiconPlane::Bridge,
-            lexicon_voice:   LexiconVoice::Logos,
+            lexicon_voice:   None,
             provenance,
             artifact:        None,
         };
@@ -319,9 +320,9 @@ mod tests {
     }
 
     #[test]
-    fn access_tier_is_internal() {
+    fn access_tier_is_public() {
         let f = tmp(&long_md(), "md");
         let chunks = IngestPipeline::default().from_path(f.path()).unwrap();
-        assert!(chunks.iter().all(|c| c.access_tier == AccessTier::Internal));
+        assert!(chunks.iter().all(|c| c.access_tier == AccessTier::Public));
     }
 }
