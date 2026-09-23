@@ -18,11 +18,12 @@ pub fn brew() -> Result<(), HmgdError> {
 ///
 /// This is a governance sentinel: GAIA's honesty contract requires that every
 /// declared realm maps to real evidence nodes before any request is routed.
-/// Called by the catalog integrity check below and by integration tests that
-/// verify the pack is not shipped with empty realm slots.
+/// The `#[must_use]` attribute signals that this function is an intentional
+/// public API return-value check, suppressing the dead_code lint for library
+/// consumers that call it without binding the result.
+#[must_use]
 pub fn all_realms_sourced() -> bool {
-    REALMS.iter().all(|r| !nodes_for(r).is_empty()
-    )
+    REALMS.iter().all(|r| !nodes_for(r).is_empty())
 }
 
 #[cfg(test)]
