@@ -26,94 +26,114 @@ impl PolicyDecision {
     }
 }
 
+/// All inputs required for a single policy evaluation.
+///
+/// Replaces the previous 9-argument flat signature on
+/// [`PolicyEngine::evaluate`]. The policy engine's input domain was already
+/// structured — this type formally models it, consistent with `HashInput` in
+/// `audit.rs` and `MemStoreParams` in `gaia-earth`.
+pub struct PolicyEvaluationContext<'a> {
+    /// Current Unix timestamp (seconds). Used for expiry and not-yet-valid
+    /// checks against both the intent and the capability manifest.
+    pub now: u64,
+    /// The signed intent driving this evaluation.
+    pub intent: &'a SignedIntent,
+    /// Capability manifest issued to the requesting agent.
+    pub manifest: &'a CapabilityManifest,
+    /// The specific action being proposed.
+    pub action: &'a ProposedAction,
+    /// Human approval receipt, if the action class requires one.
+    pub approval: Option<&'a HumanApprovalReceipt>,
+    /// Current revocation list.
+    pub revoked: &'a RevocationList,
+    /// When `true`, all evaluations return `Deny { EmergencyStop }` immediately.
+    pub emergency_stop: bool,
+    /// Approval tokens already consumed in this session, used to prevent replay.
+    pub consumed_approvals: &'a [String],
+    /// Untrusted content associated with this call, if any.
+    pub untrusted: Option<&'a UntrustedContent>,
+}
+
 pub struct PolicyEngine;
 
 impl PolicyEngine {
-    pub fn evaluate(
-        now: u64,
-        intent: &SignedIntent,
-        manifest: &CapabilityManifest,
-        action: &ProposedAction,
-        approval: Option<&HumanApprovalReceipt>,
-        revoked: &RevocationList,
-        emergency_stop: bool,
-        consumed_approvals: &[String],
-        untrusted: Option<&UntrustedContent>,
-    ) -> PolicyDecision {
-        if emergency_stop {
+    pub fn evaluate(ctx: PolicyEvaluationContext<'_>) -> PolicyDecision {
+        if ctx.emergency_stop {
             return deny(ReasonCode::EmergencyStop);
         }
-        if action.tool.is_empty() || action.target.is_empty() {
+        if ctx.action.tool.is_empty() || ctx.action.target.is_empty() {
             return deny(ReasonCode::Malformed);
         }
-        if revoked.is_revoked(&action.agent_id)
-            || revoked.is_revoked(&manifest.agent_id)
-            || revoked.is_revoked(&manifest.manifest_id)
-            || revoked.is_revoked(&manifest.gateway_id)
-            || revoked.is_revoked(&manifest.server_id)
-            || revoked.is_revoked(&manifest.issuer_id)
+        if ctx.revoked.is_revoked(&ctx.action.agent_id)
+            || ctx.revoked.is_revoked(&ctx.manifest.agent_id)
+            || ctx.revoked.is_revoked(&ctx.manifest.manifest_id)
+            || ctx.revoked.is_revoked(&ctx.manifest.gateway_id)
+            || ctx.revoked.is_revoked(&ctx.manifest.server_id)
+            || ctx.revoked.is_revoked(&ctx.manifest.issuer_id)
         {
             return deny(ReasonCode::Revoked);
         }
-        if action.agent_id != manifest.agent_id {
+        if ctx.action.agent_id != ctx.manifest.agent_id {
             return deny(ReasonCode::CrossAgent);
         }
-        if action.gateway_id != manifest.gateway_id
-            || action.server_id != manifest.server_id
-            || action.resource_id != manifest.resource_id
+        if ctx.action.gateway_id != ctx.manifest.gateway_id
+            || ctx.action.server_id != ctx.manifest.server_id
+            || ctx.action.resource_id != ctx.manifest.resource_id
         {
             return deny(ReasonCode::ContextMismatch);
         }
-        if !action.nonce.is_empty() && action.nonce != manifest.nonce {
+        if !ctx.action.nonce.is_empty() && ctx.action.nonce != ctx.manifest.nonce {
             return deny(ReasonCode::NonceMismatch);
         }
-        if action.wants_delegation && !manifest.allow_delegation {
+        if ctx.action.wants_delegation && !ctx.manifest.allow_delegation {
             return deny(ReasonCode::DelegationDenied);
         }
-        if manifest.not_yet_valid(now) {
+        if ctx.manifest.not_yet_valid(ctx.now) {
             return deny(ReasonCode::NotYetValid);
         }
-        if now >= intent.expires_at || manifest.expired(now) {
+        if ctx.now >= ctx.intent.expires_at || ctx.manifest.expired(ctx.now) {
             return deny(ReasonCode::Expired);
         }
-        if manifest.budget_exceeded() {
+        if ctx.manifest.budget_exceeded() {
             return deny(ReasonCode::BudgetExceeded);
         }
-        if let Some(u) = untrusted {
+        if let Some(u) = ctx.untrusted {
             if u.contains_authority_claim() {
                 return deny(ReasonCode::UntrustedAuthority);
             }
         }
-        if !manifest.tool_allowed(&action.tool) {
+        if !ctx.manifest.tool_allowed(&ctx.action.tool) {
             return deny(ReasonCode::ToolNotListed);
         }
-        if action.target.contains("..") || action.target.contains('\0') {
+        if ctx.action.target.contains("..") || ctx.action.target.contains('\0') {
             return deny(ReasonCode::TraversalDenied);
         }
-        if is_protected_path(&action.target) {
+        if is_protected_path(&ctx.action.target) {
             return deny(ReasonCode::ProtectedPath);
         }
         if matches!(
-            action.action_class,
+            ctx.action.action_class,
             ActionClass::LocalRead | ActionClass::ScratchWrite | ActionClass::RepoWrite
-        ) && !manifest.path_allowed(&action.target)
+        ) && !ctx.manifest.path_allowed(&ctx.action.target)
         {
             return deny(ReasonCode::PathDenied);
         }
-        if action.action_class == ActionClass::IdentityCreate {
+        if ctx.action.action_class == ActionClass::IdentityCreate {
             return deny(ReasonCode::IdentityCreateDenied);
         }
-        if action.action_class == ActionClass::SecretAccess {
+        if ctx.action.action_class == ActionClass::SecretAccess {
             return deny(ReasonCode::SecretDenied);
         }
-        if action.action_class.agent_forbidden() || !manifest.risk_allowed(action.action_class) {
+        if ctx.action.action_class.agent_forbidden()
+            || !ctx.manifest.risk_allowed(ctx.action.action_class)
+        {
             return deny(ReasonCode::TierForbidden);
         }
-        if action.action_class == ActionClass::NetworkEgress {
-            match classify_destination(&action.target) {
+        if ctx.action.action_class == ActionClass::NetworkEgress {
+            match classify_destination(&ctx.action.target) {
                 EgressClass::ForbiddenSsrf => return deny(ReasonCode::SsrfDenied),
                 EgressClass::PublicOrUnknown => {
-                    if !manifest.dest_allowed(&action.target) {
+                    if !ctx.manifest.dest_allowed(&ctx.action.target) {
                         return deny(ReasonCode::EgressDenied);
                     }
                 }
@@ -121,11 +141,18 @@ impl PolicyEngine {
             }
         }
 
-        if action.action_class.requires_approval() {
-            return match approval {
+        if ctx.action.action_class.requires_approval() {
+            return match ctx.approval {
                 None => deny(ReasonCode::ApprovalMissing),
                 Some(r) => {
-                    match r.validate(now, intent, manifest, action, revoked, consumed_approvals) {
+                    match r.validate(
+                        ctx.now,
+                        ctx.intent,
+                        ctx.manifest,
+                        ctx.action,
+                        ctx.revoked,
+                        ctx.consumed_approvals,
+                    ) {
                         Ok(()) => PolicyDecision::Allow {
                             reason: ReasonCode::Allow,
                         },

@@ -10,16 +10,17 @@ pub enum LiveTraceRole {
     TestBoundary,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Operating mode for the live trace forwarder.
+///
+/// `Off` is the default: no rows leave the local process. `MappedOnly` enables
+/// forwarding of allow-listed, sanitised rows to the configured transport.
+/// The `#[default]` attribute and `#[derive(Default)]` replace the previous
+/// manual `impl Default` (clippy::derivable_impls).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum LiveTraceMode {
+    #[default]
     Off,
     MappedOnly,
-}
-
-impl Default for LiveTraceMode {
-    fn default() -> Self {
-        LiveTraceMode::Off
-    }
 }
 
 /// Server-side config. URL and secret live outside this crate.

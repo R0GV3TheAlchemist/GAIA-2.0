@@ -14,6 +14,30 @@ pub fn brew() -> Result<(), HmgdError> {
     Err(HmgdError::RecipeForbidden)
 }
 
+/// Returns `true` when every realm in the catalog has at least one sourced node.
+///
+/// This is a governance sentinel: GAIA's honesty contract requires that every
+/// declared realm maps to real evidence nodes before any request is routed.
+/// Called by the catalog integrity check below and by integration tests that
+/// verify the pack is not shipped with empty realm slots.
 pub fn all_realms_sourced() -> bool {
-    REALMS.iter().all(|r| !nodes_for(r).is_empty())
+    REALMS.iter().all(|r| !nodes_for(r).is_empty()
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Governance invariant: every realm the catalog declares must resolve to at
+    /// least one evidence node. An empty slot means a request for that realm
+    /// would route to a node list of length zero, silently producing no answer
+    /// rather than an honest "not found" error.
+    #[test]
+    fn all_realms_have_at_least_one_node() {
+        assert!(
+            all_realms_sourced(),
+            "catalog integrity failure: one or more realms have no sourced nodes"
+        );
+    }
 }
