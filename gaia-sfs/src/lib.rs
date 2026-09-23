@@ -26,6 +26,14 @@ pub enum SfsError {
     NotFound(String),
     #[error("invalid path: {0}")]
     InvalidPath(String),
+    /// Returned by `put()` when the content produces a zero-norm embedding.
+    ///
+    /// A zero vector is meaningless for cosine similarity and must not be
+    /// written to the index, the meta directory, or the lineage log.
+    /// Callers must supply content with at least one tokenisable word
+    /// (ASCII alphanumeric, length > 1) before calling `put()`.
+    #[error("empty embedding: content at '{0}' produced a zero-norm vector")]
+    EmptyEmbedding(String),
 }
 
 pub type Result<T> = std::result::Result<T, SfsError>;
@@ -73,9 +81,25 @@ impl Sfs {
 
     pub fn put(&mut self, path: &str, data: &[u8], meta: SemanticMeta) -> Result<SfsObject> {
         let rel = normalize_path(path)?;
+        let embedding = embed(&String::from_utf8_lossy(data));
+
+        // Guard: reject content that produces a zero-norm embedding.
+        //
+        // A zero vector has cosine similarity 0.0 against every query, so it
+        // can never be retrieved via search(). Worse, if Qdrant or Graphiti
+        // backends are wired downstream, a zero vector:
+        //   • becomes an HNSW hub candidate, silently degrading graph quality;
+        //   • bypasses Graphiti's tier-2 similarity deduplication, creating
+        //     phantom entity forks in the temporal knowledge graph.
+        //
+        // Callers must supply content containing at least one tokenisable word
+        // (ASCII alphanumeric token, length > 1) before calling put().
+        if embedding.iter().all(|&x| x == 0.0) {
+            return Err(SfsError::EmptyEmbedding(rel));
+        }
+
         let cid = sha256_hex(data);
         let parent_cid = self.index.get(&rel).map(|o| o.cid.clone());
-        let embedding = embed(&String::from_utf8_lossy(data));
         let obj = SfsObject {
             path: rel.clone(),
             cid: cid.clone(),
@@ -277,5 +301,67 @@ mod tests {
         assert!(!sfs.search("texas weather", 3).is_empty());
         let body = std::fs::read_to_string(sfs.posix_root().join("docs/note.txt")).unwrap();
         assert!(body.contains("rain"));
+    }
+
+    // -------------------------------------------------------------------------
+    // EmptyEmbedding guard — hollow-vector write rejection
+    // -------------------------------------------------------------------------
+
+    /// put() must reject empty byte slices with SfsError::EmptyEmbedding.
+    ///
+    /// An empty blob produces embed("") → [0.0; EMBED_DIM]. Storing a zero
+    /// vector is silently catastrophic for downstream backends:
+    ///   • Qdrant: zero vector becomes an HNSW hub candidate, polluting the
+    ///     graph neighbourhood of every vector inserted nearby.
+    ///   • Graphiti: cosine(zero, x) = 0 for all x, so tier-2 similarity
+    ///     deduplication never matches any existing node, forking the temporal
+    ///     entity graph with phantom duplicates that accumulate over time.
+    /// The guard fires at the single write choke-point before any I/O.
+    #[test]
+    fn put_empty_bytes_returns_empty_embedding_error() {
+        let mut sfs = Sfs::open(tmp()).unwrap();
+        let err = sfs.put("ghost.bin", b"", meta());
+        assert!(
+            matches!(err, Err(SfsError::EmptyEmbedding(_))),
+            "empty content must be rejected with EmptyEmbedding, got: {err:?}"
+        );
+    }
+
+    /// put() must reject content whose only characters are single-char tokens
+    /// (e.g. pure punctuation, separators, or single-byte binary) — these also
+    /// produce a zero-norm embedding because tokenize() filters len <= 1.
+    #[test]
+    fn put_untokenisable_content_returns_empty_embedding_error() {
+        let mut sfs = Sfs::open(tmp()).unwrap();
+        let err = sfs.put("junk.bin", b"!@#$%^", meta());
+        assert!(
+            matches!(err, Err(SfsError::EmptyEmbedding(_))),
+            "untokenisable content must be rejected with EmptyEmbedding, got: {err:?}"
+        );
+    }
+
+    /// put() must succeed for content with at least one tokenisable word.
+    /// This confirms the guard does not over-block valid content.
+    #[test]
+    fn put_valid_content_is_not_blocked_by_guard() {
+        let mut sfs = Sfs::open(tmp()).unwrap();
+        let result = sfs.put("valid.txt", b"hello world", meta());
+        assert!(
+            result.is_ok(),
+            "valid tokenisable content must not be rejected by EmptyEmbedding guard"
+        );
+    }
+
+    /// The error message must name the path that triggered the rejection,
+    /// so callers and log consumers can identify which write was blocked.
+    #[test]
+    fn empty_embedding_error_message_contains_path() {
+        let mut sfs = Sfs::open(tmp()).unwrap();
+        let err = sfs.put("data/empty.bin", b"", meta()).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("data/empty.bin"),
+            "error message must contain the offending path, got: {msg}"
+        );
     }
 }
