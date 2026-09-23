@@ -88,41 +88,43 @@ impl ActionReceipt {
     }
 
     pub fn recompute_hash(&self) -> String {
-        hash_fields(
-            &self.previous_hash,
-            self.sequence,
-            self.event,
-            &self.agent_id,
-            &self.tool,
-            &self.request_hash,
-            &self.reason,
-            &self.outcome,
-            &self.action_class,
-        )
+        hash_fields(HashInput {
+            previous_hash: &self.previous_hash,
+            sequence: self.sequence,
+            event: self.event,
+            agent_id: &self.agent_id,
+            tool: &self.tool,
+            request_hash: &self.request_hash,
+            reason: &self.reason,
+            outcome: &self.outcome,
+            action_class: &self.action_class,
+        })
     }
 }
 
-fn hash_fields(
-    previous_hash: &str,
+struct HashInput<'a> {
+    previous_hash: &'a str,
     sequence: u64,
     event: PlaneEvent,
-    agent_id: &str,
-    tool: &str,
-    request_hash: &str,
-    reason: &str,
-    outcome: &str,
-    action_class: &str,
-) -> String {
+    agent_id: &'a str,
+    tool: &'a str,
+    request_hash: &'a str,
+    reason: &'a str,
+    outcome: &'a str,
+    action_class: &'a str,
+}
+
+fn hash_fields(input: HashInput<'_>) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(previous_hash.as_bytes());
-    hasher.update(sequence.to_le_bytes());
-    hasher.update(format!("{event:?}").as_bytes());
-    hasher.update(agent_id.as_bytes());
-    hasher.update(tool.as_bytes());
-    hasher.update(request_hash.as_bytes());
-    hasher.update(reason.as_bytes());
-    hasher.update(outcome.as_bytes());
-    hasher.update(action_class.as_bytes());
+    hasher.update(input.previous_hash.as_bytes());
+    hasher.update(input.sequence.to_le_bytes());
+    hasher.update(format!("{:?}", input.event).as_bytes());
+    hasher.update(input.agent_id.as_bytes());
+    hasher.update(input.tool.as_bytes());
+    hasher.update(input.request_hash.as_bytes());
+    hasher.update(input.reason.as_bytes());
+    hasher.update(input.outcome.as_bytes());
+    hasher.update(input.action_class.as_bytes());
     hex::encode(hasher.finalize())
 }
 
@@ -156,17 +158,17 @@ impl AuditChain {
         let previous_hash = self.last_hash();
         let sequence = self.receipts.len() as u64 + 1;
         let reason_s = reason.as_str();
-        let hash = hash_fields(
-            &previous_hash,
+        let hash = hash_fields(HashInput {
+            previous_hash: &previous_hash,
             sequence,
             event,
             agent_id,
             tool,
             request_hash,
-            reason_s,
+            reason: reason_s,
             outcome,
             action_class,
-        );
+        });
         let receipt = ActionReceipt {
             sequence,
             event,
