@@ -121,6 +121,13 @@ pub struct CapabilityAuthority {
     capabilities: BTreeMap<CapabilityId, Capability>,
     revoked: BTreeSet<CapabilityId>,
 }
+
+impl Default for CapabilityAuthority {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CapabilityAuthority {
     pub fn new() -> Self {
         Self {
