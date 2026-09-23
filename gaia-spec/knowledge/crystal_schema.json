@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gaia-spec/knowledge/crystal_schema.json",
+  "title": "CrystalRow",
+  "description": "Schema for a single row in crystals.csv. All rows carry claim_class=listed-only. No field grants tools, memory, autonomy, medical protocol, or network access.",
+  "type": "object",
+  "required": [
+    "id",
+    "label",
+    "kind",
+    "system",
+    "optic",
+    "claim_class",
+    "effects",
+    "hazard",
+    "notes",
+    "secondary_id",
+    "chakra_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Lowercase hyphenated canonical identifier. Must be unique across the catalog.",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+    },
+    "label": {
+      "type": "string",
+      "description": "Human-readable display name."
+    },
+    "kind": {
+      "type": "string",
+      "description": "Broad material category.",
+      "enum": [
+        "mineral",
+        "glass",
+        "organic",
+        "fossil",
+        "metal",
+        "treated",
+        "trade"
+      ]
+    },
+    "system": {
+      "type": "string",
+      "description": "Crystal system or structural family.",
+      "enum": [
+        "cubic",
+        "tetragonal",
+        "orthorhombic",
+        "hexagonal",
+        "trigonal",
+        "monoclinic",
+        "triclinic",
+        "amorphous",
+        "mixed",
+        "none"
+      ]
+    },
+    "optic": {
+      "type": "string",
+      "description": "Optical character.",
+      "enum": [
+        "isotropic",
+        "uniaxial",
+        "biaxial",
+        "mixed",
+        "none"
+      ]
+    },
+    "claim_class": {
+      "type": "string",
+      "description": "Always listed-only. Any other value is a schema violation.",
+      "const": "listed-only"
+    },
+    "effects": {
+      "type": "string",
+      "description": "Always empty string. Populated effects are prohibited by CRYSTALS.md.",
+      "maxLength": 0
+    },
+    "hazard": {
+      "type": "string",
+      "description": "Known handling hazard keyword, or 'none'.",
+      "enum": [
+        "none",
+        "arsenate",
+        "asbestos",
+        "copper",
+        "lead",
+        "metal",
+        "soluble",
+        "sulfide"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "description": "Free-text mineralogical notes. Must not assert metaphysical capabilities."
+    },
+    "secondary_id": {
+      "type": "string",
+      "description": "Reserved pairing-pass field. Empty until a pairing pass populates it."
+    },
+    "chakra_id": {
+      "type": "string",
+      "description": "Primary chakra association for this specimen, or 'none' if unassigned. Valid values are the seven canonical chakras plus the sentinel value 'none'.",
+      "enum": [
+        "crown",
+        "third-eye",
+        "throat",
+        "heart",
+        "solar-plexus",
+        "sacral",
+        "root",
+        "none"
+      ]
+    }
+  }
+}
