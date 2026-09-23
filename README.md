@@ -26,9 +26,9 @@ This repository is the implementation monorepo. Research stays in `Documents/` a
 
 **Status:** Phase 0 foundation plus Phase 1 userspace runtime (executor, syscall host, SFS v0.1, MemOS, Ed25519 audit), plus honest first cuts through the original #1–#221 board. **Not `v1.0.0`.** See [RFC 0001](rfcs/0001-kernel-path.md), [issues #1–#10 honesty](gaia-spec/sos/ISSUES-1-10.md), and the [#1–#50 rollup](gaia-spec/sos/ISSUES-1-50.md).
 
-**Parent tracker:** [#1](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/1)  
-**Phase 0 epic:** [#2](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/2) (closed; foundation only)  
-**Phase 1 epic:** [#3](https://github.com/R0GV3TheAlchemist/GAIA-2.0/issues/3) (closed; userspace only)
+**Parent tracker:** [#1](https://github.com/R0GV3TheAvatar/GAIA-2.0/issues/1)  
+**Phase 0 epic:** [#2](https://github.com/R0GV3TheAvatar/GAIA-2.0/issues/2) (closed; foundation only)  
+**Phase 1 epic:** [#3](https://github.com/R0GV3TheAvatar/GAIA-2.0/issues/3) (closed; userspace only)
 
 ## Principles
 
