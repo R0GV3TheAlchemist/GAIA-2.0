@@ -119,3 +119,74 @@ impl CapabilityManifest {
         class.risk() <= self.max_risk
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn manifest(agent_id: &str, now: u64) -> CapabilityManifest {
+        CapabilityManifest::local_reader(agent_id, now)
+    }
+
+    #[test]
+    fn fresh_manifest_is_not_expired() {
+        let m = manifest("a1", 1000);
+        assert!(!m.expired(1000));
+        assert!(!m.expired(1000 + 3599));
+    }
+
+    #[test]
+    fn manifest_expires_at_boundary() {
+        let m = manifest("a1", 1000);
+        // expires_at = now + 3600 = 4600
+        assert!(m.expired(4600));
+    }
+
+    #[test]
+    fn not_yet_valid_before_not_before() {
+        let mut m = manifest("a1", 1000);
+        m.not_before = 2000;
+        assert!(m.not_yet_valid(1999));
+        assert!(!m.not_yet_valid(2000));
+    }
+
+    #[test]
+    fn budget_exceeded_when_actions_used_eq_max() {
+        let mut m = manifest("a1", 0);
+        m.max_actions  = 3;
+        m.actions_used = 3;
+        assert!(m.budget_exceeded());
+        m.actions_used = 2;
+        assert!(!m.budget_exceeded());
+    }
+
+    #[test]
+    fn tool_allowed_exact_match() {
+        let m = manifest("a1", 0);
+        assert!(m.tool_allowed("local_read"));
+        assert!(!m.tool_allowed("exec_shell"));
+    }
+
+    #[test]
+    fn path_allowed_prefix_check() {
+        let m = manifest("a1", 0);
+        assert!(m.path_allowed("docs/notes.txt"));
+        assert!(m.path_allowed("scratch/tmp"));
+        assert!(!m.path_allowed("secrets/vault"));
+    }
+
+    #[test]
+    fn path_with_traversal_is_denied() {
+        let m = manifest("a1", 0);
+        assert!(!m.path_allowed("docs/../secrets"));
+    }
+
+    #[test]
+    fn revocation_list_idempotent() {
+        let mut rev = RevocationList::default();
+        rev.revoke("id-x");
+        rev.revoke("id-x");
+        assert!(rev.is_revoked("id-x"));
+        assert!(!rev.is_revoked("id-y"));
+    }
+}

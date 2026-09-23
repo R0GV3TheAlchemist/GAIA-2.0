@@ -186,3 +186,89 @@ impl SandboxProfile {
             && self.scratch_only_writes
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn localhost_is_ssrf() {
+        assert_eq!(classify_destination("http://localhost/api"), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn loopback_ip_is_ssrf() {
+        assert_eq!(classify_destination("http://127.0.0.1/"), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn link_local_metadata_is_ssrf() {
+        assert_eq!(
+            classify_destination("http://169.254.169.254/latest/meta-data"),
+            EgressClass::ForbiddenSsrf,
+        );
+    }
+
+    #[test]
+    fn private_rfc1918_is_ssrf() {
+        assert_eq!(classify_destination("http://192.168.1.1/"), EgressClass::ForbiddenSsrf);
+        assert_eq!(classify_destination("http://10.0.0.1/"),   EgressClass::ForbiddenSsrf);
+        assert_eq!(classify_destination("http://172.16.0.1/"), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn file_scheme_is_ssrf() {
+        assert_eq!(classify_destination("file:///etc/passwd"), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn public_host_is_public() {
+        assert_eq!(
+            classify_destination("https://api.example.com/v1"),
+            EgressClass::PublicOrUnknown,
+        );
+    }
+
+    #[test]
+    fn empty_destination_is_ssrf() {
+        assert_eq!(classify_destination(""), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn rebinding_host_is_ssrf() {
+        assert_eq!(
+            classify_rebinding_host("evil.rebind.test"),
+            EgressClass::ForbiddenSsrf,
+        );
+        assert_eq!(classify_rebinding_host("rebind.local"), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn redirect_to_localhost_is_ssrf() {
+        assert_eq!(
+            classify_redirect("https://good.com", "http://localhost/"),
+            EgressClass::ForbiddenSsrf,
+        );
+    }
+
+    #[test]
+    fn sandbox_profile_default_is_baseline() {
+        assert!(SandboxProfile::default().is_baseline());
+    }
+
+    #[test]
+    fn sandbox_profile_with_root_is_not_baseline() {
+        let p = SandboxProfile { root: true, ..Default::default() };
+        assert!(!p.is_baseline());
+    }
+
+    #[test]
+    fn octal_loopback_is_ssrf() {
+        assert_eq!(classify_destination("http://0177.0.0.1/"), EgressClass::ForbiddenSsrf);
+    }
+
+    #[test]
+    fn hex_loopback_is_ssrf() {
+        assert_eq!(classify_destination("http://0x7f000001/"), EgressClass::ForbiddenSsrf);
+    }
+}
