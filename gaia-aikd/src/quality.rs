@@ -267,7 +267,7 @@ pub fn temporal_validation(text: &str, cutoff_year: u16) -> TemporalValidation {
                 let followed_by_digit = i + 4 < bytes.len() && bytes[i + 4].is_ascii_digit();
                 if !preceded_by_digit && !followed_by_digit {
                     if let Ok(y) = text[i..i + 4].parse::<u16>() {
-                        if y >= 1000 && y <= 2200 {
+                        if (1000..=2200).contains(&y) {
                             found = Some(y);
                             break;
                         }
