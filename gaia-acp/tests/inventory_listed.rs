@@ -17,7 +17,7 @@ fn untrusted_authority_is_logged() {
         claim_class: ClaimClass::Prohibited,
     });
     sink.emit(ev);
-    let events = sink.events();
+    let events = &sink.events;
     assert_eq!(events.len(), 1);
     assert_eq!(events[0].reason, ReasonCode::UntrustedAuthority);
 }
