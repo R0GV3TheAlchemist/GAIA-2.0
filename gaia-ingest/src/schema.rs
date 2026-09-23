@@ -19,7 +19,8 @@ use crate::{
 
 // ── Data source ─────────────────────────────────────────────────────────────
 
-/// Every external data source named in #729.
+/// Every external data source named in #729, plus GAIA-internal text sources
+/// used by `DocumentChunk` (#909).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DataSource {
@@ -45,23 +46,32 @@ pub enum DataSource {
     OceanNode,
     /// Commercial satellite feed (Planet, Maxar, Airbus, …).
     SatelliteCommercial,
+    /// A GAIA canon tablet sourced from the canon repository or `gaia-spec/`.
+    /// Used as the `DataSource` in `ProvenanceReceipt` for `DocumentChunk`
+    /// records of kind `DocumentKind::CanonTablet` or `DocumentKind::SpecDocument`.
+    CanonTablet,
+    /// An internal GAIA document: research note, episodic summary, or any
+    /// `DocumentChunk` not sourced from an external system or the canon.
+    InternalDocument,
 }
 
 impl DataSource {
     /// Default SPDX license for this source's open data tier.
     pub fn default_license(self) -> &'static str {
         match self {
-            Self::Copernicus              => "CC-BY-4.0",
-            Self::Noaa                    => "CC0-1.0",
-            Self::Nasa                    => "CC0-1.0",
-            Self::Usgs                    => "CC0-1.0",
-            Self::Gbif                    => "CC-BY-4.0",
-            Self::INaturalist             => "CC-BY-NC-4.0",
-            Self::SensorThings            => "CC-BY-4.0",
-            Self::HomeNode                => "CC-BY-4.0",
-            Self::CommunityNode           => "CC-BY-4.0",
-            Self::OceanNode               => "CC0-1.0",
-            Self::SatelliteCommercial     => "proprietary",
+            Self::Copernicus          => "CC-BY-4.0",
+            Self::Noaa                => "CC0-1.0",
+            Self::Nasa                => "CC0-1.0",
+            Self::Usgs                => "CC0-1.0",
+            Self::Gbif                => "CC-BY-4.0",
+            Self::INaturalist         => "CC-BY-NC-4.0",
+            Self::SensorThings        => "CC-BY-4.0",
+            Self::HomeNode            => "CC-BY-4.0",
+            Self::CommunityNode       => "CC-BY-4.0",
+            Self::OceanNode           => "CC0-1.0",
+            Self::SatelliteCommercial => "proprietary",
+            Self::CanonTablet         => "CC-BY-4.0",
+            Self::InternalDocument    => "proprietary",
         }
     }
 
@@ -79,6 +89,8 @@ impl DataSource {
             Self::CommunityNode       => "Community Node",
             Self::OceanNode           => "Ocean Node",
             Self::SatelliteCommercial => "Commercial Satellite",
+            Self::CanonTablet         => "GAIA Canon Tablet",
+            Self::InternalDocument    => "GAIA Internal Document",
         }
     }
 }
@@ -315,6 +327,8 @@ mod tests {
             DataSource::CommunityNode,
             DataSource::OceanNode,
             DataSource::SatelliteCommercial,
+            DataSource::CanonTablet,
+            DataSource::InternalDocument,
         ];
         for s in sources {
             assert!(!s.default_license().is_empty(), "{s:?} has empty license");
