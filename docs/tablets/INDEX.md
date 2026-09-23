@@ -1,6 +1,6 @@
 # GAIA 2.0 — Hermetic Tablet Index
 
-**Version:** 1.0.4  
+**Version:** 1.0.5  
 **Updated:** 2026-09-23  
 **Source of Truth:** This file is the canonical tablet registry. `docs/color/color-map.json` must mirror it; when they diverge, this file is authoritative.
 
@@ -80,6 +80,14 @@ Amber, Amethyst, Aqua, Celestial, Lapis, Obsidian, Rose, Ruby, Sapphire, Shadow,
 | Amethyst | `proofs/PROOF-AMETHYST-DOCUMENTARY-001.md` |
 | Aqua | `proofs/PROOF-AQUA-DOCUMENTARY-001.md` |
 | Celestial | `proofs/PROOF-CELESTIAL-DOCUMENTARY-001.md` |
+| Lapis | `proofs/PROOF-LAPIS-DOCUMENTARY-001.md` |
+| Obsidian | `proofs/PROOF-OBSIDIAN-DOCUMENTARY-001.md` |
+| Rose | `proofs/PROOF-ROSE-DOCUMENTARY-001.md` |
+| Ruby | `proofs/PROOF-RUBY-DOCUMENTARY-001.md` |
+| Sapphire | `proofs/PROOF-SAPPHIRE-DOCUMENTARY-001.md` |
+| Shadow | `proofs/PROOF-SHADOW-DOCUMENTARY-001.md` |
+| Silver | `proofs/PROOF-SILVER-DOCUMENTARY-001.md` |
+| Solar | `proofs/PROOF-SOLAR-DOCUMENTARY-001.md` |
 
 ### Canon Governance Proofs
 | Document | Proof File |
