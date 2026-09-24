@@ -119,10 +119,12 @@ impl MemosQuery {
     pub fn execute(&self, candidates: Vec<MemoCandidate>) -> AuthorizedMemosResult {
         let filter = RetrievalFilter::new(self.caller.clone());
         let mut report = RetrievalReport::default();
-        let memos = candidates
-            .into_iter()
-            .filter(|c| filter.is_authorized(&c.metadata, &mut report))
-            .collect();
+        let mut memos = Vec::with_capacity(candidates.len());
+        for candidate in candidates {
+            if filter.is_authorized(&candidate.metadata, &mut report) {
+                memos.push(candidate);
+            }
+        }
         AuthorizedMemosResult { memos, report }
     }
 }
