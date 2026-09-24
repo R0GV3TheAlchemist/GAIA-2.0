@@ -5,11 +5,13 @@ mod adapter;
 mod approval;
 mod audit;
 mod autonomy;
+mod claim;
 mod config;
 mod gateway;
 mod live_trace;
 mod manifest;
 mod policy;
+mod quota;
 mod registry;
 mod sandbox;
 mod trace;
@@ -19,6 +21,7 @@ pub use adapter::{FakeAdapter, RecordingAdapter};
 pub use approval::{ApprovalDecision, HumanApprovalReceipt};
 pub use audit::{ActionReceipt, AuditChain, AuditPushInput, PlaneEvent, PlaneState};
 pub use autonomy::{gate as autonomy_gate, AutonomyLevel, ConfirmDomain, PeerEnvelope};
+pub use claim::{claim_gate, Claim};
 pub use config::{description_is_untrusted, digest_pinned, lint_mcp_config, McpServerConfig};
 pub use gateway::{ControlPlane, InvokeResult};
 pub use live_trace::{
@@ -27,6 +30,7 @@ pub use live_trace::{
 };
 pub use manifest::{CapabilityManifest, IdentityKind, PrincipalId, RevocationList};
 pub use policy::{PolicyDecision, PolicyEngine, PolicyEvaluationContext, POLICY_VERSION};
+pub use quota::{resource_quota_gate, ResourceQuota, ResourceUsage};
 pub use registry::{LocalAip, LocalRegistry};
 pub use sandbox::{
     classify_destination, classify_rebinding_host, classify_redirect, EgressClass, SandboxProfile,

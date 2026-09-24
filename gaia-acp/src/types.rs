@@ -90,6 +90,8 @@ pub enum ReasonCode {
     ConfirmRequired,
     VaultDumpDenied,
     LifeSafetyDenied,
+    ResourceQuotaExceeded,
+    SyntheticDisclosureRequired,
 }
 
 impl ReasonCode {
@@ -130,6 +132,8 @@ impl ReasonCode {
             ReasonCode::ConfirmRequired => "GAIA_ACP_CONFIRM_REQUIRED",
             ReasonCode::VaultDumpDenied => "GAIA_ACP_VAULT_DUMP_DENIED",
             ReasonCode::LifeSafetyDenied => "GAIA_ACP_LIFE_SAFETY_DENIED",
+            ReasonCode::ResourceQuotaExceeded => "GAIA_ACP_RESOURCE_QUOTA_EXCEEDED",
+            ReasonCode::SyntheticDisclosureRequired => "GAIA_ACP_SYNTHETIC_DISCLOSURE_REQUIRED",
         }
     }
 }
@@ -243,6 +247,8 @@ mod tests {
             ReasonCode::VaultDumpDenied,
             ReasonCode::LifeSafetyDenied,
             ReasonCode::AutonomyCap,
+            ReasonCode::ResourceQuotaExceeded,
+            ReasonCode::SyntheticDisclosureRequired,
         ] {
             assert!(
                 code.as_str().starts_with("GAIA_ACP_"),

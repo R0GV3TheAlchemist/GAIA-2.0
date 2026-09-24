@@ -12,6 +12,10 @@ pub enum ClaimClass {
     Experimental,
     Symbolic,
     Prohibited,
+    /// Claim generated or hallucinated by a model; requires user disclosure.
+    Synthetic,
+    /// Claim derived from raw sensor/tool output, not independently verified.
+    Observed,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
