@@ -2,6 +2,8 @@
 //! Synthetic claims must be explicitly disclosed before being treated as
 //! ground truth. Observed claims are not subject to the synthetic-disclosure
 //! rule. No I/O. Pure deterministic logic.
+//
+// ci-trigger: force synchronize 2026-09-24T17:50Z
 
 use serde::{Deserialize, Serialize};
 
