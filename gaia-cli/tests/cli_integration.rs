@@ -1,0 +1,94 @@
+//! CLI integration tests — #938
+//!
+//! The workspace already has a `gaia` binary from gaia-orchestrator
+//! (`usage: gaia intent [--accept] [--kill-specialist-a] <goal>`).
+//! This crate ships `gaia-cli` so process tests hit the clap multi-command
+//! surface in gaia-cli/src/main.rs.
+//!
+//! All fallible operations use `.expect("<context>")` instead of bare
+//! `.unwrap()`.
+//!
+//! Tests only exercise `--help` and intentional clap error paths — they do
+//! NOT require a live GAIA runtime.
+
+use assert_cmd::Command;
+
+fn gaia() -> Command {
+    Command::cargo_bin("gaia-cli").expect("gaia-cli binary should be present in cargo bin path")
+}
+
+#[test]
+fn top_level_help_succeeds() {
+    gaia()
+        .arg("--help")
+        .assert()
+        .success();
+}
+
+#[test]
+fn top_level_no_args_fails() {
+    gaia().assert().failure();
+}
+
+#[test]
+fn init_help_succeeds() {
+    gaia().args(["init", "--help"]).assert().success();
+}
+
+#[test]
+fn init_unknown_flag_fails() {
+    gaia()
+        .args(["init", "--not-a-real-flag"])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn start_help_succeeds() {
+    gaia().args(["start", "--help"]).assert().success();
+}
+
+#[test]
+fn agent_help_succeeds() {
+    gaia().args(["agent", "--help"]).assert().success();
+}
+
+#[test]
+fn agent_no_subcommand_fails() {
+    gaia().arg("agent").assert().failure();
+}
+
+#[test]
+fn intent_help_succeeds() {
+    gaia().args(["intent", "--help"]).assert().success();
+}
+
+#[test]
+fn intent_missing_text_fails() {
+    gaia().arg("intent").assert().failure();
+}
+
+#[test]
+fn memory_help_succeeds() {
+    gaia().args(["memory", "--help"]).assert().success();
+}
+
+#[test]
+fn memory_no_subcommand_fails() {
+    gaia().arg("memory").assert().failure();
+}
+
+#[test]
+fn audit_help_succeeds() {
+    gaia().args(["audit", "--help"]).assert().success();
+}
+
+#[test]
+fn revoke_help_succeeds() {
+    gaia().args(["revoke", "--help"]).assert().success();
+}
+
+#[test]
+fn revoke_missing_agent_id_fails() {
+    gaia().arg("revoke").assert().failure();
+}

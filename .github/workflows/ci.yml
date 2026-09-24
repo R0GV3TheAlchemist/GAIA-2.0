@@ -108,6 +108,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
+      - name: Generate Cargo.lock if absent
+        run: cargo generate-lockfile
       - name: Test Rust workspace, including gaia-acp control-plane corpus
         run: cargo test --workspace
 

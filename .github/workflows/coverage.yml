@@ -1,0 +1,84 @@
+# Coverage baseline — cargo-tarpaulin (#899)
+#
+# Runs on every push / PR to main. Uploads an lcov report as a workflow
+# artifact and prints a human-readable summary in the job summary.
+#
+# The --fail-under threshold is intentionally commented out on first
+# introduction; uncomment and set a value once the baseline is known.
+#
+# Exclusions:
+#   gaia-cli     — binary crate; assert_cmd subprocesses are not instrumented
+#   gaia-agents  — wasmtime guest tests raise SIGILL under tarpaulin (ptrace)
+
+name: coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tarpaulin:
+    name: cargo-tarpaulin
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry + build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-tarpaulin-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: ${{ runner.os }}-cargo-tarpaulin-
+
+      - name: Generate Cargo.lock if absent
+        run: cargo generate-lockfile
+
+      - name: Install cargo-tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+
+      - name: Run tarpaulin
+        run: |
+          cargo tarpaulin \
+            --workspace \
+            --exclude gaia-cli \
+            --exclude gaia-agents \
+            --timeout 300 \
+            --out Lcov \
+            --output-dir coverage \
+            --exclude-files 'gaia-cli/src/main.rs' \
+            --exclude-files 'gaia-agents/**' \
+            -- --test-threads=1
+        # Uncomment the line below once the baseline is established:
+        # --fail-under 60
+
+      - name: Upload lcov report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-report
+          path: coverage/lcov.info
+          retention-days: 30
+
+      - name: Post coverage summary
+        run: |
+          echo '## Coverage summary' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo 'Full lcov report uploaded as workflow artifact `lcov-report`.' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo 'gaia-agents excluded: wasmtime guest tests SIGILL under tarpaulin ptrace.' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          grep -E '^(SF|LF|LH)' coverage/lcov.info | \
+            awk 'BEGIN{f=0;lf=0;lh=0} /^SF/{f++} /^LF:/{lf+=$1+0} /^LH:/{lh+=$1+0} \
+                 END{printf "Files: %d | Coverable lines: %d | Covered lines: %d | Coverage: %.1f%%\n", \
+                 f, lf, lh, (lf>0 ? lh/lf*100 : 0)}' \
+            FS=: >> $GITHUB_STEP_SUMMARY || true
