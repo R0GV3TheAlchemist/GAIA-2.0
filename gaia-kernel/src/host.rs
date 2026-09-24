@@ -13,7 +13,7 @@ use crate::broker::{Broker, Capabilities};
 use crate::executor::Executor;
 use crate::identity::{verify, Principal};
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum KernelError {
     #[error("invalid argument: {0}")]
     InvalidArgument(String),
@@ -23,6 +23,8 @@ pub enum KernelError {
     Sfs(String),
     #[error("memos: {0}")]
     Memos(String),
+    #[error("capability registration monopoly risk: fewer than two independent resolution paths")]
+    MonopolyRisk,
 }
 
 pub type Result<T> = std::result::Result<T, KernelError>;
@@ -84,11 +86,8 @@ impl KernelHost {
             intent_id: Uuid::new_v4(),
             state: "admitted".into(),
         };
-        self.audit.append(
-            &self.principal,
-            "intent",
-            &format!("{}:{}", handle.intent_id, goal),
-        );
+        self.audit
+            .append(&self.principal, "intent", &format!("{}:{}", handle.intent_id, goal));
         Ok(handle)
     }
 
