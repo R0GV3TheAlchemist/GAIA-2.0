@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/R0GV3TheAvatar/GAIA-2.0/canon-runtime/schema.json",
+  "title": "GAIA Tablet Runtime Object",
+  "description": "Listed fields only. Presence in a manifest is not ACP enforcement, not a syscall, and not sentience. Parent #836 / schema #892.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "color", "governing_law", "element", "stage", "sealed", "author", "version", "constraints", "affordances", "prohibitions", "proof_id", "source_path", "tracker_issue"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+    "name": {"type": "string", "minLength": 1},
+    "color": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "hex"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}
+      }
+    },
+    "governing_law": {"type": "string"},
+    "element": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "enum": ["Earth", "Water", "Fire", "Air", "Aether", "Spirit", "Light", "Shadow", "Sound", "Wood", "Metal", "Void", "Cosmos", "None"]}
+      ]
+    },
+    "stage": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "enum": ["Prima Materia", "Calcination", "Dissolution", "Separation", "Conjunction", "Fermentation", "Distillation", "Coagulation", "Full Sequence"]}
+      ]
+    },
+    "sealed": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      ]
+    },
+    "author": {"type": "string"},
+    "version": {"type": "string"},
+    "constraints": {"type": "array", "items": {"type": "string"}},
+    "affordances": {"type": "array", "items": {"type": "string"}},
+    "prohibitions": {"type": "array", "items": {"type": "string"}},
+    "proof_id": {"type": "string", "minLength": 1},
+    "source_path": {"type": "string", "pattern": "^docs/tablets/[A-Z0-9_]+_TABLET\\.md$"},
+    "tracker_issue": {"type": "integer", "minimum": 1}
+  }
+}
