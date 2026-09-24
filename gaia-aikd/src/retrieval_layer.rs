@@ -112,6 +112,49 @@ pub fn retrieval_filter(
     }
 }
 
+// ── EpistemicViolation ────────────────────────────────────────────────────────
+
+/// Detectable violations of epistemic integrity in a [`KnowledgeChunk`].
+///
+/// Canon C210 (Citrine Tablet — calibrated confidence, not performed certainty)
+/// and moral-architecture P3 (knowledge without pretending certainty) both
+/// require that every asserted chunk carry at least one external, non-circular
+/// provenance anchor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EpistemicViolation {
+    /// The chunk's only provenance reference(s) point back to its own `id`
+    /// — a circular self-citation that provides no external anchor.
+    SelfGrounding,
+    /// The chunk has an empty provenance list — an unfalsifiable bare assertion.
+    MissingProvenance,
+}
+
+// ── epistemic_gate ────────────────────────────────────────────────────────────
+
+/// Validate the epistemic integrity of a [`KnowledgeChunk`] before it enters
+/// the retrieval pipeline.
+///
+/// # Returns
+/// - `Ok(())` when the chunk has at least one provenance entry that is not
+///   equal to the chunk's own `id`.
+/// - `Err(EpistemicViolation::MissingProvenance)` when `provenance` is empty.
+/// - `Err(EpistemicViolation::SelfGrounding)` when every provenance entry
+///   equals `chunk.id` — the loop must be broken at ingestion, not at query
+///   time.
+///
+/// Note: a chunk that mixes its own `id` with at least one distinct external
+/// reference is considered valid; only the all-self-referential case is
+/// rejected.
+pub fn epistemic_gate(chunk: &KnowledgeChunk) -> Result<(), EpistemicViolation> {
+    if chunk.provenance.is_empty() {
+        return Err(EpistemicViolation::MissingProvenance);
+    }
+    if chunk.provenance.iter().all(|p| p == &chunk.id) {
+        return Err(EpistemicViolation::SelfGrounding);
+    }
+    Ok(())
+}
+
 // ── unit tests ────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -164,5 +207,46 @@ mod tests {
         let chunks = vec![chunk("a", EpistemicState::Inferred, Confidence::Low)];
         let result = retrieval_filter(&chunks, RetrievalPolicy::SurfaceAll);
         assert_eq!(result[0].confidence, Confidence::Low);
+    }
+
+    // ── epistemic_gate unit tests ─────────────────────────────────────────────
+
+    #[test]
+    fn gate_rejects_empty_provenance() {
+        let c = KnowledgeChunk {
+            id: "x".into(),
+            content: "c".into(),
+            confidence: Confidence::High,
+            epistemic_state: EpistemicState::Confirmed,
+            provenance: vec![],
+            falsification_pointer: None,
+        };
+        assert_eq!(epistemic_gate(&c), Err(EpistemicViolation::MissingProvenance));
+    }
+
+    #[test]
+    fn gate_rejects_self_only_provenance() {
+        let c = KnowledgeChunk {
+            id: "loop-id".into(),
+            content: "c".into(),
+            confidence: Confidence::High,
+            epistemic_state: EpistemicState::Confirmed,
+            provenance: vec!["loop-id".into()],
+            falsification_pointer: None,
+        };
+        assert_eq!(epistemic_gate(&c), Err(EpistemicViolation::SelfGrounding));
+    }
+
+    #[test]
+    fn gate_passes_external_provenance() {
+        let c = KnowledgeChunk {
+            id: "c1".into(),
+            content: "c".into(),
+            confidence: Confidence::Medium,
+            epistemic_state: EpistemicState::Inferred,
+            provenance: vec!["external-doi-xyz".into()],
+            falsification_pointer: Some("evidence of Y would falsify".into()),
+        };
+        assert!(epistemic_gate(&c).is_ok());
     }
 }

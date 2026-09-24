@@ -56,7 +56,8 @@ pub use quality::{
 };
 pub use registry::{system_tags, BenchRow};
 pub use retrieval_layer::{
-    retrieval_filter, Confidence, EpistemicState, KnowledgeChunk, RetrievalPolicy,
+    epistemic_gate, retrieval_filter, Confidence, EpistemicState, EpistemicViolation,
+    KnowledgeChunk, RetrievalPolicy,
 };
 pub use retrieve::{GenerationContext, QueryHit, RetrievedChunk};
 pub use session::{embodied_enabled, sandbox_breakout, ToolCube};
