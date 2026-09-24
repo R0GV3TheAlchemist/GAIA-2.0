@@ -1,6 +1,7 @@
 //! GAIAN first cuts (#57–#75, #213–#221). Consent and local stubs.
 //! Not Ollama, rembg, Flutter, WebGPU, or GAIAN v1.0.
 
+pub mod affect;
 pub mod asr;
 mod agency;
 mod agent;
@@ -20,6 +21,9 @@ mod vault;
 mod voice;
 mod wardrobe;
 
+pub use affect::{
+    AffectLabel, AffectSource, AffectiveBuildError, AffectiveContext, AffectiveContextBuilder,
+};
 pub use agency::{Scope, ScopedAgent};
 pub use agent::{gaian_release_checklist, Agent, AgentAct, Grant};
 pub use capture::{equity_eval_labels, server_face_store, CaptureSession};
