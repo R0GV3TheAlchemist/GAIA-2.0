@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Build canon-runtime/manifest.json from INDEX + CAP sidecar (#893).
-
-Stdlib only. No network. Exit non-zero on missing required field or broken proof path.
-"""
+"""Build canon-runtime/manifest.json from INDEX + CAP sidecar (#893)."""
 
 from __future__ import annotations
 
@@ -63,8 +60,6 @@ def parse_index(text: str) -> list[dict]:
             raise SystemExit(f"missing backtick hex in INDEX row: {label}")
         sealed_cell = match.group("sealed")
         sealed = None
-        if "\u2705" in sealed_cell or "Sealed" in sealed_cell or "\u2705" in sealed_cell:
-            pass
         if "\u2705" in sealed_cell:
             date_match = DATE_RE.search(sealed_cell)
             sealed = date_match.group(1) if date_match else None
@@ -119,15 +114,12 @@ LAWS = {
 }
 
 
-def normalize_hex(value: str) -> str:
-    return value.upper()
-
-
 def validate_row(row: dict) -> None:
     if row["element"] is not None and row["element"] not in ELEMENTS:
         raise SystemExit(f"invalid element {row['element']!r} on {row['id']}")
     if row["stage"] is not None and row["stage"] not in STAGES:
         raise SystemExit(f"invalid stage {row['stage']!r} on {row['id']}")
+    row["color"]["hex"] = row["color"]["hex"].upper()
     if not re.fullmatch(r"#[0-9A-Fa-f]{6}", row["color"]["hex"]):
         raise SystemExit(f"invalid hex on {row['id']}")
     if not (ROOT / row["source_path"]).is_file():
@@ -135,9 +127,6 @@ def validate_row(row: dict) -> None:
     proof = PROOFS / f"{row['proof_id']}.md"
     if not proof.is_file():
         raise SystemExit(f"broken proof path for {row['id']}: {proof.name}")
-    for key in ("constraints", "affordances", "prohibitions"):
-        if not isinstance(row[key], list) or any(not isinstance(x, str) for x in row[key]):
-            raise SystemExit(f"{key} must be a string list on {row['id']}")
     if row["sealed"] and not any(row[k] for k in ("constraints", "affordances", "prohibitions")):
         raise SystemExit(f"sealed tablet {row['id']} has empty CAP lists")
 
@@ -151,11 +140,10 @@ def build() -> dict:
         if slug not in cap:
             raise SystemExit(f"CAP sidecar missing key {slug}")
         lists = cap[slug]
-        row["color"]["hex"] = normalize_hex(row["color"]["hex"])
         tablet = {
             "id": slug,
             "name": row["name"],
-            "color": row["color"],
+            "color": {"name": row["color"]["name"], "hex": row["color"]["hex"].upper()},
             "governing_law": LAWS.get(slug, ""),
             "element": row["element"],
             "stage": row["stage"],
@@ -190,8 +178,11 @@ def main() -> int:
     manifest = build()
     rendered = json.dumps(manifest, indent=2, sort_keys=False) + "\n"
     if args.check:
-        current = MANIFEST_PATH.read_text(encoding="utf-8") if MANIFEST_PATH.is_file() else ""
-        if current != rendered:
+        if not MANIFEST_PATH.is_file():
+            print("missing canon-runtime/manifest.json", file=sys.stderr)
+            return 1
+        current = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        if current != manifest:
             print("canon-runtime/manifest.json is stale; run scripts/build-canon-runtime.py", file=sys.stderr)
             return 1
         print(f"manifest ok ({len(manifest['tablets'])} tablets)")
