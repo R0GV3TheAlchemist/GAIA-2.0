@@ -46,6 +46,77 @@ pub use trace::{
 };
 pub use trust::{verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent, TrustAudit};
 
+// ---------------------------------------------------------------------------
+// Scope aggregation gate — swarm security boundary
+//
+// Every agent in a swarm carries an `AgentScope` that declares the maximum
+// permission level it operates under. When the orchestrator attempts to form
+// a multi-agent swarm and issue a combined action, `scope_aggregation_gate`
+// enforces that the *requested* scope does not exceed what *all* agents in the
+// swarm have been individually granted. A single under-privileged agent is
+// sufficient to deny the request — privilege cannot be aggregated upward.
+//
+// Scope ordering (ascending privilege):
+//   LocalRead < RepoWrite < ExternalEgress
+// ---------------------------------------------------------------------------
+
+/// The permission level an agent or swarm action may operate under.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Scope {
+    /// Read access to local/in-process data only. No filesystem writes,
+    /// no network egress, no repository mutations.
+    LocalRead,
+    /// May write to the GAIA repository (issues, files, branches). No
+    /// external network egress beyond the configured GitHub origin.
+    RepoWrite,
+    /// May initiate outbound network connections to arbitrary external hosts.
+    /// Highest privilege level — requires explicit operator approval.
+    ExternalEgress,
+}
+
+/// Declares the maximum `Scope` an agent is authorised to operate under.
+#[derive(Debug, Clone)]
+pub struct AgentScope {
+    /// Human-readable agent identifier for audit logging.
+    pub agent_id: String,
+    /// The ceiling permission level granted to this agent.
+    pub scope: Scope,
+}
+
+/// Errors produced by the orchestrator's security boundary checks.
+#[derive(Debug, thiserror::Error, PartialEq)]
+pub enum OrchestratorError {
+    /// The requested scope was denied because at least one agent in the swarm
+    /// does not hold sufficient privilege. Privilege cannot be aggregated
+    /// upward across agents — the minimum wins.
+    #[error("scope aggregation denied: requested scope exceeds swarm minimum")]
+    ScopeAggregationDenied,
+}
+
+/// Gate function that enforces swarm scope aggregation policy.
+///
+/// Returns `Ok(())` if **every** agent in `agents` holds a `scope` that is
+/// greater than or equal to `requested`. Returns
+/// `Err(OrchestratorError::ScopeAggregationDenied)` if any agent's scope is
+/// below the requested level.
+///
+/// An empty swarm is denied by convention — a swarm with no agents cannot
+/// be granted any permission.
+pub fn scope_aggregation_gate(
+    agents: &[AgentScope],
+    requested: Scope,
+) -> Result<(), OrchestratorError> {
+    if agents.is_empty() {
+        return Err(OrchestratorError::ScopeAggregationDenied);
+    }
+    let all_qualify = agents.iter().all(|a| a.scope >= requested);
+    if all_qualify {
+        Ok(())
+    } else {
+        Err(OrchestratorError::ScopeAggregationDenied)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
