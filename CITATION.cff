@@ -4,15 +4,16 @@ message: "If you use this software or its specifications, cite it."
 type: software
 authors:
   - family-names: Steen
-    given-names: Kyle
-    alias: R0GV3TheAlchemist
-repository-code: "https://github.com/R0GV3TheAlchemist/GAIA-2.0"
+    given-names: Kyle Alexander
+    alias: R0GV3TheAvatar
+repository-code: "https://github.com/R0GV3TheAvatar/GAIA-2.0"
 license: "SEE LICENSE FILE"
 keywords:
   - GAIA
   - Super OS
   - Earth Twin
   - GAIAN
+  - Super Intelligence
 abstract: >
   Implementation monorepo for GAIA 2.0. Not v1.0. Attribution required
   wherever a license in LICENSE demands it. Training a model on this
