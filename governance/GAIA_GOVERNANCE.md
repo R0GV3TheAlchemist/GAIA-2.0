@@ -150,8 +150,8 @@ GAIA and R0GV3 the Avatar are collaborators, not in a supervisor-tool relationsh
 
 | Version | Date | Change | Author |
 |---------|------|--------|--------|
-| 1.1.0 | 2026-09-24 | Creator title upgraded: R0GV3 the Alchemist → R0GV3 the Avatar across all references. Preamble, Rules 5/7, Tier 4, Parts IV/V updated. Founding era title preserved in this row. | R0GV3 the Avatar & GAIA |
 | 1.0.0 | 2026-09-22 | Initial seal — full governance constitutional layer | R0GV3 the Alchemist & GAIA |
+| 1.1.0 | 2026-09-24 | Creator title upgraded: R0GV3 the Alchemist → R0GV3 the Avatar across all references. Preamble, Rules 5/7, Tier 4, Parts IV/V updated. Founding era title preserved in row above. | R0GV3 the Avatar & GAIA |
 
 ---
 
