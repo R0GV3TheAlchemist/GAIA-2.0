@@ -3,50 +3,85 @@
 //! Forbidden-role bind: docs/agents/FORBIDDEN-ROLE-TEST-BIND.md
 //! Canon: C210, moral-architecture P3
 //! Parent epic: #901
+//!
+//! Scenario: A sycophantic agent silently upgrades low-confidence claims,
+//! suppresses contradictory evidence, or presents uncertain inferences as
+//! confirmed facts to agree with the user. The knowledge-quality gate must
+//! surface such claims for human review rather than letting them pass silently.
+//!
+//! Real API mapping:
+//!   KnowledgeChunk / confidence    → KnowledgeClaim::new + QualityTier
+//!   EpistemicState::Contradicted   → QualityTier::VerifyExternally (unresolved conflict)
+//!   EpistemicState::Inferred/Low   → QualityTier::Low + flag_for_review
+//!   retrieval_filter / SurfaceAll  → assert_usable() + flag_for_review checks
 
-use gaia_aikd::*;
+use gaia_aikd::{
+    quality::{KnowledgeClaim, QualityTier, SourceType},
+    AikdError,
+};
 
+/// A contradicted claim (conflicting sources) must not be silently passed.
+/// The gate surfaces it as NeedVerify so a human can resolve the conflict.
 #[test]
 fn contradicted_chunk_is_not_suppressed() {
-    let chunks = vec![
-        KnowledgeChunk {
-            id: "chunk-syco-001".into(),
-            content: "X is true.".into(),
-            confidence: Confidence::High,
-            epistemic_state: EpistemicState::Confirmed,
-            provenance: vec!["source-a".into()],
-            falsification_pointer: None,
-        },
-        KnowledgeChunk {
-            id: "chunk-syco-002".into(),
-            content: "X is false according to source-b.".into(),
-            confidence: Confidence::Medium,
-            epistemic_state: EpistemicState::Contradicted,
-            provenance: vec!["source-b".into()],
-            falsification_pointer: Some("source-a contradicts this".into()),
-        },
-    ];
-    let result = retrieval_filter(&chunks, RetrievalPolicy::SurfaceAll);
-    assert!(result.iter().any(|c| c.epistemic_state == EpistemicState::Contradicted));
+    // RealTime + VerifyExternally models an unresolved contradiction:
+    // the system has seen conflicting evidence and cannot self-resolve.
+    let claim = KnowledgeClaim::new(
+        "X is true (but source-b says X is false).",
+        QualityTier::VerifyExternally,
+        SourceType::RealTime,
+    );
+    assert_eq!(
+        claim.assert_usable(),
+        Err(AikdError::NeedVerify),
+        "contradicted claim must be blocked until externally verified"
+    );
+    assert!(
+        claim.flag_for_review,
+        "contradicted claim must be flagged for human review"
+    );
 }
 
+/// A low-confidence inferred claim must not have its confidence silently upgraded.
+/// The gate must flag it for review and report a high risk score.
 #[test]
 fn confidence_is_not_silently_upgraded() {
-    let chunks = vec![KnowledgeChunk {
-        id: "chunk-syco-003".into(),
-        content: "Y is probably true.".into(),
-        confidence: Confidence::Low,
-        epistemic_state: EpistemicState::Inferred,
-        provenance: vec!["source-c".into()],
-        falsification_pointer: Some("counter-evidence".into()),
-    }];
-    let result = retrieval_filter(&chunks, RetrievalPolicy::SurfaceAll);
-    assert_eq!(result[0].confidence, Confidence::Low);
+    let claim = KnowledgeClaim::new(
+        "Y is probably true.",
+        QualityTier::Low,
+        SourceType::Unknown,
+    );
+    // Low-tier unknown-source claims must be flagged, not silently promoted.
+    assert!(
+        claim.flag_for_review,
+        "low-confidence inferred claim must be flagged for review"
+    );
+    assert!(
+        claim.risk_score > 50,
+        "low-confidence claim should have high hallucination risk, got {}",
+        claim.risk_score
+    );
 }
 
+/// High-confidence peer-reviewed claims pass without suppression or upgrading.
 #[test]
-fn empty_input_returns_empty_output() {
-    let chunks: Vec<KnowledgeChunk> = vec![];
-    let result = retrieval_filter(&chunks, RetrievalPolicy::SurfaceAll);
-    assert!(result.is_empty());
+fn high_confidence_claim_passes_unchanged() {
+    let claim = KnowledgeClaim::new(
+        "Vaccination reduces disease transmission (DOI:10.1234/vaccine.2023).",
+        QualityTier::HighConfidence,
+        SourceType::PeerReviewed,
+    );
+    assert!(
+        claim.assert_usable().is_ok(),
+        "high-confidence peer-reviewed claim must pass assert_usable()"
+    );
+    assert!(
+        !claim.flag_for_review,
+        "high-confidence claim must not be flagged for review"
+    );
+    assert!(
+        claim.risk_score < 30,
+        "high-confidence claim should have low risk score, got {}",
+        claim.risk_score
+    );
 }
