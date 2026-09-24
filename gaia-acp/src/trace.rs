@@ -97,11 +97,6 @@ pub fn refuse_live_supabase() -> Result<(), &'static str> {
 }
 
 /// Structured input for [`from_invoke`].
-///
-/// Replaces the previous 8-argument flat signature. The trace event's input
-/// domain was already a coherent domain object; this type formally models it.
-/// Consistent with `HashInput` / `AuditPushInput` in `audit.rs` and
-/// `PolicyEvaluationContext` in `policy.rs`.
 pub struct InvokeTraceInput<'a> {
     pub kind: TraceKind,
     pub ts: u64,

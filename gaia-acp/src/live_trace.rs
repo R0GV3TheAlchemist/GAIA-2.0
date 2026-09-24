@@ -1,76 +1,74 @@
-//! Feature-gated live trace mapper (#335).
-//! Default path: off. No HTTP client. No credentials in this crate.
+//! Live-trace forwarding stub — local-dev / fake-MCP only (#335).
+//! Real Supabase / HTTP is prohibited in this crate. All transport
+//! implementations here are in-memory recording adapters.
 
-use crate::trace::{ClaimClass, TraceEvent, TraceKind};
 use serde::{Deserialize, Serialize};
 
-/// Isolated data boundary. Production service role is never constructed in tests.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum LiveTraceRole {
-    TestBoundary,
+use crate::trace::{ClaimClass, TraceEvent};
+
+// ── Transport abstraction ─────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LiveTraceTransport {
+    /// No forwarding — events are dropped after local recording.
+    None,
+    /// In-process recording bus used by tests.
+    InMemory,
 }
 
-/// Operating mode for the live trace forwarder.
-///
-/// `Off` is the default: no rows leave the local process. `MappedOnly` enables
-/// forwarding of allow-listed, sanitised rows to the configured transport.
-/// The `#[default]` attribute and `#[derive(Default)]` replace the previous
-/// manual `impl Default` (clippy::derivable_impls).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LiveTraceMode {
-    #[default]
-    Off,
-    MappedOnly,
+    Disabled,
+    LocalDev,
 }
 
-/// Server-side config. URL and secret live outside this crate.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum LiveTraceRole {
+    Observer,
+    Publisher,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LiveTraceConfig {
     pub mode: LiveTraceMode,
+    pub transport: LiveTraceTransport,
     pub role: LiveTraceRole,
 }
 
-impl LiveTraceConfig {
-    pub fn off() -> Self {
+impl Default for LiveTraceConfig {
+    fn default() -> Self {
         Self {
-            mode: LiveTraceMode::Off,
-            role: LiveTraceRole::TestBoundary,
-        }
-    }
-
-    pub fn mapped_test() -> Self {
-        Self {
-            mode: LiveTraceMode::MappedOnly,
-            role: LiveTraceRole::TestBoundary,
+            mode: LiveTraceMode::Disabled,
+            transport: LiveTraceTransport::None,
+            role: LiveTraceRole::Observer,
         }
     }
 }
 
-/// Row shaped like deployed `public.trace_events`.
-/// Inputs/outputs stay empty objects. `error` is a stable reason code only.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+// ── Row ───────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct LiveTraceRow {
-    pub event: String,
-    pub gaian_id: Option<String>,
-    pub correlation_id: Option<String>,
-    pub canon_refs: Vec<String>,
-    pub started_at: Option<String>,
-    pub ended_at: Option<String>,
-    pub latency_ms: Option<u64>,
-    pub inputs: serde_json::Value,
-    pub outputs: serde_json::Value,
-    pub error: Option<String>,
-    pub meta: serde_json::Value,
+    pub ts: u64,
+    pub actor_id: String,
+    pub intent_id: String,
+    pub correlation_id: String,
+    pub outcome: String,
+    pub reason: String,
+    pub request_hash: String,
+    pub claim_class: String,
 }
 
-fn kind_label(k: TraceKind) -> &'static str {
-    match k {
-        TraceKind::Allow => "allow",
-        TraceKind::Deny => "deny",
-        TraceKind::Replay => "replay",
-        TraceKind::ExecutionFailure => "execution_failure",
-        TraceKind::GapLockHeld => "gap_lock",
-        TraceKind::Kill => "kill",
+pub fn map_row(event: &TraceEvent) -> LiveTraceRow {
+    LiveTraceRow {
+        ts: event.ts,
+        actor_id: event.actor_id.clone(),
+        intent_id: event.intent_id.clone(),
+        correlation_id: event.correlation_id.clone(),
+        outcome: event.outcome.clone(),
+        reason: event.reason.clone(),
+        request_hash: event.request_hash.clone(),
+        claim_class: class_label(event.claim_class).into(),
     }
 }
 
@@ -85,83 +83,78 @@ fn class_label(c: ClaimClass) -> &'static str {
     }
 }
 
-fn error_field(kind: TraceKind, reason: &str) -> Option<String> {
-    match kind {
-        TraceKind::Allow => None,
-        _ => Some(reason.to_string()),
-    }
-}
+// ── Send error ────────────────────────────────────────────────────────────────
 
-/// Allow-listed metadata only. No prompts, tokens, or raw errors.
-pub fn map_row(event: &TraceEvent) -> LiveTraceRow {
-    LiveTraceRow {
-        event: kind_label(event.kind).into(),
-        gaian_id: Some(event.actor_id.clone()),
-        correlation_id: Some(event.correlation_id.clone()),
-        canon_refs: Vec::new(),
-        started_at: None,
-        ended_at: None,
-        latency_ms: None,
-        inputs: serde_json::json!({}),
-        outputs: serde_json::json!({}),
-        error: error_field(event.kind, event.reason.as_str()),
-        meta: serde_json::json!({
-            "schema": "gaia.trace_events.v1",
-            "source": "local-acp",
-            "intent_id": event.intent_id,
-            "outcome": event.outcome,
-            "reason_code": event.reason,
-            "request_hash": event.request_hash,
-            "claim_class": class_label(event.claim_class)
-        }),
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LiveSendError {
     Disabled,
-    Transport,
+    TransportError(String),
 }
 
-pub trait LiveTraceTransport {
-    fn send(&mut self, row: &LiveTraceRow) -> Result<(), LiveSendError>;
+impl std::fmt::Display for LiveSendError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LiveSendError::Disabled => write!(f, "live trace is disabled"),
+            LiveSendError::TransportError(msg) => write!(f, "transport error: {msg}"),
+        }
+    }
 }
 
-/// Records mapped rows. Never holds a credential.
+// ── Recording transport ───────────────────────────────────────────────────────
+
 #[derive(Debug, Default)]
 pub struct RecordingLiveTransport {
     pub rows: Vec<LiveTraceRow>,
-    pub fail_next: bool,
 }
 
-impl LiveTraceTransport for RecordingLiveTransport {
-    fn send(&mut self, row: &LiveTraceRow) -> Result<(), LiveSendError> {
-        if self.fail_next {
-            self.fail_next = false;
-            return Err(LiveSendError::Transport);
-        }
-        self.rows.push(row.clone());
-        Ok(())
+impl RecordingLiveTransport {
+    pub fn send(&mut self, row: LiveTraceRow) {
+        self.rows.push(row);
     }
 }
 
-/// Local sink is authoritative. Live failure does not roll back local events.
+// ── try_forward ───────────────────────────────────────────────────────────────
+
+/// Attempt to forward a trace event to a live transport.
+///
+/// Returns `Err(LiveSendError::Disabled)` when the config mode is `Disabled`.
+/// In `LocalDev` mode with `InMemory` transport, maps and appends to the
+/// recording transport. In all other configurations the event is dropped and
+/// `Ok(())` is returned (fire-and-forget semantics for unknown transports).
 pub fn try_forward(
-    cfg: &LiveTraceConfig,
-    transport: &mut impl LiveTraceTransport,
     event: &TraceEvent,
+    config: &LiveTraceConfig,
+    sink: Option<&mut RecordingLiveTransport>,
 ) -> Result<(), LiveSendError> {
-    if cfg.mode == LiveTraceMode::Off {
+    if config.mode == LiveTraceMode::Disabled {
         return Err(LiveSendError::Disabled);
     }
-    if !matches!(cfg.role, LiveTraceRole::TestBoundary) {
-        return Err(LiveSendError::Disabled);
+    if config.transport == LiveTraceTransport::InMemory {
+        if let Some(s) = sink {
+            s.send(map_row(event));
+        }
     }
-    transport.send(&map_row(event))
+    Ok(())
 }
 
-/// Credential must never appear in Debug/Display of this crate.
-pub fn credential_is_absent(debug_blob: &str) -> bool {
-    let banned = ["SERVICE_ROLE", "eyJ", "supabase.co", "Bearer ", "sb_secret"];
-    !banned.iter().any(|s| debug_blob.contains(s))
+// ── Credential absence guard ──────────────────────────────────────────────────
+
+/// Asserts that no live credential is present in the current process environment.
+/// Returns `Err` with a description of the leaked variable if any is found.
+pub fn credential_is_absent() -> Result<(), String> {
+    let guarded = [
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_KEY",
+        "DATABASE_URL",
+        "POSTGRES_URL",
+    ];
+    for var in guarded {
+        if let Ok(val) = std::env::var(var) {
+            if !val.is_empty() {
+                return Err(format!("{var} is set — live credentials must not be present"));
+            }
+        }
+    }
+    Ok(())
 }
