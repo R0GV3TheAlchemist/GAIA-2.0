@@ -20,6 +20,7 @@ mod meta;
 pub mod model_registry;
 mod packs;
 pub mod quality;
+pub mod retrieval_layer;
 mod registry;
 mod retrieve;
 mod session;
@@ -54,6 +55,9 @@ pub use quality::{
     QualityTier, SourceType, TemporalValidation,
 };
 pub use registry::{system_tags, BenchRow};
+pub use retrieval_layer::{
+    retrieval_filter, Confidence, EpistemicState, KnowledgeChunk, RetrievalPolicy,
+};
 pub use retrieve::{GenerationContext, QueryHit, RetrievedChunk};
 pub use session::{embodied_enabled, sandbox_breakout, ToolCube};
 pub use skills::{
