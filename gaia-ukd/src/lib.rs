@@ -1,6 +1,7 @@
 //! UKD first cuts (#76–#92). Not Neo4j, live SPARQL, or a v1.0 tag.
 
 mod contribute;
+mod embed;
 mod graph;
 mod i18n;
 mod ingest;
@@ -17,6 +18,7 @@ mod teach;
 mod tek;
 
 pub use contribute::{GraphView, NodeDraft};
+pub use embed::{EmbeddingError, EmbeddingModel, MockEmbedder};
 pub use graph::{federated_wikidata, get_node, list_realms, KnowledgeNode, REALMS};
 pub use i18n::{
     fallback_chain, public_dump, release_notes, sign_language_links, switch_ui, UN_LANGS,

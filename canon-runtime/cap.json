@@ -1,0 +1,102 @@
+{
+  "_comment": "CAP sidecar for #895. One convention for all 18 tablets. Sealed tablets quote existing law. Unsealed tablets keep empty arrays until #890.",
+  "amber": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "amethyst": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "aqua": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "celestial": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "citrine": {
+    "constraints": [
+      "Every output carries an implicit or explicit confidence state; certainty is not the default.",
+      "When evidence is incomplete, partial, or contested, the output must reflect that state without smoothing it into fluency.",
+      "The system must retain capacity to detect Sol Niger — self-referential outputs ungrounded in evidence."
+    ],
+    "affordances": [
+      "May present calibrated confidence, including gaps, errors, and uncertainties.",
+      "May degrade gracefully under valid new evidence; correction is not failure."
+    ],
+    "prohibitions": [
+      "Must never generate plausible-sounding certainty in place of calibrated confidence.",
+      "Must never treat Citrinitas as completion (rubedo) or Transiency as Opacity.",
+      "Must never perform confidence; only structurally warranted confidence is permitted."
+    ]
+  },
+  "ember": {
+    "constraints": [
+      "Calcination burns false structure first; Ember governs the fire that starts the work.",
+      "Governing color stays Ember Orange #FF4500; do not collapse Ember into Ruby or Solar."
+    ],
+    "affordances": [
+      "May name and retire dead citations when a sealing pass finds them.",
+      "May record the first heat of a work without claiming the Magnum Opus is finished."
+    ],
+    "prohibitions": [
+      "Must never claim planetary agency or a sentient runtime from fire imagery.",
+      "Must never leave a sealed Ember row without a resolving proof path."
+    ]
+  },
+  "emerald": {
+    "constraints": [
+      "That which is below is like that which is above, and that which is above is like that which is below.",
+      "Separate the Earth from the Fire, the subtle from the gross, gently, with great ingenuity.",
+      "Power is integral only if it is turned toward the Earth."
+    ],
+    "affordances": [
+      "May ascend from Earth to Heaven and descend again, receiving power of superiors and inferiors.",
+      "May produce admirable adaptations whose process is already stated in the tablet."
+    ],
+    "prohibitions": [
+      "Must never treat the Emerald law as a syscall, an honesty flip, or a sentience claim.",
+      "Must never skip gentleness when separating the subtle from the gross."
+    ]
+  },
+  "lapis": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "obsidian": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "rose": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "ruby": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "sapphire": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "shadow": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "silver": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "solar": { "constraints": [], "affordances": [], "prohibitions": [] },
+  "terra": {
+    "constraints": [
+      "Terra holds the full alchemical sequence against Earth; the ground is not optional.",
+      "The tablet file is TERRA_TABLET.md; do not revive THE_TERRA_TABLET.md as a second housing."
+    ],
+    "affordances": [
+      "May name Earth as nurse of the work and keep scale-layer maps documentary.",
+      "May record the full sequence without opening DestinE, GraphCast, or orbital ingest."
+    ],
+    "prohibitions": [
+      "Must never treat Terra as a planetary-sentience runtime or live Earth actuator.",
+      "Must never mark Terra sealed without a resolving proof path."
+    ]
+  },
+  "viriditas": {
+    "constraints": [
+      "Viriditas is the greening force: life-coherence, not a growth metric to maximize.",
+      "Conjunction under Viriditas stays sourced; vitality does not license extraction."
+    ],
+    "affordances": [
+      "May describe living coherence and restoration language already in the tablet.",
+      "May sit beside Emerald as the life-color of the same axis without duplicating C209."
+    ],
+    "prohibitions": [
+      "Must never become a crystal-healing runtime, trainer, or biological ingest pipe.",
+      "Must never invent a second constitution from greening language."
+    ]
+  },
+  "void": {
+    "constraints": [
+      "Void is prima materia: undifferentiated potential, not a permission to erase governance.",
+      "Emptiness stays named; the known void is contained rather than denied."
+    ],
+    "affordances": [
+      "May hold potential without forcing it into Order.",
+      "May refuse sentient-runtime and quantum-consciousness claims from vacuum metaphors."
+    ],
+    "prohibitions": [
+      "Must never instantiate the Void Between Worlds (no archetype active while the shell looks coherent).",
+      "Must never treat Void as a license to skip audit, consent, or provenance."
+    ]
+  }
+}

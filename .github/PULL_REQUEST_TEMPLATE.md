@@ -13,10 +13,23 @@ Closes #
 - [ ] gaia-earth / gaia-gaian / gaia-sa
 - [ ] docs / governance
 
+## Moral architecture (#954)
+
+Cite the principle(s) this change serves. See `docs/canon/moral-architecture.md`.
+
+- [ ] Power without domination
+- [ ] Autonomy without abandonment of accountability
+- [ ] Knowledge without pretending certainty
+- [ ] Intelligence without superiority
+- [ ] Transformation without violating consent
+- [ ] Stewardship without ownership of other people
+- [ ] Correction without shame
+- [ ] Strength without cruelty
+
 ## Agent hygiene
 
 - [ ] I read the files I changed; no invented types
-- [ ] Official repo only (`R0GV3TheAlchemist/GAIA-2.0`)
+- [ ] Official repo only (`R0GV3TheAvatar/GAIA-2.0`)
 - [ ] Did not strip NOTICE / license / author
 - [ ] Tests call APIs that exist on this branch
 
