@@ -33,12 +33,20 @@
 //! ## Text ingestion
 //! Use [`IngestPipeline::from_path`] to ingest a local file in one call.
 //! Use [`ChunkId`] to fingerprint individual chunks for deduplication and
-//! cache keying.
+//! cache keying.  Use [`dedup::ChunkStore`] to track already-ingested chunks
+//! and prevent duplicates.  Use [`freshness`] to evaluate TTL staleness.
+//! Use [`auth::RetrievalFilter`] to enforce per-chunk authorization at
+//! retrieval time.  Use [`chunking::MarkdownChunker`] for structure-preserving
+//! Markdown splitting.
 
 pub mod artifact;
+pub mod auth;
 pub mod chunk_id;
 pub mod chunker;
+pub mod chunking;
+pub mod dedup;
 pub mod document;
+pub mod freshness;
 pub mod ingest;
 pub mod lexicon;
 pub mod provenance;
@@ -48,11 +56,15 @@ pub mod schema;
 // ingest::PipelineError is the file-ingestion error (Io, NoFileStem, Provenance, Chunking).
 // They are distinct types with distinct names to avoid any ambiguity at the call site.
 pub use artifact::{ArtifactStore, IngestError, RawArtifactRef};
+pub use auth::{AgentId, ChunkMetadata, RetrievalFilter, RetrievalReport};
 pub use chunk_id::ChunkId;
 pub use chunker::{ChunkError, Chunker, SlidingWindowChunker};
+pub use chunking::{ChunkingStrategy, MarkdownChunker, StructuredChunk};
+pub use dedup::{ChunkStore, IngestReport, IngestResult};
 pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
+pub use freshness::{evaluate as evaluate_freshness, freshness_score, FreshnessVerdict};
 pub use ingest::{IngestPipeline, PipelineError};
 pub use lexicon::{
     classify_chunk, classify_document_chunk, LexiconPlane, LexiconSignals, LexiconVoice,
