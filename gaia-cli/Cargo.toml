@@ -3,7 +3,7 @@ name = "gaia-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "GAIA developer CLI — Ratatui terminal interface for the GAIA runtime"
+description = "GAIA developer CLI — command-line interface for the GAIA runtime"
 
 [[bin]]
 name = "gaia"
@@ -11,11 +11,8 @@ path = "src/main.rs"
 
 [dependencies]
 clap       = { version = "4", features = ["derive"] }
-ratatui    = "0.29"
-crossterm  = "0.28"
 tokio      = { version = "1", features = ["full"] }
 reqwest    = { version = "0.12", default-features = false, features = ["stream", "json", "rustls-tls"] }
-futures    = "0.3"
 anyhow     = "1"
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"

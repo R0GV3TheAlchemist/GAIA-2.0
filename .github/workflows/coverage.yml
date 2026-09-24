@@ -5,6 +5,10 @@
 #
 # The --fail-under threshold is intentionally commented out on first
 # introduction; uncomment and set a value once the baseline is known.
+#
+# gaia-cli is excluded: it is a binary crate with no lib.rs and its
+# integration tests (assert_cmd) spawn a subprocess that tarpaulin
+# cannot instrument across process boundaries.
 
 name: coverage
 
@@ -44,6 +48,7 @@ jobs:
         run: |
           cargo tarpaulin \
             --workspace \
+            --exclude gaia-cli \
             --timeout 300 \
             --out Lcov \
             --output-dir coverage \
