@@ -160,6 +160,7 @@ mod tests {
                 sha256: "a".repeat(64),
                 license: "proprietary".into(),
             },
+            embedding: None,
             artifact: None,
         }
     }
