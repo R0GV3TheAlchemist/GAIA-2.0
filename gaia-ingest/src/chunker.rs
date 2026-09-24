@@ -192,6 +192,7 @@ impl Chunker for SlidingWindowChunker {
                 lexicon_plane: template.lexicon_plane,
                 lexicon_voice: template.lexicon_voice.clone(),
                 embedding: None,
+                epistemic_state: None,
             });
         }
 
@@ -253,6 +254,7 @@ mod tests {
             lexicon_plane: LexiconPlane::Bridge,
             lexicon_voice: None,
             embedding: None,
+            epistemic_state: None,
         }
     }
 

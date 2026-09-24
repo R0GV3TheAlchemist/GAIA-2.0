@@ -194,6 +194,7 @@ impl IngestPipeline {
             provenance,
             artifact:        None,
             embedding:       None,
+            epistemic_state: None,
         };
 
         // ── 7. Chunk ──────────────────────────────────────────────────────────
