@@ -9,6 +9,7 @@ pub mod host;
 pub mod hpc;
 pub mod identity;
 pub mod ports;
+pub mod syscall;
 
 pub use capability::{redundancy_gate, CapabilityRegistration};
 pub use federation::{Federation, FederationError, Instance, JointTask, ResidentCube};
@@ -16,6 +17,7 @@ pub use host::{KernelError, KernelHost, SignedBlob, TaskHandle};
 pub use hpc::{BatchTask, HpcAdapter};
 pub use identity::{Principal, PrincipalKind};
 pub use ports::{matrix, Arch, Footprint, PortProfile};
+pub use syscall::{dispatch, ABI_VERSION, GaiaSyscall, SyscallRequest, SyscallResult};
 
 #[cfg(test)]
 mod tests {
