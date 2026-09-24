@@ -16,6 +16,8 @@ This directory contains the *rules* that make those artifacts binding.
 | [STAGE_SEQUENCE.md](STAGE_SEQUENCE.md) | Canonical alchemical stage sequence — valid values for the `Governing Stage` tablet field | #809, #829 |
 | [SEALING_CEREMONY.md](SEALING_CEREMONY.md) | Formal process for sealing a new tablet | #798, #835 |
 | [AMENDMENT_PROTOCOL.md](AMENDMENT_PROTOCOL.md) | How a sealed tablet may be amended without breaking its binding nature | #798 |
+| [moral-architecture.md](moral-architecture.md) | Eight principles — what GAIA is allowed to become | #954 |
+| [golden-age.md](golden-age.md) | Epistemic honesty definition — what GAIA is for | #955 |
 
 ## Existing Canon Documents
 
@@ -32,4 +34,7 @@ witnessed ceremony is informal. A change made without the amendment protocol
 is arbitrary. These documents exist so that every future contributor — human
 or AI — operates on the same explicitly defined rules.
 
-**References:** Epic #798 · #799 · #808 · #809 · #833
+Machine-readable listed fields live in [`canon-runtime/`](../../canon-runtime/README.md).
+Presence there is not enforcement.
+
+**References:** Epic #798 · #799 · #808 · #809 · #833 · #836 · #954 · #955
