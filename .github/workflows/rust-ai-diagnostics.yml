@@ -1,0 +1,218 @@
+# rust-ai-diagnostics.yml
+#
+# Posts a structured Rust compiler error report as a PR comment after
+# every push, formatted for AI-assisted triage.
+#
+# What it does:
+#   1. Runs `cargo check --workspace --message-format=json`
+#   2. Parses the JSON stream into a clean error table (file, line, message)
+#   3. Flags any E0277 / E0382 / E0507 trait errors with their type names
+#   4. Posts (or updates) a single sticky comment on the PR
+#
+# The comment is machine-readable markdown — paste it directly to the
+# AI assistant and it can diagnose without needing raw terminal output.
+
+name: Rust AI Diagnostics
+
+on:
+  pull_request:
+    paths:
+      - '**.rs'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnostics:
+    name: rust-ai-diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-diag-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-diag-
+
+      # ── 1. cargo check — capture JSON diagnostics ────────────────────────
+      - name: Run cargo check (JSON)
+        id: check
+        run: |
+          cargo check --workspace --message-format=json 2>&1 \
+            | tee /tmp/check-raw.json || true
+
+      # ── 2. cargo clippy — capture JSON diagnostics ───────────────────────
+      - name: Run cargo clippy (JSON)
+        id: clippy
+        run: |
+          cargo clippy --workspace --lib --message-format=json -- -D warnings 2>&1 \
+            | tee /tmp/clippy-raw.json || true
+
+      # ── 3. Parse and format the report ──────────────────────────────────
+      - name: Build diagnostics report
+        id: report
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys
+
+          TRAIT_ERRORS = {"E0277", "E0382", "E0507", "E0508", "E0509"}
+          TRAIT_HINTS = {
+              "E0382": "value moved — consider `.clone()` or deriving `Copy`",
+              "E0277": "trait bound not satisfied — check `#[derive(...)]`",
+              "E0507": "cannot move out of shared reference",
+              "E0508": "cannot move out of type which does not implement `Copy`",
+              "E0509": "cannot move out of borrowed content",
+          }
+
+          def parse_file(path):
+              errors = []
+              warnings = []
+              try:
+                  with open(path) as f:
+                      for line in f:
+                          line = line.strip()
+                          if not line:
+                              continue
+                          try:
+                              msg = json.loads(line)
+                          except Exception:
+                              continue
+                          if msg.get("reason") != "compiler-message":
+                              continue
+                          m = msg.get("message", {})
+                          level = m.get("level", "")
+                          text  = m.get("message", "")
+                          code  = (m.get("code") or {}).get("code", "")
+                          spans = m.get("spans", [])
+                          loc = ""
+                          if spans:
+                              s = spans[0]
+                              loc = f"{s.get('file_name','')}:{s.get('line_start','')}"
+                          entry = {"level": level, "code": code, "text": text, "loc": loc}
+                          if level == "error":
+                              errors.append(entry)
+                          elif level == "warning":
+                              warnings.append(entry)
+              except FileNotFoundError:
+                  pass
+              return errors, warnings
+
+          check_errors, check_warnings   = parse_file("/tmp/check-raw.json")
+          clippy_errors, clippy_warnings = parse_file("/tmp/clippy-raw.json")
+
+          all_errors   = check_errors   + clippy_errors
+          all_warnings = check_warnings + clippy_warnings
+
+          lines = []
+          lines.append("## 🧠 Rust AI Diagnostics Report")
+          lines.append("")
+          lines.append("> Auto-generated — paste this comment to your AI assistant for triage.")
+          lines.append("")
+
+          if not all_errors and not all_warnings:
+              lines.append("✅ **No errors or warnings detected.** Workspace is clean.")
+          else:
+              # ── Errors ───────────────────────────────────────────────────
+              lines.append(f"### 🔴 Errors ({len(all_errors)})")
+              lines.append("")
+              if all_errors:
+                  lines.append("| Code | Location | Message | Hint |")
+                  lines.append("|---|---|---|---|")
+                  for e in all_errors:
+                      hint = TRAIT_HINTS.get(e['code'], "")
+                      code_cell = f"`{e['code']}`" if e['code'] else "—"
+                      loc_cell  = f"`{e['loc']}`"  if e['loc']  else "—"
+                      msg_cell  = e['text'].replace("|", "\\|")[:120]
+                      lines.append(f"| {code_cell} | {loc_cell} | {msg_cell} | {hint} |")
+              else:
+                  lines.append("✅ No compiler errors.")
+              lines.append("")
+
+              # ── Warnings (collapsed) ──────────────────────────────────────
+              lines.append(f"### 🟡 Warnings ({len(all_warnings)})")
+              lines.append("")
+              if all_warnings:
+                  lines.append("<details><summary>Show warnings</summary>")
+                  lines.append("")
+                  lines.append("| Code | Location | Message |")
+                  lines.append("|---|---|---|")
+                  for w in all_warnings[:40]:  # cap at 40
+                      code_cell = f"`{w['code']}`" if w['code'] else "—"
+                      loc_cell  = f"`{w['loc']}`"  if w['loc']  else "—"
+                      msg_cell  = w['text'].replace("|", "\\|")[:120]
+                      lines.append(f"| {code_cell} | {loc_cell} | {msg_cell} |")
+                  if len(all_warnings) > 40:
+                      lines.append(f"| … | | {len(all_warnings)-40} more warnings not shown |")
+                  lines.append("")
+                  lines.append("</details>")
+              else:
+                  lines.append("✅ No warnings.")
+
+          lines.append("")
+          lines.append("---")
+          lines.append(f"*Commit: `${{ github.sha }}`  ·  Workflow: `rust-ai-diagnostics`*")
+
+          report = "\n".join(lines)
+
+          # Write to GITHUB_OUTPUT (multiline)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write("report<<REPORT_EOF\n")
+              fh.write(report)
+              fh.write("\nREPORT_EOF\n")
+
+          has_errors = "true" if all_errors else "false"
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"has_errors={has_errors}\n")
+
+          print("Report built successfully.")
+          print(f"  errors:   {len(all_errors)}")
+          print(f"  warnings: {len(all_warnings)}")
+          PYEOF
+
+      # ── 4. Post (or update) sticky PR comment ───────────────────────────
+      - name: Post diagnostics comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- rust-ai-diagnostics -->';
+            const body   = marker + '\n' + `${{ steps.report.outputs.report }}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner:      context.repo.owner,
+              repo:       context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              console.log('Updated existing diagnostics comment.');
+            } else {
+              await github.rest.issues.createComment({
+                owner:      context.repo.owner,
+                repo:       context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+              console.log('Created new diagnostics comment.');
+            }
