@@ -1,5 +1,11 @@
 //! MemOS v0.2: 5-tier persistent memory with hybrid search, Ebbinghaus decay,
 //! cryptographic erasure, per-user isolation, and cross-device sync.
+//!
+//! ## Batch B additions
+//!
+//! `retrieval_guard` now exposes [`MemosQuery`], [`MemoCandidate`], and
+//! [`AuthorizedMemosResult`] for authorization-filtered memo retrieval
+//! using `gaia_ingest::auth::RetrievalFilter`.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -27,6 +33,7 @@ pub use episode_store::EpisodeStore;
 pub use isolation::UserScope;
 pub use persist::MemStore;
 pub use retrieval_guard::{guard_chunk, guard_chunks, LexiconPlaneMismatch, QueryPlane};
+pub use retrieval_guard::{AuthorizedMemosResult, MemoCandidate, MemosQuery};
 pub use screenpipe::ScreenpipeStub;
 pub use sync::{export as sync_export, merge as sync_merge, SyncBundle};
 
@@ -195,8 +202,6 @@ impl MemOs {
     }
 
     /// User-triggered deletion with cryptographic erasure receipt.
-    /// Removes the cube from memory and from SQLite (if persistent),
-    /// and returns a receipt proving what was deleted and when.
     pub fn forget(&mut self, id: Uuid) -> Result<ErasureReceipt> {
         let cube = self.cubes.remove(&id).ok_or(MemosError::NotFound(id))?;
         let receipt = ErasureReceipt::generate(&cube);
@@ -220,9 +225,6 @@ impl MemOs {
 
     /// Hybrid recall: 55 % semantic (cosine) + 25 % BM25 (term overlap)
     /// + 20 % importance.
-    ///
-    /// Recency bonus (+0.1) applied to cubes accessed
-    /// within the last tick via `access_count > 0`.
     pub fn recall(&mut self, query: &str, k: usize) -> Vec<(f32, MemCube)> {
         let q = embed(query);
         let q_terms = terms(query);
@@ -256,8 +258,6 @@ impl MemOs {
             .collect()
     }
 
-    /// Convenience wrapper around [`recall`] that discards scores and returns
-    /// up to 20 matching [`MemCube`]s.
     pub fn search(&mut self, query: &str) -> Vec<MemCube> {
         self.recall(query, 20)
             .into_iter()
@@ -372,8 +372,6 @@ mod tests {
         format!("/tmp/gaia-memos-test-{n}.db")
     }
 
-    // ── Legacy tests (must stay green) ───────────────────────────────────────
-
     #[test]
     fn create_recall_archive_tiers() {
         let mut mem = MemOs::new();
@@ -422,8 +420,6 @@ mod tests {
         assert_eq!(restored.id, id);
         assert_eq!(restored.content, "alice identity");
     }
-
-    // ── Production tests ─────────────────────────────────────────────────────
 
     #[test]
     fn persist_survives_restart() {

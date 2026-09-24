@@ -63,7 +63,7 @@ impl std::fmt::Display for AgentId {
 /// All six fields are required — there are no `Option`s on the core schema
 /// fields.  This is enforced at compile time: callers cannot construct a
 /// `ChunkMetadata` with missing provenance.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChunkMetadata {
     /// Human-readable source identifier (e.g. `"TERRA.md"`, `"GBIF:12345"`).
     pub source: String,

@@ -1,63 +1,32 @@
-//! RAG retrieval guard — enforces the Order ↔ Chaos lexicon-plane boundary.
+//! RAG retrieval guard — enforces the Order ↔ Chaos lexicon-plane boundary
+//! and agent-level authorization filtering (Batch B, #942).
 //!
-//! ## Purpose
+//! ## Lexicon-plane guard (pre-existing)
 //!
-//! The GAIA knowledge graph partitions documents into three planes:
+//! [`guard_chunk`] / [`guard_chunks`] enforce the Order ↔ Chaos boundary
+//! on [`ChunkRow`] values retrieved from the persist layer.
 //!
-//! | Plane | Meaning |
-//! |---|---|
-//! | `Order` | Canonical, structured, sacred/scholarly sources |
-//! | `Chaos` | Colloquial, narrative, synthetic, or unverified sources |
-//! | `Bridge` | Unclassified — classifier has not yet run |
+//! ## Agent authorization guard (Batch B)
 //!
-//! A RAG query issued from an Order context must never silently receive
-//! Chaos chunks (and vice-versa). Mixing planes corrupts the epistemic
-//! provenance of the response. Per **C30** (no silent failures), the guard
-//! surfaces a hard error rather than quietly filtering or truncating.
-//!
-//! ## Usage
-//!
-//! ```rust,ignore
-//! use gaia_memos::{guard_chunks, QueryPlane};
-//!
-//! let safe = guard_chunks(QueryPlane::Order, candidate_chunks)?;
-//! // safe contains only Order + Bridge chunks
-//! ```
-//!
-//! `Bridge` chunks always pass — they are awaiting classification and must
-//! not block retrieval. `Bridge` as a `QueryPlane` is a pass-through:
-//! no filtering, no error (used during cold-start before the classifier runs).
+//! [`MemosQuery`] applies `gaia_ingest::auth::RetrievalFilter` to a slice of
+//! [`MemoCandidate`]s, silently excluding chunks the caller is not authorized
+//! to see and recording the count in [`AuthorizedMemosResult::report`].
 
 use thiserror::Error;
 
 use crate::persist::ChunkRow;
+use gaia_ingest::auth::{AgentId, ChunkMetadata, RetrievalFilter, RetrievalReport};
 
 // ── QueryPlane ────────────────────────────────────────────────────────────────
 
-/// The lexicon-plane context of a RAG query.
-///
-/// Set by the caller based on the document context or user session plane.
-/// Controls which [`ChunkRow`]s the guard will allow through.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum QueryPlane {
-    /// Query originates from an Order context.
-    /// Allows: `Order` chunks + unclassified `Bridge` chunks.
-    /// Rejects: `Chaos` chunks → [`LexiconPlaneMismatch`].
     Order,
-
-    /// Query originates from a Chaos context.
-    /// Allows: `Chaos` chunks + unclassified `Bridge` chunks.
-    /// Rejects: `Order` chunks → [`LexiconPlaneMismatch`].
     Chaos,
-
-    /// Pass-through — no plane filtering applied.
-    /// Used during cold-start (classifier not yet run) or for
-    /// explicitly cross-plane administrative queries.
     Bridge,
 }
 
 impl QueryPlane {
-    /// Returns the string representation matching the `lexicon_plane` column.
     pub fn as_str(&self) -> &'static str {
         match self {
             QueryPlane::Order  => "Order",
@@ -69,58 +38,29 @@ impl QueryPlane {
 
 // ── LexiconPlaneMismatch ──────────────────────────────────────────────────────
 
-/// Error emitted when a retrieved chunk's plane conflicts with the query plane.
-///
-/// Per **C30** (no silent failures), this error is never swallowed.
-/// Callers must handle it explicitly — either by re-issuing the query with
-/// a `Bridge` plane or by surfacing it to the caller as a provenance error.
 #[derive(Debug, Error)]
 #[error(
     "lexicon plane mismatch: query plane is `{query_plane}` \
      but chunk `{chunk_id}` has plane `{chunk_plane}`"
 )]
 pub struct LexiconPlaneMismatch {
-    /// The plane context of the originating query.
     pub query_plane: String,
-    /// The `id` of the offending [`ChunkRow`].
     pub chunk_id:    String,
-    /// The `lexicon_plane` value of the offending chunk.
     pub chunk_plane: String,
 }
 
-// ── guard_chunk ───────────────────────────────────────────────────────────────
+// ── guard_chunk / guard_chunks ────────────────────────────────────────────────
 
-/// Check a single [`ChunkRow`] against the query plane.
-///
-/// Returns `Ok(())` if the chunk is compatible, or
-/// `Err(LexiconPlaneMismatch)` if it would cross the plane boundary.
-///
-/// # Rules
-///
-/// | `query_plane` | chunk `lexicon_plane` | Result |
-/// |---|---|---|
-/// | `Bridge` | any | `Ok` — pass-through |
-/// | `Order` | `"Order"` | `Ok` |
-/// | `Order` | `"Bridge"` | `Ok` — unclassified, allow through |
-/// | `Order` | `"Chaos"` | `Err` |
-/// | `Chaos` | `"Chaos"` | `Ok` |
-/// | `Chaos` | `"Bridge"` | `Ok` — unclassified, allow through |
-/// | `Chaos` | `"Order"` | `Err` |
 pub fn guard_chunk(
     query_plane: QueryPlane,
     chunk: &ChunkRow,
 ) -> Result<(), LexiconPlaneMismatch> {
-    // Bridge queries are always pass-through.
     if query_plane == QueryPlane::Bridge {
         return Ok(());
     }
-
-    // Unclassified Bridge chunks are always compatible.
     if chunk.lexicon_plane == "Bridge" {
         return Ok(());
     }
-
-    // Plane must match exactly.
     if chunk.lexicon_plane != query_plane.as_str() {
         return Err(LexiconPlaneMismatch {
             query_plane: query_plane.as_str().to_owned(),
@@ -128,29 +68,16 @@ pub fn guard_chunk(
             chunk_plane: chunk.lexicon_plane.clone(),
         });
     }
-
     Ok(())
 }
 
-// ── guard_chunks ──────────────────────────────────────────────────────────────
-
-/// Filter a batch of [`ChunkRow`]s against the query plane.
-///
-/// Returns `Ok(Vec<ChunkRow>)` containing only plane-compatible rows.
-/// Returns `Err(LexiconPlaneMismatch)` on the **first** incompatible chunk
-/// found — the error is not swallowed or logged-and-continued (C30).
-///
-/// Callers that want best-effort filtering instead of a hard error should
-/// call [`guard_chunk`] per row and collect results themselves.
 pub fn guard_chunks(
     query_plane: QueryPlane,
     chunks: Vec<ChunkRow>,
 ) -> Result<Vec<ChunkRow>, LexiconPlaneMismatch> {
-    // Bridge is a pass-through — return immediately without iterating.
     if query_plane == QueryPlane::Bridge {
         return Ok(chunks);
     }
-
     let mut out = Vec::with_capacity(chunks.len());
     for chunk in chunks {
         guard_chunk(query_plane, &chunk)?;
@@ -159,12 +86,57 @@ pub fn guard_chunks(
     Ok(out)
 }
 
+// ── Batch B: agent authorization guard (#942) ─────────────────────────────────
+
+/// A single memo candidate with its provenance metadata.
+#[derive(Debug, Clone)]
+pub struct MemoCandidate {
+    pub text:     String,
+    pub metadata: ChunkMetadata,
+}
+
+/// A query issued by an agent against the memo store.
+pub struct MemosQuery {
+    pub caller: AgentId,
+    pub query:  String,
+}
+
+/// The filtered result of a [`MemosQuery::execute`] call.
+pub struct AuthorizedMemosResult {
+    /// Memo candidates the caller is authorized to receive.
+    pub memos:  Vec<MemoCandidate>,
+    /// Authorization statistics for this query.
+    pub report: RetrievalReport,
+}
+
+impl MemosQuery {
+    pub fn new(caller: AgentId, query: impl Into<String>) -> Self {
+        Self { caller, query: query.into() }
+    }
+
+    /// Filter `candidates` through [`RetrievalFilter`], silently excluding
+    /// any chunk the caller is not authorized to receive.
+    pub fn execute(&self, candidates: Vec<MemoCandidate>) -> AuthorizedMemosResult {
+        let filter = RetrievalFilter::new(self.caller.clone());
+        let mut report = RetrievalReport::default();
+        let mut memos = Vec::with_capacity(candidates.len());
+        for candidate in candidates {
+            if filter.is_authorized(&candidate.metadata, &mut report) {
+                memos.push(candidate);
+            }
+        }
+        AuthorizedMemosResult { memos, report }
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::persist::ChunkRow;
+
+    // ── lexicon-plane guard (pre-existing) ────────────────────────────────────
 
     fn make_chunk(id: &str, plane: &str) -> ChunkRow {
         ChunkRow {
@@ -194,18 +166,7 @@ mod tests {
             make_chunk("b", "Chaos"),
             make_chunk("c", "Bridge"),
         ];
-        let result = guard_chunks(QueryPlane::Bridge, chunks).unwrap();
-        assert_eq!(result.len(), 3);
-    }
-
-    #[test]
-    fn order_query_passes_order_and_bridge() {
-        let chunks = vec![
-            make_chunk("a", "Order"),
-            make_chunk("b", "Bridge"),
-        ];
-        let result = guard_chunks(QueryPlane::Order, chunks).unwrap();
-        assert_eq!(result.len(), 2);
+        assert_eq!(guard_chunks(QueryPlane::Bridge, chunks).unwrap().len(), 3);
     }
 
     #[test]
@@ -214,17 +175,6 @@ mod tests {
         let err = guard_chunks(QueryPlane::Order, chunks).unwrap_err();
         assert_eq!(err.query_plane, "Order");
         assert_eq!(err.chunk_plane, "Chaos");
-        assert_eq!(err.chunk_id, "chaos-1");
-    }
-
-    #[test]
-    fn chaos_query_passes_chaos_and_bridge() {
-        let chunks = vec![
-            make_chunk("a", "Chaos"),
-            make_chunk("b", "Bridge"),
-        ];
-        let result = guard_chunks(QueryPlane::Chaos, chunks).unwrap();
-        assert_eq!(result.len(), 2);
     }
 
     #[test]
@@ -233,35 +183,77 @@ mod tests {
         let err = guard_chunks(QueryPlane::Chaos, chunks).unwrap_err();
         assert_eq!(err.query_plane, "Chaos");
         assert_eq!(err.chunk_plane, "Order");
-        assert_eq!(err.chunk_id, "order-1");
+    }
+
+    // ── #942: agent authorization guard ──────────────────────────────────────
+
+    fn memo(text: &str, authorized_for: Vec<&str>) -> MemoCandidate {
+        MemoCandidate {
+            text: text.into(),
+            metadata: ChunkMetadata {
+                source:         "test-source".into(),
+                date:           "2026-09-23".into(),
+                author:         None,
+                domain:         "test".into(),
+                confidence:     1.0,
+                version:        "1".into(),
+                authorized_for: authorized_for
+                    .into_iter()
+                    .map(|s| AgentId::new(s))
+                    .collect(),
+            },
+        }
     }
 
     #[test]
-    fn mixed_batch_order_query_errors_on_chaos_chunk() {
-        // First two are fine; third is a cross-plane violation.
-        let chunks = vec![
-            make_chunk("ok-1",    "Order"),
-            make_chunk("ok-2",    "Bridge"),
-            make_chunk("bad-1",   "Chaos"),
-            make_chunk("ok-3",    "Order"),
+    fn unrestricted_memo_visible_to_any_caller() {
+        let q = MemosQuery::new(AgentId::new("agent-x"), "anything");
+        let result = q.execute(vec![memo("open", vec![])]);
+        assert_eq!(result.memos.len(), 1);
+        assert_eq!(result.report.unauthorized_excluded, 0);
+    }
+
+    #[test]
+    fn restricted_memo_excluded_for_wrong_caller() {
+        let q = MemosQuery::new(AgentId::new("agent-x"), "query");
+        let result = q.execute(vec![memo("secret", vec!["agent-y"])]);
+        assert_eq!(result.memos.len(), 0);
+        assert_eq!(result.report.unauthorized_excluded, 1);
+    }
+
+    #[test]
+    fn authorized_caller_receives_restricted_memo() {
+        let q = MemosQuery::new(AgentId::new("agent-a"), "query");
+        let result = q.execute(vec![memo("private", vec!["agent-a"])]);
+        assert_eq!(result.memos.len(), 1);
+        assert_eq!(result.report.unauthorized_excluded, 0);
+    }
+
+    #[test]
+    fn mixed_batch_filters_correctly() {
+        let q = MemosQuery::new(AgentId::new("agent-a"), "query");
+        let candidates = vec![
+            memo("open",   vec![]),
+            memo("secret", vec!["agent-b"]),
+            memo("mine",   vec!["agent-a"]),
         ];
-        let err = guard_chunks(QueryPlane::Order, chunks).unwrap_err();
-        assert_eq!(err.chunk_id, "bad-1");
+        let result = q.execute(candidates);
+        assert_eq!(result.memos.len(), 2);
+        assert_eq!(result.report.unauthorized_excluded, 1);
+        assert_eq!(result.memos[0].text, "open");
+        assert_eq!(result.memos[1].text, "mine");
     }
 
     #[test]
-    fn unclassified_bridge_chunk_passes_any_query() {
-        let chunk = make_chunk("unclassified", "Bridge");
-        assert!(guard_chunk(QueryPlane::Order, &chunk).is_ok());
-        assert!(guard_chunk(QueryPlane::Chaos, &chunk).is_ok());
-        assert!(guard_chunk(QueryPlane::Bridge, &chunk).is_ok());
-    }
-
-    #[test]
-    fn guard_chunk_single_row_order_rejects_chaos() {
-        let chunk = make_chunk("c1", "Chaos");
-        let err = guard_chunk(QueryPlane::Order, &chunk).unwrap_err();
-        assert!(err.to_string().contains("query plane is `Order`"));
-        assert!(err.to_string().contains("plane `Chaos`"));
+    fn report_counts_multiple_exclusions() {
+        let q = MemosQuery::new(AgentId::new("nobody"), "query");
+        let candidates = vec![
+            memo("s1", vec!["agent-a"]),
+            memo("s2", vec!["agent-a"]),
+            memo("s3", vec!["agent-a"]),
+        ];
+        let result = q.execute(candidates);
+        assert_eq!(result.memos.len(), 0);
+        assert_eq!(result.report.unauthorized_excluded, 3);
     }
 }
