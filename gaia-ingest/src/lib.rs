@@ -30,6 +30,15 @@
 //! and `lexicon_voice` are resolved at ingest time. The retrieval layer must
 //! refuse implicit cross-plane lookups (C30: no silent failures).
 //!
+//! ## Epistemic state contract (#953)
+//! Every `DocumentChunk` MAY carry an `epistemic_state` field populated by
+//! the classify step. `None` is valid at ingest time. When present, the inner
+//! `claim_status` determines retrieval eligibility: `Retracted` chunks MUST
+//! NOT be returned by the retrieval layer (C30). Downstream consumers:
+//! - `#932` (RAG grounding): weight retrieval by `EpistemicConfidence`.
+//! - `#952` (multi-model ACP): detect inter-model contradictions via
+//!   `ContradictionRef`.
+//!
 //! ## Text ingestion
 //! Use [`IngestPipeline::from_path`] to ingest a local file in one call.
 //! Use [`ChunkId`] to fingerprint individual chunks for deduplication and
@@ -52,6 +61,7 @@ pub mod chunking;
 pub mod dedup;
 pub mod document;
 pub mod embed;
+pub mod epistemic;
 pub mod freshness;
 pub mod ingest;
 pub mod lexicon;
@@ -71,6 +81,10 @@ pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
 pub use embed::EmbeddingVector;
+pub use epistemic::{
+    ClaimStatus, ContradictionRef, EpistemicConfidence, EpistemicError,
+    EpistemicState, EpistemicStateBuilder, EvidenceKind,
+};
 pub use freshness::{evaluate as evaluate_freshness, freshness_score, FreshnessVerdict};
 pub use ingest::{IngestPipeline, PipelineError};
 pub use lexicon::{
