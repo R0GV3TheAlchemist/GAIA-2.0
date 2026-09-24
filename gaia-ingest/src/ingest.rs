@@ -193,6 +193,7 @@ impl IngestPipeline {
             lexicon_voice:   None,
             provenance,
             artifact:        None,
+            embedding:       None,
         };
 
         // ── 7. Chunk ──────────────────────────────────────────────────────────
