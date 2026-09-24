@@ -6,9 +6,9 @@
 # The --fail-under threshold is intentionally commented out on first
 # introduction; uncomment and set a value once the baseline is known.
 #
-# gaia-cli is excluded: it is a binary crate with no lib.rs and its
-# integration tests (assert_cmd) spawn a subprocess that tarpaulin
-# cannot instrument across process boundaries.
+# Exclusions:
+#   gaia-cli     — binary crate; assert_cmd subprocesses are not instrumented
+#   gaia-agents  — wasmtime guest tests raise SIGILL under tarpaulin (ptrace)
 
 name: coverage
 
@@ -52,10 +52,12 @@ jobs:
           cargo tarpaulin \
             --workspace \
             --exclude gaia-cli \
+            --exclude gaia-agents \
             --timeout 300 \
             --out Lcov \
             --output-dir coverage \
             --exclude-files 'gaia-cli/src/main.rs' \
+            --exclude-files 'gaia-agents/**' \
             -- --test-threads=1
         # Uncomment the line below once the baseline is established:
         # --fail-under 60
@@ -73,7 +75,8 @@ jobs:
           echo '' >> $GITHUB_STEP_SUMMARY
           echo 'Full lcov report uploaded as workflow artifact `lcov-report`.' >> $GITHUB_STEP_SUMMARY
           echo '' >> $GITHUB_STEP_SUMMARY
-          # Print line-level summary if tarpaulin wrote it to stdout
+          echo 'gaia-agents excluded: wasmtime guest tests SIGILL under tarpaulin ptrace.' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
           grep -E '^(SF|LF|LH)' coverage/lcov.info | \
             awk 'BEGIN{f=0;lf=0;lh=0} /^SF/{f++} /^LF:/{lf+=$1+0} /^LH:/{lh+=$1+0} \
                  END{printf "Files: %d | Coverable lines: %d | Covered lines: %d | Coverage: %.1f%%\n", \
