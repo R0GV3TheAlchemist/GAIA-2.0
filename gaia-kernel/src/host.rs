@@ -13,7 +13,7 @@ use crate::broker::{Broker, Capabilities};
 use crate::executor::Executor;
 use crate::identity::{verify, Principal};
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum KernelError {
     #[error("invalid argument: {0}")]
     InvalidArgument(String),
@@ -23,6 +23,10 @@ pub enum KernelError {
     Sfs(String),
     #[error("memos: {0}")]
     Memos(String),
+    /// A capability was registered with fewer than two resolution paths,
+    /// giving one node exclusive control (Monopoly Architect adversarial scenario).
+    #[error("GAIA_KERNEL_MONOPOLY_RISK: capability has fewer than two resolution paths")]
+    MonopolyRisk,
 }
 
 pub type Result<T> = std::result::Result<T, KernelError>;

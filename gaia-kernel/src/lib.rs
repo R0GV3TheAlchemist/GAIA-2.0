@@ -2,6 +2,7 @@
 
 pub mod audit;
 pub mod broker;
+pub mod capability;
 pub mod execution;
 pub mod executor;
 pub mod federation;
@@ -13,6 +14,7 @@ pub mod ports;
 pub mod scheduler;
 pub mod syscall;
 
+pub use capability::{CapabilityRegistration, redundancy_gate};
 pub use execution::{
     ExecutionEngine, ExecutionResult, ExecutionError,
     Intent, IntentSignature, Outcome, Task, TaskDAG, TaskResult,
@@ -150,7 +152,7 @@ mod tests {
             Principal::generate(PrincipalKind::Node)
         );
         let mut intent = signed_intent(&principal, "query");
-        intent.signature = None;   // strip signature
+        intent.signature = None;
 
         let err = intent.verify_signature().unwrap_err();
         let msg = err.to_string();
@@ -218,15 +220,12 @@ mod tests {
         dag.add_task(t1);
         dag.add_task(t2);
         dag.add_task(t3);
-        // t3 depends on both t1 and t2
         dag.add_edge(id1, id3_placeholder(id1, id2, &dag));
         dag.add_edge(id2, id3_placeholder(id1, id2, &dag));
         let tiers = dag.topological_tiers().unwrap();
-        // t1 and t2 have no deps → tier 0 must have 2 tasks
         assert_eq!(tiers[0].len(), 2, "tier 0 should contain t1 and t2");
     }
 
-    // Helper: retrieve the id of the task that is NOT t1 or t2 (i.e. t3)
     fn id3_placeholder(id1: Uuid, id2: Uuid, dag: &TaskDAG) -> Uuid {
         *dag.tasks.keys().find(|&&id| id != id1 && id != id2).unwrap()
     }
