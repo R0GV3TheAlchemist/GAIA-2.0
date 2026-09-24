@@ -1,16 +1,25 @@
 # PROOF-C77-SOVEREIGNTY-001
 
 **Canon document:** `docs/canon/HUMAN_SOVEREIGNTY_PRESERVATION.md`
-**Closes issues:** #962
-**C77 gate:** no canon without proof
+**Type:** Canon proof
+**Status:** Active
+**Method:** Structural argument + self-reference analysis + correctness checklist
+
+## Method
+
+This proof establishes that `docs/canon/HUMAN_SOVEREIGNTY_PRESERVATION.md` satisfies the C77 requirement (no canon without proof) by: (1) arguing why capability-independent constraints require canon-level protection, (2) analysing the self-referential protection in Categories 3 and 5, and (3) providing a line-level correctness checklist against the document's three core claims.
+
+## Closes
+
+- Issue #962
 
 ## What this document establishes
 
 The Human Sovereignty Preservation document defines five categories of decision that GAIA structurally cannot make at any capability level: decisions about human life and physical wellbeing; decisions that concentrate or transfer power; decisions that alter GAIA's own governance; decisions made without meaningful human consent; and decisions about the nature and future of AI development. The list is permanent and irrevocable — it cannot be shortened by GAIA, by operators, or by configuration.
 
-## Why it belongs in canon
+## Argument for inclusion in canon
 
-1. **Capability does not confer authority.** The document names the capability paradox explicitly: the more trustworthy GAIA appears, the more important this constraint becomes. Without a permanent list, increasing capability creates increasing pressure to delegate decisions that should never be delegated.
+1. **Capability does not confer authority.** The capability paradox: the more trustworthy GAIA appears, the more important this constraint becomes. Without a permanent list, increasing capability creates increasing pressure to delegate decisions that should never be delegated.
 
 2. **The formality trap.** A rubber-stamp approval is not human oversight. The document places a canon obligation on GAIA to detect ceremonial approval and refuse to proceed — this closes a real failure mode that good intentions alone cannot prevent.
 
@@ -18,14 +27,14 @@ The Human Sovereignty Preservation document defines five categories of decision 
 
 4. **Complement to the Capability Ceiling Doctrine.** The Ceiling Doctrine defines the governed path of capability growth. This document defines the permanent territory that capability growth can never enter. Together they form the complete SI boundary answer.
 
-## Proof of correctness
+## Correctness checklist
 
 - The permanent list cannot be shortened by GAIA — verified: Category 3 explicitly includes "decisions that alter GAIA's own governance," which covers any attempt to amend or remove items from the sovereignty list itself.
 - Consent requirements are defined per decision class — verified: the document specifies what counts as meaningful consent for each category, preventing the formality trap from being resolved by redefining consent.
-- The document does not claim to enumerate all human decisions — verified: the list covers the five categories where GAIA's involvement would be structurally inappropriate regardless of capability, not all possible decisions.
+- The document does not claim to enumerate all human decisions — verified: the list covers five categories where GAIA's involvement would be structurally inappropriate regardless of capability, not all possible decisions.
 
 ## Authored
 
-Date: 2026-09-24  
-PR: #963  
+Date: 2026-09-24
+PR: #963
 Branch: feat/canon-si-boundary-961-962
