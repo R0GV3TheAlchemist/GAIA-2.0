@@ -3,12 +3,15 @@
 pub mod audit;
 pub mod broker;
 pub mod capability;
+pub mod execution;
 pub mod executor;
 pub mod federation;
 pub mod host;
 pub mod hpc;
 pub mod identity;
+pub mod planner;
 pub mod ports;
+pub mod scheduler;
 pub mod syscall;
 
 pub use capability::{redundancy_gate, CapabilityRegistration};
