@@ -5,8 +5,11 @@ edition.workspace = true
 license.workspace = true
 description = "GAIA developer CLI — command-line interface for the GAIA runtime"
 
+# Workspace already ships `gaia` from gaia-orchestrator (intent stub).
+# This crate uses `gaia-cli` so cargo test --workspace does not overwrite
+# target/debug/gaia and assert_cmd hits the wrong binary.
 [[bin]]
-name = "gaia"
+name = "gaia-cli"
 path = "src/main.rs"
 
 [dependencies]
