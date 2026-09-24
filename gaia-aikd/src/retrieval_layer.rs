@@ -97,12 +97,12 @@ pub enum RetrievalPolicy {
 /// `epistemic_state == EpistemicState::Contradicted` are dropped.  See the
 /// variant docs for the sharp edges on that policy.
 ///
-/// Note: the function returns a `Vec<&KnowledgeChunk>` (borrowed slice) rather
-/// than cloning, to keep the hot path allocation-free.
-pub fn retrieval_filter<'a>(
-    chunks: &'a [KnowledgeChunk],
+/// Returns a `Vec<&KnowledgeChunk>` (borrowed slice) rather than cloning,
+/// to keep the hot path allocation-free.
+pub fn retrieval_filter(
+    chunks: &[KnowledgeChunk],
     policy: RetrievalPolicy,
-) -> Vec<&'a KnowledgeChunk> {
+) -> Vec<&KnowledgeChunk> {
     match policy {
         RetrievalPolicy::SurfaceAll => chunks.iter().collect(),
         RetrievalPolicy::SuppressContradicted => chunks
