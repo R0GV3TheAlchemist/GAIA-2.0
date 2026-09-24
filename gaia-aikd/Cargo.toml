@@ -4,3 +4,6 @@ version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "AIKD first cuts. Not a local LLM runtime or Qdrant."
+
+[dependencies]
+gaia-ingest = { path = "../gaia-ingest" }

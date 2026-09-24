@@ -3,12 +3,10 @@
 //! ## What changed in Batch B
 //!
 //! * [`RetrievedChunk`] wraps every retrieved span with the full
-//!   [`ChunkMetadata`] provenance block and a pre-computed
-//!   [`freshness_score`].
+//!   [`ChunkMetadata`] provenance block and a pre-computed freshness score.
 //! * Chunks whose [`FreshnessVerdict`] is `Stale` are annotated with a
 //!   `[STALE]` prefix in their text **before** they reach the generation
-//!   layer, so the LLM call-site can see staleness without inspecting
-//!   metadata.
+//!   layer.
 //! * [`GenerationContext`] carries the full `Vec<RetrievedChunk>` so
 //!   prompt templates can access `source`, `confidence`, `date`, etc.
 //!
@@ -58,11 +56,6 @@ impl QueryHit {
 
 /// A single chunk after retrieval, freshness annotation, and provenance
 /// passthrough.
-///
-/// `text` is the content as it will be presented to the generation layer.
-/// When the chunk is stale, `text` is prefixed with `[STALE] ` so prompt
-/// templates do not need to inspect `is_stale` unless they want to handle
-/// staleness specially.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RetrievedChunk {
     /// Chunk text, `[STALE] `-prefixed when `is_stale` is `true`.
@@ -70,20 +63,12 @@ pub struct RetrievedChunk {
     /// `true` when `FreshnessVerdict::Stale` was returned for this chunk.
     pub is_stale: bool,
     /// Linear freshness decay score in `[0.0, 1.0]`.
-    /// `1.0` = just ingested; `0.0` = TTL expired; `None`-TTL chunks = `1.0`.
     pub freshness_score: f32,
     /// Full provenance block for prompt weighting and attribution.
     pub metadata: ChunkMetadata,
 }
 
 impl RetrievedChunk {
-    /// Build a [`RetrievedChunk`] from raw chunk data.
-    ///
-    /// `raw_text`        — the chunk body before any annotation.
-    /// `ttl_seconds`     — from `DocumentChunk::ttl_seconds`.
-    /// `ingested_at`     — Unix timestamp when the chunk was stored.
-    /// `now`             — current Unix timestamp.
-    /// `metadata`        — provenance fields.
     pub fn build(
         raw_text: &str,
         ttl_seconds: Option<u64>,
@@ -99,31 +84,16 @@ impl RetrievedChunk {
         } else {
             raw_text.to_string()
         };
-        Self {
-            text,
-            is_stale,
-            freshness_score: score,
-            metadata,
-        }
+        Self { text, is_stale, freshness_score: score, metadata }
     }
 }
 
 // ── GenerationContext ─────────────────────────────────────────────────────────
 
-/// The context bundle handed to the generation layer.
-///
-/// `chunks` carries every retrieved chunk with its provenance and freshness
-/// annotation.  Prompt templates can iterate `chunks` to inject `source`,
-/// `confidence`, `date`, etc.  Stale chunks are already pre-annotated in
-/// `chunk.text` — templates do not need to check `is_stale` unless they
-/// want to handle them differently (e.g., display a warning UI).
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenerationContext {
-    /// Retrieved chunks, ordered by retrieval rank.
     pub chunks: Vec<RetrievedChunk>,
-    /// The caller agent identity used for this retrieval pass.
     pub caller: AgentId,
-    /// Authorization report: how many chunks were retrieved vs. excluded.
     pub report: RetrievalReport,
 }
 
@@ -131,22 +101,19 @@ impl GenerationContext {
     /// Build a [`GenerationContext`] from a candidate chunk list.
     ///
     /// Applies [`RetrievalFilter`] authorization, freshness annotation, and
-    /// `[STALE]` prefixing in a single pass.  Unauthorized chunks are
-    /// silently dropped and counted in `report.unauthorized_excluded`.
+    /// `[STALE]` prefixing in a single pass.
     ///
-    /// `candidates` — `(raw_text, ttl_seconds, ingested_at, now, metadata)`
-    ///                tuples, one per candidate chunk.
+    /// `candidates` — `(raw_text, ttl_seconds, ingested_at, now, metadata)` tuples.
     pub fn build(
         caller: AgentId,
         candidates: Vec<(String, Option<u64>, u64, u64, ChunkMetadata)>,
     ) -> Self {
-        let filter = RetrievalFilter::new();
+        let filter = RetrievalFilter::new(caller.clone());
         let mut report = RetrievalReport::default();
         let mut chunks = Vec::with_capacity(candidates.len());
 
         for (raw_text, ttl, ingested_at, now, metadata) in candidates {
-            if !filter.is_authorized(&caller, &metadata) {
-                report.unauthorized_excluded += 1;
+            if !filter.is_authorized(&metadata, &mut report) {
                 continue;
             }
             report.retrieved += 1;
@@ -172,12 +139,12 @@ mod tests {
 
     fn meta(authorized_for: Vec<&str>) -> ChunkMetadata {
         ChunkMetadata {
-            source: "test-source".into(),
-            date: "2026-01-01".into(),
-            author: "test-author".into(),
-            domain: "test-domain".into(),
-            confidence: 0.9,
-            version: "1".into(),
+            source:         "test-source".into(),
+            date:           "2026-01-01".into(),
+            author:         None,
+            domain:         "test-domain".into(),
+            confidence:     0.9,
+            version:        "1".into(),
             authorized_for: authorized_for
                 .into_iter()
                 .map(|s| AgentId::new(s))
@@ -192,7 +159,7 @@ mod tests {
 
     #[test]
     fn stale_chunk_is_annotated() {
-        let ingested = NOW - TTL - 1; // one second past TTL
+        let ingested = NOW - TTL - 1;
         let chunk = RetrievedChunk::build("hello", Some(TTL), ingested, NOW, meta(vec![]));
         assert!(chunk.is_stale);
         assert!(chunk.text.starts_with("[STALE] "));
@@ -203,7 +170,6 @@ mod tests {
         let ingested = NOW - TTL / 2;
         let chunk = RetrievedChunk::build("hello", Some(TTL), ingested, NOW, meta(vec![]));
         assert!(!chunk.is_stale);
-        assert!(!chunk.text.starts_with("[STALE]"));
         assert_eq!(chunk.text, "hello");
     }
 
@@ -228,15 +194,14 @@ mod tests {
     fn metadata_present_on_retrieval_output() {
         let chunk = RetrievedChunk::build("data", None, 0, NOW, meta(vec![]));
         assert_eq!(chunk.metadata.source, "test-source");
-        assert_eq!(chunk.metadata.author, "test-author");
+        assert_eq!(chunk.metadata.domain, "test-domain");
     }
 
     #[test]
-    fn all_six_provenance_fields_populated() {
+    fn all_provenance_fields_populated() {
         let m = meta(vec![]);
         assert!(!m.source.is_empty());
         assert!(!m.date.is_empty());
-        assert!(!m.author.is_empty());
         assert!(!m.domain.is_empty());
         assert!(m.confidence >= 0.0 && m.confidence <= 1.0);
         assert!(!m.version.is_empty());
@@ -250,22 +215,19 @@ mod tests {
 
     #[test]
     fn stale_annotation_does_not_bleed_metadata() {
-        // The [STALE] prefix must only appear in .text, not in any metadata field
         let ingested = NOW - TTL - 1;
         let chunk = RetrievedChunk::build("content", Some(TTL), ingested, NOW, meta(vec![]));
         assert!(!chunk.metadata.source.contains("[STALE]"));
-        assert!(!chunk.metadata.author.contains("[STALE]"));
+        assert!(!chunk.metadata.domain.contains("[STALE]"));
     }
 
-    // ── GenerationContext (auth + stale + provenance wired together) ───────
+    // ── GenerationContext ─────────────────────────────────────────────────
 
     #[test]
     fn unauthorized_chunk_excluded_from_context() {
         let caller = AgentId::new("agent-a");
         let candidates = vec![
-            // unrestricted
             ("open".into(), None, 0, NOW, meta(vec![])),
-            // restricted to agent-b only
             ("secret".into(), None, 0, NOW, meta(vec!["agent-b"])),
         ];
         let ctx = GenerationContext::build(caller, candidates);
