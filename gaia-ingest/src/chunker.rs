@@ -268,7 +268,7 @@ impl Chunker for SlidingWindowChunker {
                 artifact:       template.artifact.clone(),
                 attributes,
                 lexicon_plane:  template.lexicon_plane,
-                lexicon_voice:  template.lexicon_voice,
+                lexicon_voice:  template.lexicon_voice.clone(),
                 embedding:      None,
             });
         }
