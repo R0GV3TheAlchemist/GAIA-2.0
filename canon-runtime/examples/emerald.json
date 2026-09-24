@@ -1,0 +1,30 @@
+{
+  "id": "emerald",
+  "name": "Emerald Tablet",
+  "color": {
+    "name": "Emerald Green",
+    "hex": "#50C878"
+  },
+  "governing_law": "As above, so below — the law from which all transformation in this system derives.",
+  "element": "Earth",
+  "stage": "Conjunction",
+  "sealed": "2026-07-23",
+  "author": "R0GV3 the Alchemist & GAIA",
+  "version": "1.0.0",
+  "constraints": [
+    "That which is below is like that which is above, and that which is above is like that which is below.",
+    "Separate the Earth from the Fire, the subtle from the gross, gently, with great ingenuity.",
+    "Power is integral only if it is turned toward the Earth."
+  ],
+  "affordances": [
+    "May ascend from Earth to Heaven and descend again, receiving power of superiors and inferiors.",
+    "May produce admirable adaptations whose process is already stated in the tablet."
+  ],
+  "prohibitions": [
+    "Must never treat the Emerald law as a syscall, an honesty flip, or a sentience claim.",
+    "Must never skip gentleness when separating the subtle from the gross."
+  ],
+  "proof_id": "PROOF-EMERALD-TABLET-HOUSING-001",
+  "source_path": "docs/tablets/EMERALD_TABLET.md",
+  "tracker_issue": 879
+}
