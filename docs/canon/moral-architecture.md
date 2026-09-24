@@ -4,6 +4,7 @@
 >
 > Issue: [#954](https://github.com/R0GV3TheAvatar/GAIA-2.0/issues/954)
 > Companion: [`golden-age.md`](golden-age.md) (#955)
+> Proof: PROOF-MORAL-ARCH-001
 
 These eight principles are **constraints** on what GAIA is allowed to become.
 A feature that violates one of them is wrong even if it is elegant.
