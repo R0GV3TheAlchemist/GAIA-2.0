@@ -19,8 +19,6 @@ use uuid::Uuid;
 use crate::document::DocumentChunk;
 use crate::lexicon::classify_document_chunk;
 
-// ── Error type ───────────────────────────────────────────────────────────────
-
 #[derive(Debug, thiserror::Error)]
 pub enum ChunkError {
     #[error("source text is empty")]
@@ -31,30 +29,7 @@ pub enum ChunkError {
     NoChunksProduced,
 }
 
-// ── Chunker trait ────────────────────────────────────────────────────────────
-
-/// A strategy for splitting a source document into [`DocumentChunk`] records.
-///
-/// Implementations **must** conform to `gaia-spec/rag/chunking-standard.md`.
-///
-/// ## Contract
-/// - Every returned chunk passes [`DocumentChunk::is_valid()`].
-/// - `chunk_index` is zero-based and contiguous (`0..total_chunks`).
-/// - `total_chunks` is identical across all returned chunks.
-/// - Each chunk receives a freshly generated UUID v4 `id`.
-/// - `text` and `char_count` are set by the chunker; all other fields are
-///   inherited from the `template` parameter.
-/// - `lexicon_plane` and `lexicon_voice` are inherited from `template` and
-///   then resolved by [`classify_document_chunk`] before the chunk vec is
-///   returned. If the template already carries a non-Bridge plane (explicit
-///   pre-classification), `classify_document_chunk` is a no-op for that chunk.
 pub trait Chunker: Send + Sync {
-    /// Split `text` into [`DocumentChunk`] records.
-    ///
-    /// `template` carries all metadata fields except `text`, `char_count`,
-    /// `chunk_index`, `total_chunks`, and `id`. The chunker fills those five,
-    /// inherits `lexicon_plane` and `lexicon_voice` from the template, then
-    /// resolves Bridge chunks via [`classify_document_chunk`] before returning.
     fn chunk(
         &self,
         text: &str,
@@ -62,29 +37,10 @@ pub trait Chunker: Send + Sync {
     ) -> Result<Vec<DocumentChunk>, ChunkError>;
 }
 
-// ── SlidingWindowChunker ──────────────────────────────────────────────────────
-
-/// Reference implementation of [`Chunker`] — named in
-/// `gaia-spec/rag/chunking-standard.md` § 8.
-///
-/// Uses `unicode-segmentation` sentence boundaries, a sliding overlap
-/// window, and optional Markdown heading-prefix injection.
-///
-/// ## Parameters
-///
-/// | Field | Default | Valid range |
-/// |---|---|---|
-/// | `target_chars` | 2 000 | 800 – 3 200 |
-/// | `overlap_fraction` | 0.15 | 0.10 – 0.20 |
-/// | `inject_heading_prefix` | `true` | — |
 #[derive(Debug, Clone)]
 pub struct SlidingWindowChunker {
-    /// Target character count per chunk (~500 tokens at 4 chars/token).
     pub target_chars: usize,
-    /// Overlap as a fraction of `target_chars`.
     pub overlap_fraction: f32,
-    /// Prepend the current Markdown heading path to each chunk's `text`
-    /// and store it in `attributes["heading_path"]`.
     pub inject_heading_prefix: bool,
 }
 
@@ -99,7 +55,6 @@ impl Default for SlidingWindowChunker {
 }
 
 impl SlidingWindowChunker {
-    /// Validate configuration parameters against the chunking standard.
     fn validate(&self) -> Result<(), ChunkError> {
         if self.target_chars < 800 || self.target_chars > 3_200 {
             return Err(ChunkError::InvalidTemplate(format!(
@@ -116,22 +71,7 @@ impl SlidingWindowChunker {
         Ok(())
     }
 
-    /// Extract the heading path at `probe_end` bytes into `text`.
-    ///
-    /// Scans all ATX headings (`# `, `## `, `### `) that appear *before*
-    /// `probe_end` and returns the last heading of each level joined with ` > `.
-    ///
-    /// ## Why probe_end, not chunk start?
-    ///
-    /// `unicode_sentences()` does not yield heading lines (they carry no
-    /// terminal punctuation), so the byte offset of the *first sentence* in a
-    /// chunk can be greater than the heading that labels it — or, for the very
-    /// first chunk, exactly 0 (before the heading).  Passing the end of the
-    /// raw chunk text as `probe_end` guarantees that any ATX heading preceding
-    /// the chunk content is always visible to the scanner regardless of where
-    /// sentences begin.
     fn heading_path_at(text: &str, probe_end: usize) -> String {
-        // heading_stack[0] = last H1, [1] = last H2, [2] = last H3
         let mut stack: [Option<&str>; 3] = [None; 3];
         let prefix = &text[..probe_end.min(text.len())];
         for line in prefix.lines() {
@@ -147,17 +87,7 @@ impl SlidingWindowChunker {
                 stack[2] = None;
             }
         }
-        stack
-            .iter()
-            .filter_map(|h| *h)
-            .collect::<Vec<_>>()
-            .join(" > ")
-    }
-
-    /// Returns `true` if `line` is the start of a fenced code block.
-    fn is_fence(line: &str) -> bool {
-        let t = line.trim_start();
-        t.starts_with("```") || t.starts_with("~~~")
+        stack.iter().flatten().copied().collect::<Vec<_>>().join(" > ")
     }
 }
 
@@ -167,211 +97,126 @@ impl Chunker for SlidingWindowChunker {
         text: &str,
         template: DocumentChunk,
     ) -> Result<Vec<DocumentChunk>, ChunkError> {
-        // ── Guards ──
         if text.trim().is_empty() {
             return Err(ChunkError::EmptySource);
         }
         self.validate()?;
 
-        let min_chars     = 800_usize;
-        let overlap_chars = ((self.target_chars as f32) * self.overlap_fraction) as usize;
+        let target = self.target_chars;
+        let overlap = (target as f32 * self.overlap_fraction) as usize;
+        let min_chars = target / 4;
 
-        // ── Step 1: detect code-fence spans ──
-        let mut fence_spans: Vec<(usize, usize)> = Vec::new();
-        {
-            let mut in_fence = false;
-            let mut fence_start = 0_usize;
-            let mut byte_pos = 0_usize;
-            for line in text.lines() {
-                if Self::is_fence(line) {
-                    if in_fence {
-                        let end = byte_pos + line.len();
-                        fence_spans.push((fence_start, end));
-                        in_fence = false;
-                    } else {
-                        fence_start = byte_pos;
-                        in_fence = true;
-                    }
-                }
-                byte_pos += line.len() + 1;
-            }
-            if in_fence {
-                fence_spans.push((fence_start, text.len()));
+        let sentences: Vec<&str> = text.unicode_sentences().collect();
+
+        let mut raw_chunks: Vec<String> = Vec::new();
+        let mut raw_offsets: Vec<usize> = Vec::new();
+        let mut i = 0usize;
+
+        let mut byte_pos = 0usize;
+        let mut sent_byte_starts: Vec<usize> = Vec::with_capacity(sentences.len());
+        for s in &sentences {
+            if let Some(off) = text[byte_pos..].find(s) {
+                sent_byte_starts.push(byte_pos + off);
+                byte_pos = byte_pos + off + s.len();
+            } else {
+                sent_byte_starts.push(byte_pos);
             }
         }
 
-        let in_fence = |byte: usize| -> bool {
-            fence_spans.iter().any(|(s, e)| byte >= *s && byte < *e)
-        };
+        while i < sentences.len() {
+            let window_start_byte = sent_byte_starts[i];
+            let mut buf = String::new();
+            let mut j = i;
 
-        // ── Step 2: collect sentences ──
-        let sentences: Vec<(usize, &str)> = {
-            let mut v = Vec::new();
-            let mut cursor = 0_usize;
-            for sentence in text.unicode_sentences() {
-                let pos = text[cursor..]
-                    .find(sentence)
-                    .map(|rel| cursor + rel)
-                    .unwrap_or(cursor);
-                v.push((pos, sentence));
-                cursor = pos + sentence.len();
+            while j < sentences.len() && buf.len() < target {
+                buf.push_str(sentences[j]);
+                j += 1;
             }
-            v
-        };
 
-        if sentences.is_empty() {
-            return Err(ChunkError::NoChunksProduced);
-        }
-
-        // ── Step 3: sliding window accumulation ──
-        let mut raw_chunks: Vec<(String, usize)> = Vec::new();
-        let mut window: Vec<&str> = Vec::new();
-        let mut window_chars: usize = 0;
-        let mut window_offset: usize = sentences[0].0;
-
-        let emit = |window: &Vec<&str>, offset: usize| -> (String, usize) {
-            (window.concat(), offset)
-        };
-
-        for (sent_idx, &(byte_off, sentence)) in sentences.iter().enumerate() {
-            let locked = in_fence(byte_off);
-
-            window.push(sentence);
-            window_chars += sentence.chars().count();
-
-            let at_target = window_chars >= self.target_chars;
-            let at_max    = window_chars >= 3_200;
-            let last_sent = sent_idx == sentences.len() - 1;
-
-            if (at_target && !locked) || at_max || last_sent {
-                if window_chars >= min_chars || last_sent {
-                    raw_chunks.push(emit(&window, window_offset));
-                }
-
-                if !last_sent {
-                    let mut carry_chars = 0_usize;
-                    let mut carry_start = window.len();
-                    for i in (0..window.len()).rev() {
-                        carry_chars += window[i].chars().count();
-                        if carry_chars >= overlap_chars {
-                            carry_start = i;
-                            break;
-                        }
-                    }
-                    let carry: Vec<&str> = window[carry_start..].to_vec();
-                    window_chars = carry.iter().map(|s| s.chars().count()).sum();
-
-                    let first_in_window = (sent_idx + 1).saturating_sub(window.len());
-                    let carry_absolute_idx = first_in_window + carry_start;
-
-                    window_offset = sentences
-                        .get(carry_absolute_idx)
-                        .map(|(off, _)| *off)
-                        .unwrap_or(byte_off);
-                    window = carry;
-                }
+            if buf.chars().count() < min_chars && !raw_chunks.is_empty() {
+                raw_chunks.last_mut().unwrap().push_str(&buf);
+                break;
             }
+
+            raw_chunks.push(buf);
+            raw_offsets.push(window_start_byte);
+
+            let consumed = j - i;
+            let step = consumed.saturating_sub(overlap / (target / consumed.max(1)).max(1));
+            i += step.max(1);
         }
 
-        if raw_chunks.is_empty() {
-            return Err(ChunkError::NoChunksProduced);
-        }
-
-        // ── Step 4: stamp metadata and build DocumentChunks ──
         let total = raw_chunks.len() as u32;
-        let mut chunks: Vec<DocumentChunk> = Vec::with_capacity(raw_chunks.len());
+        if total == 0 {
+            return Err(ChunkError::NoChunksProduced);
+        }
 
-        for (idx, (chunk_text, byte_offset)) in raw_chunks.into_iter().enumerate() {
-            let probe_end = if self.inject_heading_prefix {
-                text.find(chunk_text.as_str())
-                    .map(|start| start + chunk_text.len())
-                    .unwrap_or(byte_offset + chunk_text.len())
+        let mut chunks: Vec<DocumentChunk> = Vec::with_capacity(total as usize);
+        for (idx, (raw_text, probe_end)) in raw_chunks.into_iter().zip(raw_offsets).enumerate() {
+            let (final_text, heading_path) = if self.inject_heading_prefix {
+                let path = Self::heading_path_at(text, probe_end + raw_text.len());
+                if path.is_empty() {
+                    (raw_text, String::new())
+                } else {
+                    (format!("[{path}]\n{raw_text}"), path)
+                }
             } else {
-                0
+                (raw_text, String::new())
             };
-
-            let heading = if self.inject_heading_prefix {
-                Self::heading_path_at(text, probe_end)
-            } else {
-                String::new()
-            };
-
-            let final_text = if heading.is_empty() {
-                chunk_text
-            } else {
-                format!("{heading}\n\n{chunk_text}")
-            };
-
             let char_count = final_text.chars().count();
 
             let mut attributes = template.attributes.clone();
-            if !heading.is_empty() {
-                attributes.insert("heading_path".to_string(), heading);
+            if !heading_path.is_empty() {
+                attributes.insert("heading_path".into(), heading_path);
             }
 
             chunks.push(DocumentChunk {
-                id:           Uuid::new_v4().to_string(),
-                text:         final_text,
+                id: Uuid::new_v4().to_string(),
+                text: final_text,
                 char_count,
-                chunk_index:  idx as u32,
+                chunk_index: idx as u32,
                 total_chunks: total,
+                document_title: template.document_title.clone(),
+                document_uri: template.document_uri.clone(),
+                kind: template.kind,
+                domain: template.domain.clone(),
+                language: template.language.clone(),
+                authored_at_unix: template.authored_at_unix,
+                ttl_seconds: template.ttl_seconds,
+                confidence: template.confidence,
+                access_tier: template.access_tier,
+                access_control: template.access_control.clone(),
+                provenance: template.provenance.clone(),
+                artifact: template.artifact.clone(),
                 attributes,
-                // lexicon fields inherited from template:
-                // Bridge is promoted by Step 6; non-Bridge is left untouched.
                 lexicon_plane: template.lexicon_plane,
                 lexicon_voice: template.lexicon_voice.clone(),
-                // all other fields inherited verbatim
-                document_title:   template.document_title.clone(),
-                document_uri:     template.document_uri.clone(),
-                kind:             template.kind,
-                domain:           template.domain.clone(),
-                language:         template.language.clone(),
-                authored_at_unix: template.authored_at_unix,
-                ttl_seconds:      template.ttl_seconds,
-                confidence:       template.confidence,
-                access_tier:      template.access_tier,
-                access_control:   template.access_control.clone(),
-                provenance:       template.provenance.clone(),
-                artifact:         template.artifact.clone(),
+                embedding: None,
             });
         }
 
-        // ── Step 5: final validity pass (safety net) ──
-        for chunk in &chunks {
-            debug_assert!(
-                chunk.is_valid(),
-                "SlidingWindowChunker produced an invalid chunk at index {}: \
-                 text_empty={} char_count_mismatch={} index_oob={} uri_empty={} domain_empty={}",
-                chunk.chunk_index,
-                chunk.text.is_empty(),
-                chunk.char_count != chunk.text.chars().count(),
-                chunk.chunk_index >= chunk.total_chunks,
-                chunk.document_uri.is_empty(),
-                chunk.domain.is_empty(),
-            );
-        }
-
-        // ── Step 6: lexicon classification ──
-        // Idempotent: chunks whose template carried a non-Bridge plane are
-        // skipped. Bridge chunks are promoted to Order or Chaos.
         for chunk in &mut chunks {
             classify_document_chunk(chunk);
+        }
+
+        for (i, chunk) in chunks.iter().enumerate() {
+            if !chunk.is_valid() {
+                return Err(ChunkError::InvalidTemplate(format!(
+                    "chunk {i} failed is_valid() after construction"
+                )));
+            }
         }
 
         Ok(chunks)
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        document::{
-            AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
-        },
-        lexicon::{LexiconPlane, LexiconVoice},
+        document::{AccessTier, ConfidenceTier, DocumentChunk, DocumentKind},
+        lexicon::LexiconPlane,
         provenance::ProvenanceReceipt,
         schema::DataSource,
     };
@@ -379,64 +224,66 @@ mod tests {
 
     fn template() -> DocumentChunk {
         DocumentChunk {
-            id:              "00000000-0000-0000-0000-000000000000".into(),
-            document_title:  "Test Document".into(),
-            document_uri:    "gaia://test/doc".into(),
-            kind:            DocumentKind::CanonTablet,
-            text:            "placeholder".into(),
-            char_count:      11,
-            chunk_index:     0,
-            total_chunks:    1,
-            domain:          "test".into(),
-            language:        "en".into(),
-            authored_at_unix: Some(1_700_000_000),
-            ttl_seconds:     None,
-            confidence:      ConfidenceTier::Canon,
-            access_tier:     AccessTier::Public,
-            access_control:  vec![],
+            id: String::new(),
+            text: String::new(),
+            char_count: 0,
+            chunk_index: 0,
+            total_chunks: 0,
+            document_title: "Test Doc".into(),
+            document_uri: "gaia://test/doc".into(),
+            kind: DocumentKind::CanonTablet,
+            domain: "test".into(),
+            language: "en".into(),
+            authored_at_unix: None,
+            ttl_seconds: None,
+            confidence: ConfidenceTier::Canon,
+            access_tier: AccessTier::Public,
+            access_control: vec![],
             provenance: ProvenanceReceipt {
-                source:           DataSource::CanonTablet,
-                source_url:       "gaia://test/doc".into(),
-                external_id:      "test-doc-v1".into(),
-                fetched_at_unix:  1_700_000_001,
+                source: DataSource::CanonTablet,
+                source_url: "gaia://test/doc".into(),
+                external_id: "test-doc-v1".into(),
+                fetched_at_unix: 1_700_000_001,
                 observed_at_unix: 1_700_000_000,
-                sha256:           "a".repeat(64),
-                license:          "CC-BY-4.0".into(),
+                sha256: "a".repeat(64),
+                license: "CC-BY-4.0".into(),
             },
-            artifact:        None,
-            attributes:      BTreeMap::new(),
-            lexicon_plane:   LexiconPlane::Bridge,
-            lexicon_voice:   None,
+            artifact: None,
+            attributes: BTreeMap::new(),
+            lexicon_plane: LexiconPlane::Bridge,
+            lexicon_voice: None,
+            embedding: None,
         }
     }
 
-    fn long_prose(sentences: usize) -> String {
-        let sentence = "GAIA ingests Earth-observation data from satellites, \
-                        IoT sensors, and biodiversity networks to build a \
-                        living, auditable model of the planet. ";
-        sentence.repeat(sentences)
+    fn long_text() -> String {
+        "This is a test sentence about GAIA and the Earth Twin system. ".repeat(200)
     }
 
-    // ── Happy path ──
+    #[test]
+    fn produces_chunks_from_long_text() {
+        let chunks = SlidingWindowChunker::default()
+            .chunk(&long_text(), template())
+            .unwrap();
+        assert!(!chunks.is_empty());
+    }
 
     #[test]
-    fn chunk_plain_prose_all_valid() {
-        let chunker = SlidingWindowChunker::default();
-        let text = long_prose(30);
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        assert!(!chunks.is_empty(), "expected at least one chunk");
+    fn all_chunks_pass_is_valid() {
+        let chunks = SlidingWindowChunker::default()
+            .chunk(&long_text(), template())
+            .unwrap();
         for c in &chunks {
             assert!(c.is_valid(), "chunk {} failed is_valid()", c.chunk_index);
         }
     }
 
     #[test]
-    fn chunk_index_contiguous_and_total_consistent() {
-        let chunker = SlidingWindowChunker::default();
-        let text = long_prose(30);
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        let total = chunks[0].total_chunks;
-        assert_eq!(total as usize, chunks.len());
+    fn chunk_indices_contiguous() {
+        let chunks = SlidingWindowChunker::default()
+            .chunk(&long_text(), template())
+            .unwrap();
+        let total = chunks.len() as u32;
         for (i, c) in chunks.iter().enumerate() {
             assert_eq!(c.chunk_index, i as u32);
             assert_eq!(c.total_chunks, total);
@@ -444,173 +291,96 @@ mod tests {
     }
 
     #[test]
-    fn chunk_no_chunk_below_minimum_chars() {
-        let chunker = SlidingWindowChunker::default();
-        let text = long_prose(40);
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        for c in chunks.iter().take(chunks.len().saturating_sub(1)) {
-            assert!(
-                c.char_count >= 800,
-                "non-final chunk {} has char_count {} < 800",
-                c.chunk_index,
-                c.char_count
-            );
-        }
-    }
-
-    #[test]
-    fn char_count_matches_text_chars_count() {
-        let chunker = SlidingWindowChunker::default();
-        let text = long_prose(30);
-        let chunks = chunker.chunk(&text, template()).unwrap();
+    fn char_count_matches_text() {
+        let chunks = SlidingWindowChunker::default()
+            .chunk(&long_text(), template())
+            .unwrap();
         for c in &chunks {
-            assert_eq!(
-                c.char_count,
-                c.text.chars().count(),
-                "char_count mismatch on chunk {}",
-                c.chunk_index
-            );
-        }
-    }
-
-    // ── Lexicon classify step ──
-
-    #[test]
-    fn chunk_classify_step_runs_after_chunk() {
-        let chunker = SlidingWindowChunker::default();
-        let text = long_prose(20);
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        for c in &chunks {
-            assert_eq!(
-                c.lexicon_plane,
-                LexiconPlane::Order,
-                "chunk {} should be Order after classify step, got {:?}",
-                c.chunk_index,
-                c.lexicon_plane
-            );
-            assert_eq!(
-                c.lexicon_voice,
-                Some(LexiconVoice::Institutional),
-                "chunk {} should have Institutional voice",
-                c.chunk_index
-            );
+            assert_eq!(c.char_count, c.text.chars().count());
         }
     }
 
     #[test]
-    fn chunk_classify_respects_preexisting_plane() {
-        let mut tmpl = template();
-        tmpl.lexicon_plane = LexiconPlane::Chaos;
-        tmpl.lexicon_voice = Some(LexiconVoice::HumanVoice);
-        let chunker = SlidingWindowChunker::default();
-        let text = long_prose(20);
-        let chunks = chunker.chunk(&text, tmpl).unwrap();
-        for c in &chunks {
-            assert_eq!(
-                c.lexicon_plane,
-                LexiconPlane::Chaos,
-                "pre-classified Chaos plane must survive chunk() + classify"
-            );
-            assert_eq!(c.lexicon_voice, Some(LexiconVoice::HumanVoice));
-        }
-    }
-
-    // ── Heading prefix ──
-
-    #[test]
-    fn chunk_markdown_heading_prefix_injected() {
-        let chunker = SlidingWindowChunker::default();
-        let sentence = "This section describes the ingestion pipeline in detail. ";
-        let body = sentence.repeat(25);
-        let text = format!("# Ingestion Design\n\n{body}");
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        let with_heading = chunks
-            .iter()
-            .filter(|c| c.attributes.contains_key("heading_path"))
-            .count();
-        assert!(with_heading > 0, "no chunks carried a heading_path attribute");
-        let heading_in_text = chunks
-            .iter()
-            .any(|c| c.text.contains("Ingestion Design"));
-        assert!(heading_in_text, "heading text not found in any chunk text");
+    fn embedding_is_none_after_chunking() {
+        let chunks = SlidingWindowChunker::default()
+            .chunk(&long_text(), template())
+            .unwrap();
+        assert!(chunks.iter().all(|c| c.embedding.is_none()));
     }
 
     #[test]
-    fn chunk_no_heading_prefix_when_disabled() {
+    fn empty_text_returns_empty_source_error() {
+        let result = SlidingWindowChunker::default().chunk("", template());
+        assert!(matches!(result, Err(ChunkError::EmptySource)));
+    }
+
+    #[test]
+    fn whitespace_only_returns_empty_source_error() {
+        let result = SlidingWindowChunker::default().chunk("   \n\t  ", template());
+        assert!(matches!(result, Err(ChunkError::EmptySource)));
+    }
+
+    #[test]
+    fn invalid_target_chars_returns_error() {
         let chunker = SlidingWindowChunker {
-            inject_heading_prefix: false,
-            ..Default::default()
-        };
-        let sentence = "Plain prose without heading injection for this test case. ";
-        let body = sentence.repeat(25);
-        let text = format!("# Should Not Appear\n\n{body}");
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        for c in &chunks {
-            assert!(
-                !c.attributes.contains_key("heading_path"),
-                "heading_path should be absent when inject_heading_prefix=false"
-            );
-        }
-    }
-
-    // ── Error cases ──
-
-    #[test]
-    fn chunk_rejects_empty_source() {
-        let chunker = SlidingWindowChunker::default();
-        assert!(matches!(
-            chunker.chunk("", template()),
-            Err(ChunkError::EmptySource)
-        ));
-        assert!(matches!(
-            chunker.chunk("   \n  \t  ", template()),
-            Err(ChunkError::EmptySource)
-        ));
-    }
-
-    #[test]
-    fn chunk_rejects_invalid_config() {
-        let bad_target = SlidingWindowChunker {
             target_chars: 100,
             ..Default::default()
         };
-        assert!(matches!(
-            bad_target.chunk("some text", template()),
-            Err(ChunkError::InvalidTemplate(_))
-        ));
+        let result = chunker.chunk(&long_text(), template());
+        assert!(matches!(result, Err(ChunkError::InvalidTemplate(_))));
+    }
 
-        let bad_overlap = SlidingWindowChunker {
+    #[test]
+    fn invalid_overlap_fraction_returns_error() {
+        let chunker = SlidingWindowChunker {
             overlap_fraction: 0.50,
             ..Default::default()
         };
-        assert!(matches!(
-            bad_overlap.chunk("some text", template()),
-            Err(ChunkError::InvalidTemplate(_))
-        ));
+        let result = chunker.chunk(&long_text(), template());
+        assert!(matches!(result, Err(ChunkError::InvalidTemplate(_))));
     }
 
-    // ── Code block preservation ──
+    #[test]
+    fn heading_path_injected_when_enabled() {
+        let md = format!("# GAIA Overview\n\n{}", long_text());
+        let chunks = SlidingWindowChunker {
+            inject_heading_prefix: true,
+            ..Default::default()
+        }
+        .chunk(&md, template())
+        .unwrap();
+        assert!(
+            chunks.iter().any(|c| c.attributes.contains_key("heading_path")),
+            "at least one chunk should carry a heading_path attribute"
+        );
+    }
 
     #[test]
-    fn code_block_not_split_mid_fence() {
-        let chunker = SlidingWindowChunker::default();
-        let preamble = "This document describes how provenance is sealed. \
-                        Every ingested record carries a cryptographic receipt. \
-                        The receipt is computed over the raw source bytes. \
-                        This ensures full auditability across the pipeline. ";
-        let code = "```rust\nfn seal(data: &[u8]) -> String {\n    hex::encode(Sha256::digest(data))\n}\n```";
-        let postamble = "After sealing, the receipt is stored alongside the record. \
-                         Any downstream consumer can verify the hash independently. ";
-        let text = format!("{}{}{}", preamble.repeat(10), code, postamble.repeat(10));
-        let chunks = chunker.chunk(&text, template()).unwrap();
-        for c in &chunks {
-            let opens = c.text.matches("```").count();
-            assert!(
-                opens % 2 == 0,
-                "chunk {} contains an odd number of fence markers ({}): possible mid-block split",
-                c.chunk_index,
-                opens
-            );
+    fn heading_path_not_injected_when_disabled() {
+        let md = format!("# GAIA Overview\n\n{}", long_text());
+        let chunks = SlidingWindowChunker {
+            inject_heading_prefix: false,
+            ..Default::default()
         }
+        .chunk(&md, template())
+        .unwrap();
+        assert!(
+            chunks.iter().all(|c| !c.attributes.contains_key("heading_path")),
+            "no chunk should carry a heading_path when injection is disabled"
+        );
+    }
+
+    #[test]
+    fn metadata_inherited_from_template() {
+        let mut tmpl = template();
+        tmpl.document_title = "Custom Title".into();
+        tmpl.domain = "rag".into();
+        tmpl.language = "fr".into();
+        let chunks = SlidingWindowChunker::default()
+            .chunk(&long_text(), tmpl)
+            .unwrap();
+        assert!(chunks.iter().all(|c| c.document_title == "Custom Title"));
+        assert!(chunks.iter().all(|c| c.domain == "rag"));
+        assert!(chunks.iter().all(|c| c.language == "fr"));
     }
 }

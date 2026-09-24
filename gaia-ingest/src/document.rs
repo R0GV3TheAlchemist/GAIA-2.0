@@ -19,6 +19,10 @@
 //! - `lexicon_plane` defaults to `LexiconPlane::Bridge`. The ingestion
 //!   pipeline promotes it to `Order` or `Chaos` via `classify_chunk()`.
 //!   The RAG retrieval layer must reject implicit cross-plane lookups (C30).
+//! - `embedding` is `None` immediately after chunking and is populated
+//!   by the embed step before the chunk is inserted into the vector store.
+//!   `is_valid()` does not require embedding presence — absence is legal
+//!   at ingest time.
 
 use std::collections::BTreeMap;
 
@@ -26,6 +30,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     artifact::RawArtifactRef,
+    embed::EmbeddingVector,
     lexicon::{LexiconPlane, LexiconVoice},
     provenance::ProvenanceReceipt,
 };
@@ -127,6 +132,7 @@ pub enum ConfidenceTier {
 /// | `provenance.sha256` | SHA-256 of the raw source bytes, NOT the chunk text. |
 /// | `artifact` | `Some` when the full source document is stored in SFS. |
 /// | `lexicon_plane` | Defaults to `Bridge`. Promoted by the ingestion pipeline. |
+/// | `embedding` | `None` at ingest time. Populated by the embed step before vector-store insertion. |
 ///
 /// ## Chunking parameters
 /// See `gaia-spec/rag/chunking-standard.md` for the authoritative values:
@@ -226,6 +232,22 @@ pub struct DocumentChunk {
     /// Who speaks the vocabulary in this chunk.
     /// `None` until resolved by the ingestion pipeline classify step.
     pub lexicon_voice: Option<LexiconVoice>,
+
+    /// Dense embedding vector for this chunk.
+    ///
+    /// `None` immediately after chunking — the ingest pipeline produces
+    /// chunks without embeddings.  The embed step (upstream in `gaia-aikd`
+    /// or a dedicated embed worker) populates this field before the chunk
+    /// is inserted into the vector store.
+    ///
+    /// Callers MUST NOT insert a chunk with `embedding == None` into any
+    /// vector-store index.  Use `chunk.embedding.is_some()` as a pre-insert
+    /// guard.
+    ///
+    /// The field is skipped in serialised JSON when `None` to keep payloads
+    /// compact during the ingest-only path.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub embedding: Option<EmbeddingVector>,
 }
 
 impl DocumentChunk {
@@ -239,6 +261,8 @@ impl DocumentChunk {
     ///
     /// Note: `lexicon_plane == Bridge` is valid — it means the pipeline
     /// classify step has not yet run, not that the chunk is broken.
+    /// Note: `embedding == None` is valid — embedding is populated after
+    /// chunking, not during.
     pub fn is_valid(&self) -> bool {
         !self.text.is_empty()
             && self.char_count == self.text.chars().count()
@@ -246,6 +270,13 @@ impl DocumentChunk {
             && !self.document_uri.is_empty()
             && !self.domain.is_empty()
             && self.provenance.is_valid()
+    }
+
+    /// Returns `true` if the chunk is ready for vector-store insertion,
+    /// i.e. it passes all structural invariants AND carries a populated
+    /// embedding vector.
+    pub fn is_embed_ready(&self) -> bool {
+        self.is_valid() && self.embedding.is_some()
     }
 
     /// Returns `true` if the chunk should be considered stale given
@@ -273,6 +304,7 @@ impl DocumentChunk {
 mod tests {
     use super::*;
     use crate::{
+        embed::EmbeddingVector,
         lexicon::{LexiconPlane, LexiconVoice},
         provenance::ProvenanceReceipt,
         schema::DataSource,
@@ -313,6 +345,7 @@ mod tests {
             attributes: BTreeMap::new(),
             lexicon_plane: LexiconPlane::Bridge,
             lexicon_voice: None,
+            embedding: None,
         }
     }
 
@@ -357,6 +390,37 @@ mod tests {
         let mut c = valid_chunk();
         c.domain = String::new();
         assert!(!c.is_valid());
+    }
+
+    // ── embedding ──
+
+    #[test]
+    fn embedding_none_by_default() {
+        assert!(valid_chunk().embedding.is_none());
+    }
+
+    #[test]
+    fn is_valid_does_not_require_embedding() {
+        let c = valid_chunk();
+        assert!(c.embedding.is_none());
+        assert!(c.is_valid());
+    }
+
+    #[test]
+    fn is_embed_ready_requires_embedding() {
+        let mut c = valid_chunk();
+        assert!(!c.is_embed_ready());
+        c.embedding = EmbeddingVector::new(vec![0.1, 0.2, 0.3]);
+        assert!(c.is_embed_ready());
+    }
+
+    #[test]
+    fn is_embed_ready_false_when_struct_invalid() {
+        let mut c = valid_chunk();
+        c.embedding = EmbeddingVector::new(vec![0.1]);
+        c.text = String::new(); // break invariant
+        c.char_count = 0;
+        assert!(!c.is_embed_ready());
     }
 
     // ── lexicon plane ──
@@ -413,9 +477,11 @@ mod tests {
     // ── serde round-trip ──
 
     #[test]
-    fn serde_roundtrip() {
+    fn serde_roundtrip_without_embedding() {
         let c = valid_chunk();
         let json = serde_json::to_string(&c).expect("serialize");
+        // embedding field must be absent in the JSON when None
+        assert!(!json.contains("embedding"), "embedding key must be omitted when None");
         let back: DocumentChunk = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(c.id, back.id);
         assert_eq!(c.text, back.text);
@@ -426,7 +492,23 @@ mod tests {
         assert_eq!(c.provenance.sha256, back.provenance.sha256);
         assert_eq!(c.lexicon_plane, back.lexicon_plane);
         assert_eq!(c.lexicon_voice, back.lexicon_voice);
+        assert!(back.embedding.is_none());
         assert!(back.is_valid());
+    }
+
+    #[test]
+    fn serde_roundtrip_with_embedding() {
+        let mut c = valid_chunk();
+        c.embedding = EmbeddingVector::new(vec![0.1, 0.2, 0.3]);
+        let json = serde_json::to_string(&c).expect("serialize");
+        assert!(json.contains("embedding"), "embedding key must be present when Some");
+        let back: DocumentChunk = serde_json::from_str(&json).expect("deserialize");
+        assert!(back.embedding.is_some());
+        assert_eq!(
+            back.embedding.as_ref().unwrap().dim(),
+            3
+        );
+        assert!(back.is_embed_ready());
     }
 
     // ── DocumentKind helpers ──

@@ -38,6 +38,11 @@
 //! Use [`auth::RetrievalFilter`] to enforce per-chunk authorization at
 //! retrieval time.  Use [`chunking::MarkdownChunker`] for structure-preserving
 //! Markdown splitting.
+//!
+//! ## Embedding
+//! `DocumentChunk::embedding` is `None` immediately after chunking and is
+//! populated by the embed step before the chunk is inserted into the vector
+//! store.  Use [`EmbeddingVector`] to construct and validate embedding values.
 
 pub mod artifact;
 pub mod auth;
@@ -46,6 +51,7 @@ pub mod chunker;
 pub mod chunking;
 pub mod dedup;
 pub mod document;
+pub mod embed;
 pub mod freshness;
 pub mod ingest;
 pub mod lexicon;
@@ -64,6 +70,7 @@ pub use dedup::{ChunkStore, IngestReport, IngestResult};
 pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
+pub use embed::EmbeddingVector;
 pub use freshness::{evaluate as evaluate_freshness, freshness_score, FreshnessVerdict};
 pub use ingest::{IngestPipeline, PipelineError};
 pub use lexicon::{

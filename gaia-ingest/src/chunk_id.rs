@@ -152,7 +152,8 @@ mod tests {
                 sha256:           "a".repeat(64),
                 license:          "proprietary".into(),
             },
-            artifact: None,
+            embedding:       None,
+            artifact:        None,
         }
     }
 

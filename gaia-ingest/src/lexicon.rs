@@ -459,6 +459,7 @@ mod tests {
                 sha256:           "a".repeat(64),
                 license:          "CC-BY-4.0".into(),
             },
+            embedding:       None,
             artifact:        None,
             attributes:      BTreeMap::new(),
             lexicon_plane:   LexiconPlane::Bridge,
