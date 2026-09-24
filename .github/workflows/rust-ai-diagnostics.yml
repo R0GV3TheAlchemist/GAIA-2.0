@@ -62,7 +62,7 @@ jobs:
           cargo clippy --workspace --lib --message-format=json -- -D warnings 2>&1 \
             | tee /tmp/clippy-raw.json || true
 
-      # ── 3. Parse and format the report ──────────────────────────────────
+      # ── 3. Parse and format the report ──────────────────────────
       - name: Build diagnostics report
         id: report
         run: |
@@ -126,7 +126,7 @@ jobs:
           if not all_errors and not all_warnings:
               lines.append("✅ **No errors or warnings detected.** Workspace is clean.")
           else:
-              # ── Errors ───────────────────────────────────────────────────
+              # ── Errors ───────────────────────────────────
               lines.append(f"### 🔴 Errors ({len(all_errors)})")
               lines.append("")
               if all_errors:
@@ -142,7 +142,7 @@ jobs:
                   lines.append("✅ No compiler errors.")
               lines.append("")
 
-              # ── Warnings (collapsed) ──────────────────────────────────────
+              # ── Warnings (collapsed) ──────────────────────
               lines.append(f"### 🟡 Warnings ({len(all_warnings)})")
               lines.append("")
               if all_warnings:
@@ -166,30 +166,35 @@ jobs:
           lines.append("---")
           lines.append(f"*Commit: `${{ github.sha }}`  ·  Workflow: `rust-ai-diagnostics`*")
 
-          report = "\n".join(lines)
+          report = "\\n".join(lines)
 
           # Write to GITHUB_OUTPUT (multiline)
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-              fh.write("report<<REPORT_EOF\n")
+              fh.write("report<<REPORT_EOF\\n")
               fh.write(report)
-              fh.write("\nREPORT_EOF\n")
+              fh.write("\\nREPORT_EOF\\n")
 
           has_errors = "true" if all_errors else "false"
           with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
-              fh.write(f"has_errors={has_errors}\n")
+              fh.write(f"has_errors={has_errors}\\n")
 
           print("Report built successfully.")
           print(f"  errors:   {len(all_errors)}")
           print(f"  warnings: {len(all_warnings)}")
           PYEOF
 
-      # ── 4. Post (or update) sticky PR comment ───────────────────────────
+      # ── 4. Post (or update) sticky PR comment ───────────────────────
+      # Pass the report via env — never interpolate markdown into a JS
+      # template literal. Backticks in the report (e.g. `sha`) would
+      # terminate the literal and produce SyntaxError: Unexpected identifier.
       - name: Post diagnostics comment
         uses: actions/github-script@v7
+        env:
+          DIAG_REPORT: ${{ steps.report.outputs.report }}
         with:
           script: |
             const marker = '<!-- rust-ai-diagnostics -->';
-            const body   = marker + '\n' + `${{ steps.report.outputs.report }}`;
+            const body = marker + '\\n' + (process.env.DIAG_REPORT || '');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner:      context.repo.owner,
