@@ -80,6 +80,8 @@ fn class_label(c: ClaimClass) -> &'static str {
         ClaimClass::Experimental => "experimental",
         ClaimClass::Symbolic => "symbolic",
         ClaimClass::Prohibited => "prohibited",
+        ClaimClass::Synthetic => "synthetic",
+        ClaimClass::Observed => "observed",
     }
 }
 
