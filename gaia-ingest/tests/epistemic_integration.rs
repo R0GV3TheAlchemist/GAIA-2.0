@@ -25,7 +25,7 @@ use gaia_ingest::{
         EpistemicState, EpistemicStateBuilder, EvidenceKind,
     },
     lexicon::{classify_document_chunk, LexiconPlane},
-    provenance::{ProvenanceBuilder, ProvenanceReceipt},
+    provenance::ProvenanceBuilder,
     schema::DataSource,
     DocumentChunk,
 };
@@ -344,7 +344,12 @@ fn document_chunk_serde_with_epistemic_state() {
     let json = serde_json::to_string(&chunk).expect("serialize");
     assert!(json.contains("epistemic_state"), "key must be present when Some");
     let back: DocumentChunk = serde_json::from_str(&json).expect("deserialize");
-    let es = back.epistemic_state.expect("epistemic_state must survive round-trip");
+    // Borrow epistemic_state by reference so `back` is not partially moved
+    // and remains usable for the is_valid() / is_retrieval_eligible() checks below.
+    let es = back
+        .epistemic_state
+        .as_ref()
+        .expect("epistemic_state must survive round-trip");
     assert_eq!(es.claim_status, ClaimStatus::Corroborated);
     assert_eq!(es.evidence_kind, EvidenceKind::LiteratureCitation);
     assert!((es.confidence.value() - 0.92_f32).abs() < 0.001_f32);
