@@ -114,7 +114,7 @@ impl MarkdownChunker {
 fn heading_level(line: &str) -> Option<(usize, &str)> {
     let trimmed = line.trim_start_matches('#');
     let hashes = line.len() - trimmed.len();
-    if hashes >= 1 && hashes <= 3 && trimmed.starts_with(' ') {
+    if (1..=3).contains(&hashes) && trimmed.starts_with(' ') {
         Some((hashes, trimmed.trim()))
     } else {
         None

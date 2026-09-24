@@ -88,7 +88,7 @@ pub fn evaluate(
 pub fn freshness_score(ttl_seconds: Option<u64>, ingested_at_unix: u64, now_unix: u64) -> f32 {
     match ttl_seconds {
         None => 1.0,
-        Some(ttl) if ttl == 0 => 0.0,
+        Some(0) => 0.0,
         Some(ttl) => {
             let age = now_unix.saturating_sub(ingested_at_unix) as f32;
             let ttl_f = ttl as f32;
