@@ -1,0 +1,46 @@
+# Canon runtime CI (#894). Advisory until 14 days green; does not replace #835.
+name: canon-runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/tablets/**"
+      - "docs/canon/**"
+      - "canon-runtime/**"
+      - "proofs/PROOF-*-TABLET-*.md"
+      - "proofs/PROOF-C209-*.md"
+      - "proofs/PROOF-C210-*.md"
+      - "scripts/build-canon-runtime.py"
+      - ".github/workflows/canon-runtime.yml"
+  pull_request:
+    paths:
+      - "docs/tablets/**"
+      - "docs/canon/**"
+      - "canon-runtime/**"
+      - "proofs/PROOF-*-TABLET-*.md"
+      - "proofs/PROOF-C209-*.md"
+      - "proofs/PROOF-C210-*.md"
+      - "scripts/build-canon-runtime.py"
+      - ".github/workflows/canon-runtime.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  manifest:
+    name: regenerate + validate manifest (advisory)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fail if manifest.json would change
+        run: python3 scripts/build-canon-runtime.py --check
+      - name: Query unit tests
+        run: python3 -m unittest discover -s canon-runtime -p "test_*.py"
+      - name: Advisory notice
+        if: failure()
+        run: |
+          echo "::warning title=Canon runtime advisory::Regenerate canon-runtime/manifest.json and keep CAP/proof paths valid. This job is advisory until a 14-day green window. It does not replace canon-integrity (#835)."
