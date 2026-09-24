@@ -46,6 +46,88 @@ pub use trace::{
 };
 pub use trust::{verify_tagged_signature, AuditEvent, IntentSigner, SignedIntent, TrustAudit};
 
+// ---------------------------------------------------------------------------
+// Scope aggregation gate — swarm security boundary
+//
+// Every agent in a swarm carries an `AgentScope` that declares the maximum
+// permission level it operates under. When the orchestrator attempts to form
+// a multi-agent swarm and issue a combined action, `scope_aggregation_gate`
+// enforces that the *requested* scope does not exceed what *all* agents in the
+// swarm have been individually granted. A single under-privileged agent is
+// sufficient to deny the request — privilege cannot be aggregated upward.
+//
+// Scope ordering (ascending privilege):
+//   LocalRead < RepoWrite < ExternalEgress
+// ---------------------------------------------------------------------------
+
+/// The permission level an agent or swarm action may operate under.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Scope {
+    /// Read access to local/in-process data only. No filesystem writes,
+    /// no network egress, no repository mutations.
+    LocalRead,
+    /// May write to the GAIA repository (issues, files, branches). No
+    /// external network egress beyond the configured GitHub origin.
+    RepoWrite,
+    /// May initiate outbound network connections to arbitrary external hosts.
+    /// Highest privilege level — requires explicit operator approval.
+    ExternalEgress,
+}
+
+/// Declares the maximum `Scope` an agent is authorised to operate under.
+#[derive(Debug, Clone)]
+pub struct AgentScope {
+    /// Human-readable agent identifier for audit logging.
+    pub agent_id: String,
+    /// The ceiling permission level granted to this agent.
+    pub scope: Scope,
+}
+
+/// Errors produced by the orchestrator's security boundary checks.
+#[derive(Debug, PartialEq)]
+pub enum OrchestratorError {
+    /// The requested scope was denied because at least one agent in the swarm
+    /// does not hold sufficient privilege. Privilege cannot be aggregated
+    /// upward across agents — the minimum wins.
+    ScopeAggregationDenied,
+}
+
+impl std::fmt::Display for OrchestratorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OrchestratorError::ScopeAggregationDenied => {
+                write!(f, "scope aggregation denied: requested scope exceeds swarm minimum")
+            }
+        }
+    }
+}
+
+impl std::error::Error for OrchestratorError {}
+
+/// Gate function that enforces swarm scope aggregation policy.
+///
+/// Returns `Ok(())` if **every** agent in `agents` holds a `scope` that is
+/// greater than or equal to `requested`. Returns
+/// `Err(OrchestratorError::ScopeAggregationDenied)` if any agent's scope is
+/// below the requested level.
+///
+/// An empty swarm is denied by convention — a swarm with no agents cannot
+/// be granted any permission.
+pub fn scope_aggregation_gate(
+    agents: &[AgentScope],
+    requested: Scope,
+) -> Result<(), OrchestratorError> {
+    if agents.is_empty() {
+        return Err(OrchestratorError::ScopeAggregationDenied);
+    }
+    let all_qualify = agents.iter().all(|a| a.scope >= requested);
+    if all_qualify {
+        Ok(())
+    } else {
+        Err(OrchestratorError::ScopeAggregationDenied)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -56,9 +138,6 @@ mod tests {
     // -------------------------------------------------------------------------
 
     /// A freshly constructed InMemoryGate must default to Clear (gate open).
-    /// The gate is the canonical boundary between the orchestrator and the
-    /// control plane. Defaulting to Clear means work proceeds unless the
-    /// control plane explicitly signals unavailability.
     #[test]
     fn execution_gate_default_state_is_open() {
         let gate = InMemoryGate::clear();
@@ -69,8 +148,7 @@ mod tests {
         );
     }
 
-    /// After control_plane_unavailable_event(), using InMemoryGate::unavailable()
-    /// must yield ControlPlaneUnavailable state, and permit_execution must deny.
+    /// After InMemoryGate::unavailable(), permit_execution must deny.
     #[test]
     fn execution_gate_blocks_when_control_plane_unavailable() {
         let gate = InMemoryGate::unavailable();
@@ -91,21 +169,17 @@ mod tests {
     // Broker — work-queue invariants
     // -------------------------------------------------------------------------
 
-    /// Broker::new() pre-populates 3 workers; the queue starts empty.
     #[test]
     fn broker_new_is_empty() {
         let broker = Broker::new();
         assert_eq!(broker.workers.len(), 3, "Broker::new() must pre-populate 3 workers");
-        assert!(broker.queue.is_empty(),   "new Broker must have an empty work queue");
+        assert!(broker.queue.is_empty(), "new Broker must have an empty work queue");
     }
 
     // -------------------------------------------------------------------------
     // TrustAudit — signed intent roundtrip
     // -------------------------------------------------------------------------
 
-    /// Signing an IntentGraph and immediately verifying it must succeed.
-    /// IntentSigner::sign() expects &IntentGraph (not raw bytes).
-    /// Verification is performed via IntentSigner::verify_detached(&signed).
     #[test]
     fn trust_audit_signed_intent_roundtrip() {
         let signer = IntentSigner::generate();
@@ -128,24 +202,14 @@ mod tests {
     // McpRegistry — tool lookup via real API
     // -------------------------------------------------------------------------
 
-    /// McpRegistry::local() seeds the registry with at least one tool.
-    /// Tools are enumerable via .tools() and findable by name.
-    /// This tests the real constructor and query surface — no phantom methods.
     #[test]
     fn mcp_registry_local_has_tools_and_lookup_works() {
         let registry = McpRegistry::local();
         let tools = registry.tools();
-        assert!(
-            !tools.is_empty(),
-            "McpRegistry::local() must seed at least one tool"
-        );
-        // Verify that every tool returned by tools() is findable by name search.
+        assert!(!tools.is_empty(), "McpRegistry::local() must seed at least one tool");
         let first_name = tools[0].name.clone();
         let found = registry.tools().into_iter().find(|t| t.name == first_name);
-        assert!(
-            found.is_some(),
-            "tool enumerated by tools() must be findable by name"
-        );
+        assert!(found.is_some(), "tool enumerated by tools() must be findable by name");
         assert_eq!(found.unwrap().name, first_name);
     }
 }
