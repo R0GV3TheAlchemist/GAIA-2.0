@@ -12,6 +12,10 @@ pub enum ClaimClass {
     Experimental,
     Symbolic,
     Prohibited,
+    /// Claim generated or interpolated by a model; must be disclosed before use as ground truth.
+    Synthetic,
+    /// Claim derived verbatim from raw sensor/tool output; unverified but traceable.
+    Observed,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -109,14 +113,18 @@ pub struct InvokeTraceInput<'a> {
     pub claim_class: ClaimClass,
 }
 
-/// Prohibited claims cannot be emitted as an allow (#375).
+/// Prohibited, Synthetic, and Observed claims cannot be emitted as an allow (#375).
 pub fn from_invoke(input: InvokeTraceInput<'_>) -> TraceEvent {
-    let kind =
-        if matches!(input.kind, TraceKind::Allow) && matches!(input.claim_class, ClaimClass::Prohibited) {
-            TraceKind::Deny
-        } else {
-            input.kind
-        };
+    let kind = if matches!(input.kind, TraceKind::Allow)
+        && matches!(
+            input.claim_class,
+            ClaimClass::Prohibited | ClaimClass::Synthetic | ClaimClass::Observed
+        )
+    {
+        TraceKind::Deny
+    } else {
+        input.kind
+    };
     TraceEvent {
         kind,
         ts: input.ts,
