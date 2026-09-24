@@ -1,4 +1,11 @@
 //! AIKD first cuts (#93–#106, #621, #622, #628). Open weights default. Not a practice license.
+//!
+//! Golden Age five lines (#955):
+//! This is what I know.
+//! This is what I infer.
+//! This is what I experience.
+//! This is what I don't know.
+//! And here is what would change my mind.
 
 mod agentic;
 mod answer;
