@@ -19,13 +19,15 @@
 //! Parent epic: #901
 
 use gaia_ingest::{
+    document::{AccessTier, ConfidenceTier, DocumentKind},
     epistemic::{
         ClaimStatus, ContradictionRef, EpistemicConfidence, EpistemicError,
         EpistemicState, EpistemicStateBuilder, EvidenceKind,
     },
     lexicon::{classify_document_chunk, LexiconPlane},
-    provenance::ProvenanceBuilder,
-    DocumentChunk, DocumentKind,
+    provenance::{ProvenanceBuilder, ProvenanceReceipt},
+    schema::DataSource,
+    DocumentChunk,
 };
 use std::collections::BTreeMap;
 
@@ -33,25 +35,39 @@ use std::collections::BTreeMap;
 
 /// Build a minimal valid [`DocumentChunk`] with no epistemic state.
 fn base_chunk() -> DocumentChunk {
-    let receipt = ProvenanceBuilder::new("gaia://test/source")
-        .sha256([0u8; 32])
-        .build();
+    let text = "The global mean surface temperature has risen by 1.1 \u{00b0}C since 1850.".to_string();
+    let char_count = text.chars().count();
+    let receipt = ProvenanceBuilder::new(
+        DataSource::InternalDocument,
+        "gaia://test/source",
+        "integration-test-0",
+        1_700_000_001,
+        1_700_000_000,
+    )
+    .seal(text.as_bytes())
+    .expect("valid receipt");
     DocumentChunk {
-        id: gaia_ingest::ChunkId::from_text("integration test chunk zero"),
+        id: "00000000-0000-0000-0000-000000000099".into(),
+        document_title: "Integration Test Document".into(),
         document_uri: "gaia://test/source".into(),
-        document_kind: DocumentKind::CanonTablet,
-        text: "The global mean surface temperature has risen by 1.1 °C since 1850.".into(),
-        char_count: 68,
-        token_estimate: 15,
+        kind: DocumentKind::CanonTablet,
+        text,
+        char_count,
         chunk_index: 0,
         total_chunks: 1,
-        embedding: None,
-        lexicon_plane: gaia_ingest::lexicon::LexiconPlane::Bridge,
-        lexicon_voice: gaia_ingest::lexicon::LexiconVoice::NeutralVoice,
-        confidence_tier: gaia_ingest::ConfidenceTier::Standard,
-        access_tier: gaia_ingest::AccessTier::Public,
-        source_metadata: BTreeMap::new(),
+        domain: "test".into(),
+        language: "en".into(),
+        authored_at_unix: Some(1_700_000_000),
+        ttl_seconds: None,
+        confidence: ConfidenceTier::Verified,
+        access_tier: AccessTier::Public,
+        access_control: Vec::new(),
+        attributes: BTreeMap::new(),
+        lexicon_plane: LexiconPlane::Bridge,
+        lexicon_voice: None,
         provenance: receipt,
+        embedding: None,
+        artifact: None,
         epistemic_state: None,
     }
 }
@@ -368,14 +384,10 @@ fn classify_does_not_clobber_existing_epistemic_state() {
         .expect("valid");
     chunk.epistemic_state = Some(existing.clone());
 
-    // Run the classify step that sets lexicon fields.
     classify_document_chunk(&mut chunk);
 
-    // lexicon_plane must now be resolved (not Bridge, unless the classifier
-    // genuinely couldn't determine it — either way it must not panic).
-    let _ = chunk.lexicon_plane; // just confirm the field is accessible
+    let _ = chunk.lexicon_plane;
 
-    // The epistemic_state must be unchanged.
     let es = chunk
         .epistemic_state
         .expect("classify must not clear epistemic_state");
