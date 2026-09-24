@@ -25,7 +25,8 @@
 //! 3. `DocumentKind` inference (`CanonTablet`, `SpecDocument` → Order;
 //!    `EpisodeSummary`, `SourceCode` → Order/AI; etc.).
 //! 4. `provenance.source` (`DataSource`) inference.
-//! 5. Language code — non-English raises Chaos probability for human-authored.
+//! 5. Language code — non-English language codes trigger the
+//!    `Chaos / HumanVoice` rule for human-authored chunks.
 //! 6. Fallback → `Bridge`.
 //!
 //! Canon: C156 (KG + memory taxonomy), C30 (no silent failures)
@@ -120,10 +121,10 @@ pub struct LexiconSignals {
     pub ai_generated: bool,
     /// Standards body, academic, or regulatory source.
     pub institutional: bool,
-    /// Language code (BCP-47). Non-English codes raise the probability of
-    /// Chaos classification due to cultural embeddedness.
+    /// Language code (BCP-47). For human-authored chunks, a non-English code
+    /// triggers the `Chaos / HumanVoice` classification rule.
     pub language_code: Option<String>,
-    /// Domain from `card.rs`. Some domains (e.g. `law`, `health`) have
+    /// Domain from `card.rs`. Some domains (e.g. `law`, `health`) carry
     /// higher Chaos risk for human-authored content.
     pub domain: Option<String>,
     /// Explicit sacred/TEK flag from document metadata or consent record.
@@ -460,6 +461,7 @@ mod tests {
                 license:          "CC-BY-4.0".into(),
             },
             embedding:       None,
+            epistemic_state: None,
             artifact:        None,
             attributes:      BTreeMap::new(),
             lexicon_plane:   LexiconPlane::Bridge,
@@ -479,7 +481,6 @@ mod tests {
 
     #[test]
     fn signals_spec_document_is_order_institutional() {
-        // SpecDocument kind + CanonTablet source (no SpecDocument DataSource variant).
         let chunk = base_chunk(DocumentKind::SpecDocument, DataSource::CanonTablet);
         let s = signals_from_chunk(&chunk);
         assert!(s.institutional);
@@ -488,7 +489,6 @@ mod tests {
 
     #[test]
     fn signals_episode_summary_is_order_ai() {
-        // EpisodeSummary kind sets ai_generated regardless of source.
         let chunk = base_chunk(DocumentKind::EpisodeSummary, DataSource::InternalDocument);
         let s = signals_from_chunk(&chunk);
         assert!(s.ai_generated);
@@ -504,7 +504,6 @@ mod tests {
 
     #[test]
     fn signals_non_english_human_authored_attr() {
-        // HomeNode → human_authored via DataSource; language override in chunk.
         let mut chunk = base_chunk(DocumentKind::Other, DataSource::HomeNode);
         chunk.language = "mi".into();  // Māori
         let s = signals_from_chunk(&chunk);
@@ -514,22 +513,18 @@ mod tests {
 
     #[test]
     fn signals_sacred_attribute_wins() {
-        // Even a CanonTablet (institutional) becomes sacred if the attribute is set.
         let mut chunk = base_chunk(DocumentKind::CanonTablet, DataSource::CanonTablet);
         chunk.attributes.insert("sacred".into(), "true".into());
         let s = signals_from_chunk(&chunk);
         assert!(s.sacred);
-        // institutional is still set from kind, but sacred wins in classify_chunk()
         assert!(s.institutional);
     }
 
     #[test]
     fn signals_attribute_overrides_datasource() {
-        // DataSource::Noaa would set institutional, but explicit attribute wins.
         let mut chunk = base_chunk(DocumentKind::Other, DataSource::Noaa);
         chunk.attributes.insert("human_authored".into(), "true".into());
         let s = signals_from_chunk(&chunk);
-        // attribute override clears institutional, sets human_authored
         assert!(s.human_authored);
         assert!(!s.institutional);
     }
@@ -548,19 +543,15 @@ mod tests {
     #[test]
     fn classify_doc_chunk_skips_already_classified() {
         let mut chunk = base_chunk(DocumentKind::CanonTablet, DataSource::CanonTablet);
-        // Manually pre-classify as Chaos.
         chunk.lexicon_plane = LexiconPlane::Chaos;
         chunk.lexicon_voice = Some(LexiconVoice::HumanVoice);
         classify_document_chunk(&mut chunk);
-        // Must not be overwritten.
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Chaos);
         assert_eq!(chunk.lexicon_voice, Some(LexiconVoice::HumanVoice));
     }
 
     #[test]
     fn classify_doc_chunk_chaos_from_human_authored_attr() {
-        // ResearchDocument + HomeNode source → human_authored via DataSource,
-        // then attribute confirms it.
         let mut chunk = base_chunk(DocumentKind::ResearchDocument, DataSource::HomeNode);
         chunk.attributes.insert("human_authored".into(), "true".into());
         classify_document_chunk(&mut chunk);
@@ -598,7 +589,6 @@ mod tests {
 
     #[test]
     fn classify_doc_chunk_noaa_research_is_order_institutional() {
-        // ResearchDocument from NOAA → institutional via DataSource.
         let mut chunk = base_chunk(DocumentKind::ResearchDocument, DataSource::Noaa);
         classify_document_chunk(&mut chunk);
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Order);
@@ -607,7 +597,6 @@ mod tests {
 
     #[test]
     fn classify_doc_chunk_unknown_source_stays_bridge() {
-        // Other kind + InternalDocument source + no attributes → stays Bridge.
         let mut chunk = base_chunk(DocumentKind::Other, DataSource::InternalDocument);
         classify_document_chunk(&mut chunk);
         assert_eq!(chunk.lexicon_plane, LexiconPlane::Bridge);

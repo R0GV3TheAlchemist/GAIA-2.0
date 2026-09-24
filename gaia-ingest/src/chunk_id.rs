@@ -154,6 +154,7 @@ mod tests {
             },
             embedding:       None,
             artifact:        None,
+            epistemic_state: None,
         }
     }
 

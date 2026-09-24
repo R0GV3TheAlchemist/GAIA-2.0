@@ -23,6 +23,10 @@
 //!   by the embed step before the chunk is inserted into the vector store.
 //!   `is_valid()` does not require embedding presence — absence is legal
 //!   at ingest time.
+//! - `epistemic_state` is `None` immediately after chunking and is populated
+//!   by the classify step. Absence is legal at ingest time — `is_valid()` does
+//!   not require it. A chunk with `ClaimStatus::Retracted` MUST NOT be returned
+//!   by the retrieval layer (enforcement in `gaia-memos`).
 
 use std::collections::BTreeMap;
 
@@ -31,6 +35,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     artifact::RawArtifactRef,
     embed::EmbeddingVector,
+    epistemic::EpistemicState,
     lexicon::{LexiconPlane, LexiconVoice},
     provenance::ProvenanceReceipt,
 };
@@ -133,6 +138,7 @@ pub enum ConfidenceTier {
 /// | `artifact` | `Some` when the full source document is stored in SFS. |
 /// | `lexicon_plane` | Defaults to `Bridge`. Promoted by the ingestion pipeline. |
 /// | `embedding` | `None` at ingest time. Populated by the embed step before vector-store insertion. |
+/// | `epistemic_state` | `None` at ingest time. Populated by the classify step. Absence is legal. |
 ///
 /// ## Chunking parameters
 /// See `gaia-spec/rag/chunking-standard.md` for the authoritative values:
@@ -147,6 +153,14 @@ pub enum ConfidenceTier {
 /// the field based on document metadata (author type, language, domain, sacred
 /// flag). The retrieval layer in `gaia-memos` must refuse implicit cross-plane
 /// lookups (C30: no silent failures).
+///
+/// ## Epistemic state
+/// The optional `epistemic_state` field carries the Claim/Evidence/Confidence/
+/// Contradiction layer introduced in #953. `None` is valid at ingest time;
+/// the classify step populates it. A chunk with
+/// `epistemic_state.claim_status == Retracted` MUST NOT be returned by
+/// `gaia-memos` (C30). Downstream: #932 weights retrieval by confidence;
+/// #952 detects inter-model contradictions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DocumentChunk {
     /// UUID v4 assigned at ingest time.
@@ -248,6 +262,23 @@ pub struct DocumentChunk {
     /// compact during the ingest-only path.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub embedding: Option<EmbeddingVector>,
+
+    /// Epistemic state layer: Claim / Evidence / Confidence / Contradiction.
+    ///
+    /// `None` immediately after chunking — the classify step populates this
+    /// field (same pipeline stage as `classify_document_chunk`). Absence is
+    /// legal at ingest time and does not fail `is_valid()`.
+    ///
+    /// When `Some`, the inner `claim_status` determines retrieval eligibility:
+    /// - `Retracted` → MUST NOT be returned by `gaia-memos` (C30).
+    /// - `Disputed`  → returned but hedged; `contradictions` carries the refs.
+    /// - `Asserted`  → returned at face value.
+    /// - `Corroborated` → returned with highest epistemic weight.
+    ///
+    /// The field is skipped in serialised JSON when `None` to keep payloads
+    /// compact during the ingest-only path.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub epistemic_state: Option<EpistemicState>,
 }
 
 impl DocumentChunk {
@@ -263,6 +294,8 @@ impl DocumentChunk {
     /// classify step has not yet run, not that the chunk is broken.
     /// Note: `embedding == None` is valid — embedding is populated after
     /// chunking, not during.
+    /// Note: `epistemic_state == None` is valid — the classify step
+    /// populates it after chunking.
     pub fn is_valid(&self) -> bool {
         !self.text.is_empty()
             && self.char_count == self.text.chars().count()
@@ -296,6 +329,22 @@ impl DocumentChunk {
             }
         }
     }
+
+    /// Returns `true` if this chunk may be returned to a generation step.
+    ///
+    /// A chunk is NOT retrievable if its epistemic state is present and
+    /// marks the claim as `Retracted`. All other states — including `None`
+    /// (classify step not yet run) — are retrievable.
+    ///
+    /// Enforcement of this rule is the responsibility of `gaia-memos`;
+    /// this helper provides the shared policy logic in one place.
+    pub fn is_retrieval_eligible(&self) -> bool {
+        use crate::epistemic::ClaimStatus;
+        match &self.epistemic_state {
+            Some(es) => es.claim_status != ClaimStatus::Retracted,
+            None => true,
+        }
+    }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -305,6 +354,7 @@ mod tests {
     use super::*;
     use crate::{
         embed::EmbeddingVector,
+        epistemic::{ClaimStatus, EpistemicStateBuilder, EvidenceKind},
         lexicon::{LexiconPlane, LexiconVoice},
         provenance::ProvenanceReceipt,
         schema::DataSource,
@@ -346,6 +396,7 @@ mod tests {
             lexicon_plane: LexiconPlane::Bridge,
             lexicon_voice: None,
             embedding: None,
+            epistemic_state: None,
         }
     }
 
@@ -474,6 +525,87 @@ mod tests {
         assert!(!c.is_stale(1_700_000_000 + 3600 - 1));
     }
 
+    // ── epistemic_state ──
+
+    #[test]
+    fn epistemic_state_none_by_default() {
+        assert!(valid_chunk().epistemic_state.is_none());
+    }
+
+    #[test]
+    fn is_valid_does_not_require_epistemic_state() {
+        let c = valid_chunk();
+        assert!(c.epistemic_state.is_none());
+        assert!(c.is_valid());
+    }
+
+    #[test]
+    fn retrieval_eligible_when_epistemic_state_none() {
+        // No classify step run yet — chunk must be retrieval-eligible.
+        let c = valid_chunk();
+        assert!(c.is_retrieval_eligible());
+    }
+
+    #[test]
+    fn retrieval_eligible_when_asserted() {
+        let mut c = valid_chunk();
+        c.epistemic_state = Some(
+            EpistemicStateBuilder::new()
+                .claim_status(ClaimStatus::Asserted)
+                .evidence_kind(EvidenceKind::DirectObservation)
+                .confidence(0.8)
+                .build()
+                .unwrap()
+        );
+        assert!(c.is_retrieval_eligible());
+    }
+
+    #[test]
+    fn retrieval_eligible_when_corroborated() {
+        let mut c = valid_chunk();
+        c.epistemic_state = Some(
+            EpistemicStateBuilder::new()
+                .claim_status(ClaimStatus::Corroborated)
+                .evidence_kind(EvidenceKind::LiteratureCitation)
+                .confidence(0.95)
+                .grounding_uri("https://doi.org/10.1038/s41558-023-01799-8")
+                .build()
+                .unwrap()
+        );
+        assert!(c.is_retrieval_eligible());
+    }
+
+    #[test]
+    fn retrieval_eligible_when_disputed() {
+        let mut c = valid_chunk();
+        use crate::epistemic::ContradictionRef;
+        c.epistemic_state = Some(
+            EpistemicStateBuilder::new()
+                .claim_status(ClaimStatus::Disputed)
+                .evidence_kind(EvidenceKind::HumanReport)
+                .confidence(0.4)
+                .contradiction(ContradictionRef::new("gaia://other/doc", 0))
+                .build()
+                .unwrap()
+        );
+        // Disputed is still retrievable (returned hedged by gaia-memos).
+        assert!(c.is_retrieval_eligible());
+    }
+
+    #[test]
+    fn not_retrieval_eligible_when_retracted() {
+        let mut c = valid_chunk();
+        c.epistemic_state = Some(
+            EpistemicStateBuilder::new()
+                .claim_status(ClaimStatus::Retracted)
+                .evidence_kind(EvidenceKind::Synthetic)
+                .confidence(0.0)
+                .build()
+                .unwrap()
+        );
+        assert!(!c.is_retrieval_eligible());
+    }
+
     // ── serde round-trip ──
 
     #[test]
@@ -481,7 +613,8 @@ mod tests {
         let c = valid_chunk();
         let json = serde_json::to_string(&c).expect("serialize");
         // embedding field must be absent in the JSON when None
-        assert!(!json.contains("embedding"), "embedding key must be omitted when None");
+        assert!(!json.contains("embedding"),       "embedding key must be omitted when None");
+        assert!(!json.contains("epistemic_state"), "epistemic_state key must be omitted when None");
         let back: DocumentChunk = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(c.id, back.id);
         assert_eq!(c.text, back.text);
@@ -493,6 +626,7 @@ mod tests {
         assert_eq!(c.lexicon_plane, back.lexicon_plane);
         assert_eq!(c.lexicon_voice, back.lexicon_voice);
         assert!(back.embedding.is_none());
+        assert!(back.epistemic_state.is_none());
         assert!(back.is_valid());
     }
 
@@ -509,6 +643,28 @@ mod tests {
             3
         );
         assert!(back.is_embed_ready());
+    }
+
+    #[test]
+    fn serde_roundtrip_with_epistemic_state() {
+        let mut c = valid_chunk();
+        c.epistemic_state = Some(
+            EpistemicStateBuilder::new()
+                .claim_status(ClaimStatus::Corroborated)
+                .evidence_kind(EvidenceKind::LiteratureCitation)
+                .confidence(0.92)
+                .grounding_uri("https://doi.org/10.1038/s41558-023-01799-8")
+                .build()
+                .unwrap()
+        );
+        let json = serde_json::to_string(&c).expect("serialize");
+        assert!(json.contains("epistemic_state"), "epistemic_state must be present when Some");
+        let back: DocumentChunk = serde_json::from_str(&json).expect("deserialize");
+        assert!(back.epistemic_state.is_some());
+        assert_eq!(
+            back.epistemic_state.as_ref().unwrap().claim_status,
+            ClaimStatus::Corroborated
+        );
     }
 
     // ── DocumentKind helpers ──
