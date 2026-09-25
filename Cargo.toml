@@ -29,6 +29,7 @@ members = [
   "gaia-gateway",
   "gaia-hal",
   "gaia-boot",
+  "gaia-validate",
 ]
 
 [workspace.package]
