@@ -1,4 +1,9 @@
 //! Super OS design contracts (#190-#200). No second kernel. Not v1.0.
+//!
+//! Also provides runtime verification of GAIAN's Five Soul Axioms
+//! via the [`soul`] module.
+
+pub mod soul;
 
 mod abi;
 mod eacn;
@@ -23,6 +28,12 @@ pub use revival::{
     refuse_archive_exec, refuse_consciousness_runtime, virelai_736_claimed, Grade, RevivalMap,
 };
 pub use sched::{kernel_inference, sfs_v1};
+pub use soul::{
+    ActionBuildError, AxiomViolation, ProposedAction, ProposedActionBuilder,
+    SoulAxiom, SoulCheckResult, SoulCheckResultExt, SoulIntegrity,
+    StandardSoulChecker, AffectiveContextCompat, ResonanceStateCompat,
+    soul_check,
+};
 
 pub fn second_kernel() -> bool {
     false
