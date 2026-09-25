@@ -21,7 +21,7 @@ pub use error::ValidateError;
 pub use result::ValidationResult;
 pub use history::AttemptHistory;
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Run `scripts/agent-validate.sh` and return a [`ValidationResult`].
 ///
