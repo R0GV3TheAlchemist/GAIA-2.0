@@ -110,8 +110,33 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Generate Cargo.lock if absent
         run: cargo generate-lockfile
-      - name: Test Rust workspace, including gaia-acp control-plane corpus
-        run: cargo test --workspace
+      - name: Test Rust workspace (library crates only)
+        # gaia-cli integration tests use assert_cmd::Command::cargo_bin which
+        # requires the binary to be compiled first.  Exclude it here and run
+        # it in the dedicated rust-cli-integration job below.
+        run: cargo test --workspace --exclude gaia-cli
+
+  rust-cli-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-cli-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-cli-
+      - name: Generate Cargo.lock if absent
+        run: cargo generate-lockfile
+      - name: Build gaia binary (required by assert_cmd integration tests)
+        run: cargo build -p gaia-cli
+      - name: Run gaia-cli integration tests
+        run: cargo test -p gaia-cli
 
   markdown:
     runs-on: ubuntu-latest
