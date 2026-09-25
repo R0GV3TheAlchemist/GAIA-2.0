@@ -3,14 +3,21 @@
 # Posts a structured Rust compiler error report as a PR comment after
 # every push, formatted for AI-assisted triage.
 #
+# Phase 2A (2026-09-25): also writes agent-validation.json and uploads it
+# as a GitHub Actions artifact so the human-gated correction loop can fetch
+# structured diagnostics without a local run.
+# See: scripts/agent-validate.sh, gaia-spec/agent-validation.schema.json
+#
 # What it does:
 #   1. Runs `cargo check --workspace --message-format=json`
-#   2. Parses the JSON stream into a clean error table (file, line, message)
-#   3. Flags any E0277 / E0382 / E0507 trait errors with their type names
-#   4. Posts (or updates) a single sticky comment on the PR
-#
-# The comment is machine-readable markdown — paste it directly to the
-# AI assistant and it can diagnose without needing raw terminal output.
+#   2. Runs `cargo clippy --workspace --lib --message-format=json -- -D warnings`
+#   3. Runs `cargo fmt --all --check`
+#   4. Parses outputs into:
+#      a) /tmp/diag-report.md          — human-readable sticky PR comment
+#      b) /tmp/agent-validation.json   — machine-readable schema-validated artifact
+#   5. Validates agent-validation.json against gaia-spec/agent-validation.schema.json
+#   6. Uploads agent-validation.json as artifact `agent-validation` (7-day retention)
+#   7. Posts/updates the sticky markdown comment on the PR
 
 name: Rust AI Diagnostics
 
@@ -61,23 +68,27 @@ jobs:
           cargo clippy --workspace --lib --message-format=json -- -D warnings 2>&1 \
             | tee /tmp/clippy-raw.json || true
 
-      - name: Build diagnostics report
+      - name: Run cargo fmt check
+        id: fmt
+        run: |
+          cargo fmt --all --check 2>&1 | tee /tmp/fmt-raw.txt || true
+
+      - name: Build diagnostics report and agent-validation.json
         id: report
         run: |
           python3 - <<'PYEOF'
-          import json, os
+          import json, os, datetime
 
           TRAIT_HINTS = {
-              "E0382": "value moved — consider `.clone()` or deriving `Copy`",
-              "E0277": "trait bound not satisfied — check `#[derive(...)]`",
+              "E0382": "value moved \u2014 consider `.clone()` or deriving `Copy`",
+              "E0277": "trait bound not satisfied \u2014 check `#[derive(...)]`",
               "E0507": "cannot move out of shared reference",
               "E0508": "cannot move out of type which does not implement `Copy`",
               "E0509": "cannot move out of borrowed content",
           }
 
           def parse_file(path):
-              errors = []
-              warnings = []
+              errors, warnings = [], []
               try:
                   with open(path) as f:
                       for line in f:
@@ -90,14 +101,14 @@ jobs:
                               continue
                           if msg.get("reason") != "compiler-message":
                               continue
-                          m = msg.get("message", {})
+                          m     = msg.get("message", {})
                           level = m.get("level", "")
                           text  = m.get("message", "")
                           code  = (m.get("code") or {}).get("code", "")
                           spans = m.get("spans", [])
-                          loc = ""
+                          loc   = ""
                           if spans:
-                              s = spans[0]
+                              s   = spans[0]
                               loc = f"{s.get('file_name','')}:{s.get('line_start','')}"
                           entry = {"level": level, "code": code, "text": text, "loc": loc}
                           if level == "error":
@@ -108,19 +119,29 @@ jobs:
                   pass
               return errors, warnings
 
-          check_errors, check_warnings   = parse_file("/tmp/check-raw.json")
+          check_errors,  check_warnings  = parse_file("/tmp/check-raw.json")
           clippy_errors, clippy_warnings = parse_file("/tmp/clippy-raw.json")
 
           all_errors   = check_errors   + clippy_errors
           all_warnings = check_warnings + clippy_warnings
 
+          # ── fmt status ────────────────────────────────────────────────────
+          fmt_ok = True
+          try:
+              with open("/tmp/fmt-raw.txt") as f:
+                  fmt_output = f.read().strip()
+              fmt_ok = len(fmt_output) == 0
+          except FileNotFoundError:
+              fmt_output = ""
+
+          # ── markdown report (existing behaviour, unchanged) ───────────────
           lines = []
           lines.append("## Rust AI Diagnostics Report")
           lines.append("")
-          lines.append("> Auto-generated — paste this comment to your AI assistant for triage.")
+          lines.append("> Auto-generated \u2014 paste this comment to your AI assistant for triage.")
           lines.append("")
 
-          if not all_errors and not all_warnings:
+          if not all_errors and not all_warnings and fmt_ok:
               lines.append("**No errors or warnings detected.** Workspace is clean.")
           else:
               lines.append(f"### Errors ({len(all_errors)})")
@@ -129,9 +150,9 @@ jobs:
                   lines.append("| Code | Location | Message | Hint |")
                   lines.append("|---|---|---|---|")
                   for e in all_errors:
-                      hint = TRAIT_HINTS.get(e["code"], "")
-                      code_cell = f"`{e['code']}`" if e["code"] else "—"
-                      loc_cell  = f"`{e['loc']}`"  if e["loc"]  else "—"
+                      hint      = TRAIT_HINTS.get(e["code"], "")
+                      code_cell = f"`{e['code']}`" if e["code"] else "\u2014"
+                      loc_cell  = f"`{e['loc']}`"  if e["loc"]  else "\u2014"
                       msg_cell  = e["text"].replace("|", "\\|")[:120]
                       lines.append(f"| {code_cell} | {loc_cell} | {msg_cell} | {hint} |")
               else:
@@ -145,30 +166,117 @@ jobs:
                   lines.append("| Code | Location | Message |")
                   lines.append("|---|---|---|")
                   for w in all_warnings[:40]:
-                      code_cell = f"`{w['code']}`" if w["code"] else "—"
-                      loc_cell  = f"`{w['loc']}`"  if w["loc"]  else "—"
+                      code_cell = f"`{w['code']}`" if w["code"] else "\u2014"
+                      loc_cell  = f"`{w['loc']}`"  if w["loc"]  else "\u2014"
                       msg_cell  = w["text"].replace("|", "\\|")[:120]
                       lines.append(f"| {code_cell} | {loc_cell} | {msg_cell} |")
                   if len(all_warnings) > 40:
-                      lines.append(f"| … | | {len(all_warnings)-40} more warnings not shown |")
+                      lines.append(f"| \u2026 | | {len(all_warnings)-40} more warnings not shown |")
                   lines.append("")
                   lines.append("</details>")
               else:
                   lines.append("No warnings.")
+              if not fmt_ok:
+                  lines.append("")
+                  lines.append("### Format")
+                  lines.append("")
+                  lines.append("> `cargo fmt --all --check` found unformatted files. Run `cargo fmt --all` locally.")
 
           lines.append("")
           lines.append("---")
           sha = os.environ.get("GITHUB_SHA", "unknown")
-          lines.append(f"*Commit: `{sha}`  ·  Workflow: `rust-ai-diagnostics`*")
+          lines.append(f"*Commit: `{sha}`  \u00b7  Workflow: `rust-ai-diagnostics`*")
 
           report = "\n".join(lines)
           with open("/tmp/diag-report.md", "w", encoding="utf-8") as fh:
               fh.write(report)
 
-          print("Report written to /tmp/diag-report.md")
-          print(f"  errors:   {len(all_errors)}")
-          print(f"  warnings: {len(all_warnings)}")
+          # ── agent-validation.json ─────────────────────────────────────────
+          # Determine status and failed_stage from actual tool outputs
+          stages = []
+          failed_stage = None
+
+          def stage(name, ok):
+              nonlocal failed_stage
+              status = "passed" if ok else "failed"
+              if not ok and failed_stage is None:
+                  failed_stage = name
+              stages.append({"name": name, "status": status, "exit_code": 0 if ok else 1, "duration_s": 0})
+
+          stage("cargo-check",  len(check_errors)  == 0)
+          stage("cargo-clippy", len(clippy_errors) == 0)
+          stage("cargo-fmt",    fmt_ok)
+
+          overall = "passed" if failed_stage is None else "failed"
+
+          # Build diagnostics list
+          diagnostics = []
+          for e in all_errors:
+              fp = f"{e['code']}:{e['loc']}"
+              diagnostics.append({
+                  "level":       e["level"],
+                  "code":        e["code"],
+                  "path":        e["loc"],
+                  "message":     e["text"][:200],
+                  "fingerprint": fp
+              })
+
+          if not fmt_ok:
+              diagnostics.append({
+                  "level":       "error",
+                  "code":        "fmt",
+                  "path":        "",
+                  "message":     "cargo fmt --all --check found unformatted files",
+                  "fingerprint": "fmt:unformatted"
+              })
+
+          result = {
+              "schema_version": "1.0",
+              "head_sha":       sha,
+              "timestamp":      datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "mode":           "changed",
+              "status":         overall,
+              "failed_stage":   failed_stage,
+              "attempt":        1,
+              "stages":         stages,
+              "diagnostics":    diagnostics
+          }
+
+          with open("/tmp/agent-validation.json", "w", encoding="utf-8") as fh:
+              json.dump(result, fh, indent=2)
+
+          print(f"diag-report.md written ({len(report)} chars)")
+          print(f"agent-validation.json written \u2014 status: {overall}, failed_stage: {failed_stage}")
+          print(f"  errors: {len(all_errors)}, warnings: {len(all_warnings)}, fmt_ok: {fmt_ok}")
           PYEOF
+
+      - name: Validate agent-validation.json against schema
+        run: |
+          python3 -m pip install jsonschema --quiet
+          python3 - <<'PYEOF'
+          import json, sys, jsonschema
+
+          with open("/tmp/agent-validation.json") as f:
+              instance = json.load(f)
+
+          with open("gaia-spec/agent-validation.schema.json") as f:
+              schema = json.load(f)
+
+          try:
+              jsonschema.validate(instance=instance, schema=schema)
+              print("agent-validation.json is valid against schema.")
+          except jsonschema.ValidationError as e:
+              print(f"SCHEMA VALIDATION FAILED: {e.message}", file=sys.stderr)
+              sys.exit(1)
+          PYEOF
+
+      - name: Upload agent-validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-validation
+          path: /tmp/agent-validation.json
+          retention-days: 7
 
       - name: Post diagnostics comment
         uses: actions/github-script@v7
