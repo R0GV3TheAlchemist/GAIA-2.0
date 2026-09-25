@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/R0GV3TheAvatar/GAIA-2.0/gaia-spec/agent-validation.schema.json",
+  "title": "GAIA-2.0 Agent Validation Result",
+  "description": "Schema for agent-validation.json produced by scripts/agent-validate.sh. Every field is mandatory. Consumers MUST reject results whose head_sha does not match the current repository HEAD before proposing any repair.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "head_sha",
+    "timestamp",
+    "mode",
+    "status",
+    "failed_stage",
+    "attempt",
+    "stages",
+    "diagnostics"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version. Increment when fields are added or removed."
+    },
+    "head_sha": {
+      "type": "string",
+      "minLength": 7,
+      "description": "Full or abbreviated git SHA of HEAD at the time validation ran. Consumers MUST verify this matches the target commit before trusting the result."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when the validation run started."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["full", "changed", "targeted"],
+      "description": "Validation mode. 'full' runs every CI stage. 'changed' skips cli-integration and markdown. 'targeted' runs cargo-check and rust-workspace only."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "failed"],
+      "description": "Aggregate result. 'passed' only when every stage in the run passed."
+    },
+    "failed_stage": {
+      "type": ["string", "null"],
+      "description": "Name of the first stage that failed, or null if status is 'passed'."
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Correction attempt number for this task. Maximum 3 per task; the loop MUST stop and escalate if this reaches 3 without passing."
+    },
+    "stages": {
+      "type": "array",
+      "description": "Ordered list of stages that ran in this validation.",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "exit_code", "duration_s"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Stage identifier matching a CI job name."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["passed", "failed", "skipped"]
+          },
+          "exit_code": {
+            "type": "integer"
+          },
+          "duration_s": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "description": "Structured compiler/tool diagnostics extracted from cargo check --message-format=json. Empty array when status is 'passed'.",
+      "items": {
+        "type": "object",
+        "required": ["level", "code", "path", "message", "fingerprint"],
+        "additionalProperties": false,
+        "properties": {
+          "level": {
+            "type": "string",
+            "enum": ["error", "warning"]
+          },
+          "code": {
+            "type": "string",
+            "description": "Rust error/warning code, e.g. E0277. Empty string when not applicable."
+          },
+          "path": {
+            "type": "string",
+            "description": "file:line location of the primary span."
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "Stable identifier code:file:line used to detect repeated failures without meaningful progress."
+          }
+        }
+      }
+    }
+  }
+}
