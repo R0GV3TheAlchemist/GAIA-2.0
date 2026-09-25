@@ -54,7 +54,7 @@ pub use quality::{
     QualityTier, SourceType, TemporalValidation,
 };
 pub use registry::{system_tags, BenchRow};
-pub use retrieve::{GenerationContext, QueryHit, RetrievedChunk};
+pub use retrieve::{embed_query, GenerationContext, QueryHit, RetrievedChunk};
 pub use session::{embodied_enabled, sandbox_breakout, ToolCube};
 pub use skills::{
     all_skills, assess_skill, learning_path, search_skills, skill_by_id, skill_gap_analysis,

@@ -119,6 +119,7 @@ pub enum PipelineError {
 ///     embedder: Some(Box::new(PassthroughEmbedder)),
 /// };
 /// ```
+#[derive(Default)]
 pub struct IngestPipeline {
     /// The chunking strategy to apply after reading the file.
     pub chunker: SlidingWindowChunker,
@@ -136,15 +137,6 @@ impl std::fmt::Debug for IngestPipeline {
             .field("chunker", &self.chunker)
             .field("embedder", &self.embedder.as_ref().map(|e| e.model_id()))
             .finish()
-    }
-}
-
-impl Default for IngestPipeline {
-    fn default() -> Self {
-        Self {
-            chunker:  SlidingWindowChunker::default(),
-            embedder: None,
-        }
     }
 }
 
