@@ -62,12 +62,15 @@ jobs:
 
       - name: Run agent-validate.sh
         id: validate
+        continue-on-error: true
         run: |
           chmod +x scripts/agent-validate.sh
           bash scripts/agent-validate.sh changed \
-            --attempt ${{ github.run_attempt }} || true
-        # `|| true` — non-zero exit (fail/no_progress) must not abort the job;
-        # the structured JSON carries the result.
+            --attempt ${{ github.run_attempt }}
+        # continue-on-error: true — allows exit codes 1 (failed) and 3
+        # (no_progress) to proceed to the schema-validation step without
+        # aborting the job. The fallback trap in the script guarantees
+        # agent-validation.json is always written before exit.
 
       - name: Validate result schema
         id: parse

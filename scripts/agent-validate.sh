@@ -63,6 +63,36 @@ NO_PROGRESS=false
 STAGES_JSON="[]"
 DIAGNOSTICS_JSON="[]"
 
+# ── fallback trap — guarantees agent-validation.json always exists ────────────
+#
+# Registered after ROOT, ATTEMPT, and HEAD_SHA are set so the function
+# can reference them. Fires on ERR (unexpected non-zero command) or on
+# EXIT before the normal write block has run.
+
+write_fallback_result() {
+  # No-op if the normal result block already wrote the file
+  [[ -f "$RESULT_FILE" ]] && return 0
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"
+  cat > "$RESULT_FILE" <<FALLBACK
+{
+  "schema_version": "1.1",
+  "head_sha": "$HEAD_SHA",
+  "timestamp": "$ts",
+  "mode": "$MODE",
+  "attempt": $ATTEMPT,
+  "status": "failed",
+  "failed_stage": "script-error",
+  "no_progress": false,
+  "stages": [],
+  "diagnostics": [{"level":"error","code":"script-error","path":"","message":"agent-validate.sh exited unexpectedly before writing result","fingerprint":"script-error:unexpected-exit"}]
+}
+FALLBACK
+  cp "$RESULT_FILE" "$NUMBERED_FILE" 2>/dev/null || true
+}
+
+trap 'write_fallback_result' ERR EXIT
+
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 stage_result() {
@@ -86,14 +116,14 @@ json_escape() {
 STAGE_STAGES=()
 
 FMT_START=$(date +%s)
-cargo fmt --all -- --check > /tmp/gaia-fmt.out 2>&1
-FMT_EXIT=$?
+cargo fmt --all -- --check > /tmp/gaia-fmt.out 2>&1 || FMT_EXIT=$?
+FMT_EXIT=${FMT_EXIT:-0}
 FMT_DUR=$(( $(date +%s) - FMT_START ))
 
 if [[ $FMT_EXIT -ne 0 ]]; then
   STATUS="failed"
   FAILED_STAGE="cargo-fmt"
-  FMT_MSG="$(json_escape "$(cat /tmp/gaia-fmt.out | head -40)")"
+  FMT_MSG="$(json_escape "$(head -40 /tmp/gaia-fmt.out)")"
   DIAGNOSTICS_JSON=$(printf '[{"level":"error","code":"fmt","path":"","message":"%s","fingerprint":"fmt:%s"}]' \
     "$FMT_MSG" "$HEAD_SHA")
 fi
@@ -133,12 +163,10 @@ for line in sys.stdin:
 print(json.dumps(diags))
 " 2>/dev/null || echo "[]")
 
-  if [[ "$CLIPPY_EXIT" -ne 0 ]] || echo "$CLIPPY_DIAGS" | python3 -c "import sys,json; sys.exit(0 if json.load(sys.stdin) == [] else 1)" 2>/dev/null; then
-    if [[ "$CLIPPY_EXIT" -ne 0 ]]; then
-      STATUS="failed"
-      FAILED_STAGE="cargo-clippy"
-      DIAGNOSTICS_JSON="$CLIPPY_DIAGS"
-    fi
+  if [[ "$CLIPPY_EXIT" -ne 0 ]]; then
+    STATUS="failed"
+    FAILED_STAGE="cargo-clippy"
+    DIAGNOSTICS_JSON="$CLIPPY_DIAGS"
   fi
   STAGE_STAGES+=("$(stage_result cargo-clippy "$([ $CLIPPY_EXIT -eq 0 ] && echo passed || echo failed)" $CLIPPY_EXIT $CLIPPY_DUR)")
 fi
@@ -148,8 +176,8 @@ fi
 if [[ "$STATUS" == "passed" ]]; then
   TEST_START=$(date +%s)
   cargo test --workspace --exclude gaia-cli --exclude gaia-agents \
-    -- --test-threads=4 > /tmp/gaia-test.out 2>&1
-  TEST_EXIT=$?
+    -- --test-threads=4 > /tmp/gaia-test.out 2>&1 || TEST_EXIT=$?
+  TEST_EXIT=${TEST_EXIT:-0}
   TEST_DUR=$(( $(date +%s) - TEST_START ))
 
   if [[ $TEST_EXIT -ne 0 ]]; then
@@ -196,6 +224,11 @@ fi
 STAGES_JSON="[$(IFS=,; echo "${STAGE_STAGES[*]}")]"
 
 # ── write result ──────────────────────────────────────────────────────────────
+#
+# Disable the trap before writing so it does not fire on the EXIT
+# that follows the normal successful completion path.
+
+trap - ERR EXIT
 
 FAILED_STAGE_JSON="null"
 [[ -n "$FAILED_STAGE" ]] && FAILED_STAGE_JSON="\"$FAILED_STAGE\""
