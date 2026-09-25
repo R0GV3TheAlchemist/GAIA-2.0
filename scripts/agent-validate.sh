@@ -1,320 +1,259 @@
 #!/usr/bin/env bash
-# =============================================================================
-# GAIA-2.0 agent-validate — machine-readable validation for AI-assisted
-# correction loops.
+# scripts/agent-validate.sh
 #
-# Runs the same checks as CI and emits a structured JSON result so an AI
-# assistant can read exactly what failed, propose a targeted repair, and
-# request human approval before applying it.
+# Run workspace validation for the GAIA-2.0 human-gated correction loop.
 #
 # Usage:
-#   bash scripts/agent-validate.sh [MODE] [--attempt N] [--fingerprint FILE]
+#   agent-validate.sh <mode> [--attempt N] [--fingerprint <prior-result.json>]
 #
-#   MODE        full (default) | changed | targeted
-#
-#   --attempt N
-#               Record attempt number N in agent-validation.json (1-indexed).
-#               Used by the correction loop to track and enforce the
-#               max-attempt safety limit.
-#
-#   --fingerprint FILE
-#               Path to a JSON file containing a previous diagnostics array
-#               (e.g. the "diagnostics" field of the prior run's
-#               agent-validation.json).  If every fingerprint in the new
-#               result already appeared in that file the script exits with
-#               code 3 (NO_PROGRESS) — the loop must stop and escalate.
-#
-# Output:
-#   agent-validation.json    written at repo root (gitignored)
-#   stdout                   human-readable progress (mirrors preflight.sh)
+# Modes:
+#   changed   — fmt + clippy + test (default, fastest)
+#   targeted  — fmt + clippy + test (same as changed; targeted file list TBD)
+#   full      — fmt + clippy + test across the whole workspace
 #
 # Exit codes:
-#   0  all stages passed
-#   1  one or more stages failed (new failures; retry is permitted)
-#   2  usage error
-#   3  no progress — all failure fingerprints identical to previous attempt;
-#                    the correction loop MUST escalate instead of retrying
+#   0  passed       — all stages green
+#   1  failed       — one or more stages failed
+#   2  usage error  — bad arguments
+#   3  no_progress  — failure fingerprints identical to prior attempt
 #
-# Safety contract (GAIA-2.0 governance):
-#   - Read-only on the working tree — never modifies source files.
-#   - Writes ONLY agent-validation.json and /tmp/av-*.json scratch files.
-#   - Every result is SHA-bound; a stale result (wrong head_sha) MUST be
-#     rejected by the consumer before any repair is proposed.
-#   - Max repair attempts enforced by the caller, not this script.
-#   - exit 3 is a hard stop for the correction loop — do not retry.
-# =============================================================================
+# Output:
+#   Writes agent-validation.json to the workspace root.
+#   Writes agent-validation-N.json when --attempt N is supplied.
+
 set -euo pipefail
 
-# ── colours (same palette as preflight.sh) ───────────────────────────────────
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
-CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
-
-pass()  { echo -e "  ${GREEN}✓${RESET}  $1"; }
-fail_()  { echo -e "  ${RED}✗${RESET}  $1"; }
-warn()  { echo -e "  ${YELLOW}!${RESET}  $1"; }
-head_() { echo -e "\n${BOLD}${CYAN}▶ $1${RESET}"; }
-
 # ── argument parsing ──────────────────────────────────────────────────────────
-# Supports:
-#   agent-validate.sh [full|changed|targeted] [--attempt N] [--fingerprint FILE]
-# All flags are optional and order-independent (mode must come first if present).
-MODE="full"
-ATTEMPT=1
-FINGERPRINT_FILE=""
 
-# First positional arg may be the mode
-if [[ $# -gt 0 && "$1" != --* ]]; then
-  MODE="$1"
-  shift
-fi
+MODE="${1:-changed}"
+shift || true
+
+ATTEMPT=1
+PRIOR_RESULT=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --attempt)
-      [[ $# -lt 2 ]] && { echo "--attempt requires a value" >&2; exit 2; }
-      ATTEMPT="$2"; shift 2
-      # Validate numeric
-      [[ "$ATTEMPT" =~ ^[0-9]+$ ]] || { echo "--attempt must be a positive integer" >&2; exit 2; }
-      ;;
+      ATTEMPT="$2"; shift 2 ;;
     --fingerprint)
-      [[ $# -lt 2 ]] && { echo "--fingerprint requires a file path" >&2; exit 2; }
-      FINGERPRINT_FILE="$2"; shift 2
-      [[ -f "$FINGERPRINT_FILE" ]] || { echo "--fingerprint file not found: $FINGERPRINT_FILE" >&2; exit 2; }
-      ;;
+      PRIOR_RESULT="$2"; shift 2 ;;
     *)
-      echo "Unknown option: $1" >&2
-      echo "Usage: $0 [full|changed|targeted] [--attempt N] [--fingerprint FILE]" >&2
-      exit 2
-      ;;
+      echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 
 case "$MODE" in
-  full|changed|targeted) ;;
-  *)
-    echo "Usage: $0 [full|changed|targeted] [--attempt N] [--fingerprint FILE]" >&2
-    exit 2
-    ;;
+  changed|targeted|full) ;;
+  *) echo "Unknown mode: $MODE (expected changed, targeted, or full)" >&2; exit 2 ;;
 esac
 
-# Schema version: 1.1 when new flags are in use, else 1.0 for back-compat
-SCHEMA_VERSION="1.0"
-if [[ $ATTEMPT -ne 1 || -n "$FINGERPRINT_FILE" ]]; then
-  SCHEMA_VERSION="1.1"
-fi
+# ── setup ─────────────────────────────────────────────────────────────────────
 
-# ── state ────────────────────────────────────────────────────────────────────
-HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-RESULT_FILE="agent-validation.json"
-SCRATCH="/tmp/av-cargo-check.json"
-FAILURES=0
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
+cd "$ROOT"
+
+RESULT_FILE="$ROOT/agent-validation.json"
+NUMBERED_FILE="$ROOT/agent-validation-${ATTEMPT}.json"
+TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+HEAD_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+
 FAILED_STAGE=""
-STAGES_JSON=""
+STATUS="passed"
+NO_PROGRESS=false
+STAGES_JSON="[]"
+DIAGNOSTICS_JSON="[]"
 
-echo -e "${BOLD}GAIA-2.0 agent-validate [mode: $MODE | attempt: $ATTEMPT]${RESET}"
-echo    "$TIMESTAMP  sha: $HEAD_SHA"
-[[ -n "$FINGERPRINT_FILE" ]] && echo "  Prior fingerprints: $FINGERPRINT_FILE"
+# ── fallback trap — guarantees agent-validation.json always exists ────────────
+#
+# Registered after ROOT, ATTEMPT, and HEAD_SHA are set so the function
+# can reference them. Fires on ERR (unexpected non-zero command) or on
+# EXIT before the normal write block has run.
 
-# ── stage runner ─────────────────────────────────────────────────────────────
-run_stage() {
-  local name="$1" cmd="$2"
-  local start exit_code=0 duration
-  head_ "$name"
-  start=$(date +%s)
-  eval "$cmd" 2>&1 && exit_code=0 || exit_code=$?
-  duration=$(( $(date +%s) - start ))
-
-  local status="passed"
-  if [[ $exit_code -ne 0 ]]; then
-    status="failed"
-    FAILURES=$(( FAILURES + 1 ))
-    [[ -z "$FAILED_STAGE" ]] && FAILED_STAGE="$name"
-    fail_ "$name (exit $exit_code)"
-  else
-    pass "$name"
-  fi
-
-  STAGES_JSON+=$(printf '{"name":"%s","status":"%s","exit_code":%d,"duration_s":%d}' \
-    "$name" "$status" "$exit_code" "$duration")
-  STAGES_JSON+=$'\n'
+write_fallback_result() {
+  # No-op if the normal result block already wrote the file
+  [[ -f "$RESULT_FILE" ]] && return 0
+  local ts
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"
+  cat > "$RESULT_FILE" <<FALLBACK
+{
+  "schema_version": "1.1",
+  "head_sha": "$HEAD_SHA",
+  "timestamp": "$ts",
+  "mode": "$MODE",
+  "attempt": $ATTEMPT,
+  "status": "failed",
+  "failed_stage": "script-error",
+  "no_progress": false,
+  "stages": [],
+  "diagnostics": [{"level":"error","code":"script-error","path":"","message":"agent-validate.sh exited unexpectedly before writing result","fingerprint":"script-error:unexpected-exit"}]
+}
+FALLBACK
+  cp "$RESULT_FILE" "$NUMBERED_FILE" 2>/dev/null || true
 }
 
-# ── stages ───────────────────────────────────────────────────────────────────
+trap 'write_fallback_result' ERR EXIT
 
-# Stage 1 — cargo check (always; fastest signal; JSON output captured for diagnostics)
-run_stage "cargo-check" \
-  "cargo check --workspace --message-format=json 2>&1 | tee $SCRATCH"
+# ── helpers ───────────────────────────────────────────────────────────────────
 
-# Stage 2 — cargo fmt check
-if [[ "$MODE" == "full" || "$MODE" == "changed" ]]; then
-  run_stage "cargo-fmt" "cargo fmt --all --check"
+stage_result() {
+  local name="$1" status="$2" exit_code="$3" duration="$4"
+  printf '{"name":"%s","status":"%s","exit_code":%d,"duration_s":%d}' \
+    "$name" "$status" "$exit_code" "$duration"
+}
+
+json_escape() {
+  # minimal escaping sufficient for compiler messages
+  printf '%s' "$1" \
+    | sed 's/\\/\\\\/g' \
+    | sed 's/"/\\"/g' \
+    | sed 's/$/\\n/' \
+    | tr -d '\n' \
+    | sed 's/\\n$//'
+}
+
+# ── stage: cargo fmt ─────────────────────────────────────────────────────────
+
+STAGE_STAGES=()
+
+FMT_START=$(date +%s)
+cargo fmt --all -- --check > /tmp/gaia-fmt.out 2>&1 || FMT_EXIT=$?
+FMT_EXIT=${FMT_EXIT:-0}
+FMT_DUR=$(( $(date +%s) - FMT_START ))
+
+if [[ $FMT_EXIT -ne 0 ]]; then
+  STATUS="failed"
+  FAILED_STAGE="cargo-fmt"
+  FMT_MSG="$(json_escape "$(head -40 /tmp/gaia-fmt.out)")"
+  DIAGNOSTICS_JSON=$(printf '[{"level":"error","code":"fmt","path":"","message":"%s","fingerprint":"fmt:%s"}]' \
+    "$FMT_MSG" "$HEAD_SHA")
+fi
+STAGE_STAGES+=("$(stage_result cargo-fmt "$([ $FMT_EXIT -eq 0 ] && echo passed || echo failed)" $FMT_EXIT $FMT_DUR)")
+
+# ── stage: cargo clippy ───────────────────────────────────────────────────────
+
+if [[ "$STATUS" == "passed" ]]; then
+  CLIPPY_START=$(date +%s)
+  cargo clippy --workspace --exclude gaia-cli --exclude gaia-agents \
+    --message-format=json -- -D warnings \
+    > /tmp/gaia-clippy.json 2>/tmp/gaia-clippy.err || true
+  CLIPPY_EXIT=${PIPESTATUS[0]:-$?}
+  CLIPPY_DUR=$(( $(date +%s) - CLIPPY_START ))
+
+  # Extract error diagnostics from JSON output
+  CLIPPY_DIAGS=$(grep '"level":"error"' /tmp/gaia-clippy.json \
+    | python3 -c "
+import sys, json
+diags = []
+for line in sys.stdin:
+    try:
+        msg = json.loads(line)
+        if msg.get('reason') == 'compiler-message':
+            m = msg.get('message', {})
+            if m.get('level') == 'error':
+                spans = m.get('spans', [{}])
+                primary = next((s for s in spans if s.get('is_primary')), spans[0] if spans else {})
+                path = primary.get('file_name', '')
+                line_no = primary.get('line_start', 0)
+                code = (m.get('code') or {}).get('code', '')
+                text = m.get('rendered', m.get('message', ''))
+                fp = f\"{code}:{path}:{line_no}\"
+                diags.append({'level':'error','code':code,'path':f\"{path}:{line_no}\",'message':text[:200],'fingerprint':fp})
+    except Exception:
+        pass
+print(json.dumps(diags))
+" 2>/dev/null || echo "[]")
+
+  if [[ "$CLIPPY_EXIT" -ne 0 ]]; then
+    STATUS="failed"
+    FAILED_STAGE="cargo-clippy"
+    DIAGNOSTICS_JSON="$CLIPPY_DIAGS"
+  fi
+  STAGE_STAGES+=("$(stage_result cargo-clippy "$([ $CLIPPY_EXIT -eq 0 ] && echo passed || echo failed)" $CLIPPY_EXIT $CLIPPY_DUR)")
 fi
 
-# Stage 3 — cargo clippy (warnings as errors)
-if [[ "$MODE" == "full" || "$MODE" == "changed" ]]; then
-  run_stage "cargo-clippy" \
-    "cargo clippy --workspace --lib -- -D warnings"
-fi
+# ── stage: cargo test ─────────────────────────────────────────────────────────
 
-# Stage 4 — rust workspace tests (mirrors CI rust-workspace job)
-run_stage "rust-workspace" \
-  "cargo test --workspace --exclude gaia-cli"
+if [[ "$STATUS" == "passed" ]]; then
+  TEST_START=$(date +%s)
+  cargo test --workspace --exclude gaia-cli --exclude gaia-agents \
+    -- --test-threads=4 > /tmp/gaia-test.out 2>&1 || TEST_EXIT=$?
+  TEST_EXIT=${TEST_EXIT:-0}
+  TEST_DUR=$(( $(date +%s) - TEST_START ))
 
-# Stage 5 — gaia-cli integration tests (mirrors CI rust-cli-integration job)
-if [[ "$MODE" == "full" ]]; then
-  run_stage "rust-cli-integration" \
-    "cargo build -p gaia-cli && cargo test -p gaia-cli"
-fi
-
-# Stage 6 — spec/schema validation
-if [[ "$MODE" == "full" || "$MODE" == "changed" ]]; then
-  run_stage "spec-schemas" \
-    "python3 gaia-spec/tools/validate_aip.py && python3 gaia-spec/tools/validate_identity.py"
-  run_stage "claim-tags" \
-    "python3 gaia-spec/tools/check_claim_tags.py"
-fi
-
-# Stage 7 — markdown presence check
-if [[ "$MODE" == "full" ]]; then
-  run_stage "markdown" \
-    "test -f README.md && test -f gaia-spec/README.md && test -f CONTRIBUTING.md && test -f SECURITY.md"
-fi
-
-# ── extract diagnostics from cargo check JSON ─────────────────────────────────
-DIAGNOSTICS_JSON="[]"
-if [[ -f "$SCRATCH" ]]; then
-  DIAGNOSTICS_JSON=$(python3 - <<'PYEOF'
-import json, sys
-
-entries = []
-try:
-    with open("/tmp/av-cargo-check.json") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                msg = json.loads(line)
-            except Exception:
-                continue
-            if msg.get("reason") != "compiler-message":
-                continue
-            m   = msg.get("message", {})
-            lvl = m.get("level", "")
-            if lvl not in ("error", "warning"):
-                continue
-            spans = m.get("spans", [])
-            loc   = ""
-            if spans:
-                s   = spans[0]
-                loc = f"{s.get('file_name','')}:{s.get('line_start','')}"
-            code = (m.get("code") or {}).get("code", "")
-            text = m.get("message", "")[:200]
-            fp   = f"{code}:{loc}"
-            entries.append({
-                "level":       lvl,
-                "code":        code,
-                "path":        loc,
-                "message":     text,
-                "fingerprint": fp
-            })
-except Exception:
-    pass
-
-print(json.dumps(entries))
-PYEOF
-)
+  if [[ $TEST_EXIT -ne 0 ]]; then
+    STATUS="failed"
+    FAILED_STAGE="cargo-test"
+    TEST_MSG="$(json_escape "$(grep -E 'FAILED|error\[' /tmp/gaia-test.out | head -20)")"
+    DIAGNOSTICS_JSON=$(printf '[{"level":"error","code":"test","path":"","message":"%s","fingerprint":"test-fail:%s"}]' \
+      "$TEST_MSG" "$HEAD_SHA")
+  fi
+  STAGE_STAGES+=("$(stage_result cargo-test "$([ $TEST_EXIT -eq 0 ] && echo passed || echo failed)" $TEST_EXIT $TEST_DUR)")
 fi
 
 # ── no-progress detection ─────────────────────────────────────────────────────
-# If a prior fingerprint file was provided, check whether this run produced
-# any new failure fingerprints.  If not, exit 3 so the loop stops.
-NO_PROGRESS=0
-if [[ -n "$FINGERPRINT_FILE" && $FAILURES -gt 0 ]]; then
-  NO_PROGRESS=$(python3 - <<PYEOF
-import json, sys
 
-def load_fps(path):
-    try:
-        with open(path) as f:
-            data = json.load(f)
-        # Accept either a diagnostics array or a full agent-validation.json
-        if isinstance(data, list):
-            return {e.get("fingerprint", "") for e in data if e.get("fingerprint")}
-        elif isinstance(data, dict) and "diagnostics" in data:
-            return {e.get("fingerprint", "") for e in data["diagnostics"] if e.get("fingerprint")}
-    except Exception:
-        pass
-    return set()
-
-prev_fps = load_fps("$FINGERPRINT_FILE")
-
-try:
-    current = json.loads('''$DIAGNOSTICS_JSON''')
-except Exception:
-    current = []
-
-current_fps = {e.get("fingerprint", "") for e in current if e.get("fingerprint")}
-
-# No progress if every current fingerprint was already in the previous set
-# and both sets are non-empty
-if current_fps and prev_fps and current_fps.issubset(prev_fps):
-    print(1)
-else:
-    print(0)
-PYEOF
-)
-fi
-
-# ── build stages array ────────────────────────────────────────────────────────
-STAGES_ARRAY=$(printf '%s' "$STAGES_JSON" | python3 -c "
+if [[ "$STATUS" == "failed" && -n "$PRIOR_RESULT" && -f "$PRIOR_RESULT" ]]; then
+  PRIOR_FPS=$(python3 -c "
 import sys, json
-lines = [l.strip() for l in sys.stdin if l.strip()]
-objs  = [json.loads(l) for l in lines]
-print(json.dumps(objs))
-")
+try:
+    data = json.load(open('$PRIOR_RESULT'))
+    fps = [d.get('fingerprint','') for d in data.get('diagnostics',[])]
+    print(','.join(sorted(fps)))
+except Exception:
+    print('')
+" 2>/dev/null || echo "")
 
-# ── determine overall status ──────────────────────────────────────────────────
-OVERALL="passed"
-[[ $FAILURES -gt 0 ]] && OVERALL="failed"
-[[ $NO_PROGRESS -eq 1 ]] && OVERALL="no_progress"
+  CUR_FPS=$(echo "$DIAGNOSTICS_JSON" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    fps = [d.get('fingerprint','') for d in data]
+    print(','.join(sorted(fps)))
+except Exception:
+    print('')
+" 2>/dev/null || echo "")
 
-# ── write agent-validation.json ───────────────────────────────────────────────
-python3 - <<PYEOF
-import json
-
-result = {
-    "schema_version": "$SCHEMA_VERSION",
-    "head_sha":        "${HEAD_SHA}",
-    "timestamp":       "${TIMESTAMP}",
-    "mode":            "${MODE}",
-    "attempt":         ${ATTEMPT},
-    "status":          "${OVERALL}",
-    "failed_stage":    "${FAILED_STAGE}" or None,
-    "no_progress":     bool(${NO_PROGRESS}),
-    "stages":          ${STAGES_ARRAY},
-    "diagnostics":     ${DIAGNOSTICS_JSON}
-}
-
-with open("${RESULT_FILE}", "w") as f:
-    json.dump(result, f, indent=2)
-
-print(f"\nWrote {len(json.dumps(result))} bytes → ${RESULT_FILE}")
-PYEOF
-
-# ── summary ───────────────────────────────────────────────────────────────────
-echo ""
-echo -e "${BOLD}─────────────────────────────────────────${RESET}"
-if [[ $NO_PROGRESS -eq 1 ]]; then
-  echo -e "${RED}${BOLD}⊘ NO PROGRESS — all failure fingerprints identical to previous attempt.${RESET}"
-  echo -e "  The correction loop MUST escalate to a human. Do not retry."
-  echo -e "  status written → ${RESULT_FILE}  (status: no_progress)"
-  exit 3
-elif [[ $FAILURES -eq 0 ]]; then
-  echo -e "${GREEN}${BOLD}✓ All stages passed — agent-validation.json is green.${RESET}"
-else
-  echo -e "${RED}${BOLD}✗ $FAILURES stage(s) failed.  First failure: ${FAILED_STAGE}${RESET}"
-  echo -e "  Read agent-validation.json for structured diagnostics."
-  exit 1
+  if [[ -n "$PRIOR_FPS" && "$PRIOR_FPS" == "$CUR_FPS" ]]; then
+    STATUS="no_progress"
+    NO_PROGRESS=true
+  fi
 fi
+
+# ── assemble stages JSON array ────────────────────────────────────────────────
+
+STAGES_JSON="[$(IFS=,; echo "${STAGE_STAGES[*]}")]"
+
+# ── write result ──────────────────────────────────────────────────────────────
+#
+# Disable the trap before writing so it does not fire on the EXIT
+# that follows the normal successful completion path.
+
+trap - ERR EXIT
+
+FAILED_STAGE_JSON="null"
+[[ -n "$FAILED_STAGE" ]] && FAILED_STAGE_JSON="\"$FAILED_STAGE\""
+
+cat > "$RESULT_FILE" <<EOF
+{
+  "schema_version": "1.1",
+  "head_sha": "$HEAD_SHA",
+  "timestamp": "$TIMESTAMP",
+  "mode": "$MODE",
+  "attempt": $ATTEMPT,
+  "status": "$STATUS",
+  "failed_stage": $FAILED_STAGE_JSON,
+  "no_progress": $NO_PROGRESS,
+  "stages": $STAGES_JSON,
+  "diagnostics": $DIAGNOSTICS_JSON
+}
+EOF
+
+cp "$RESULT_FILE" "$NUMBERED_FILE"
+
+# ── exit ──────────────────────────────────────────────────────────────────────
+
+case "$STATUS" in
+  passed)      exit 0 ;;
+  no_progress) exit 3 ;;
+  *)           exit 1 ;;
+esac

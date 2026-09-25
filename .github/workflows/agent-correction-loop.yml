@@ -1,0 +1,232 @@
+# .github/workflows/agent-correction-loop.yml
+#
+# Runs the agent-validate.sh script on every pull request and posts a
+# bounded diagnostic comment so the correction loop can read CI results
+# without write access to repository secrets.
+#
+# Security model:
+#   - Uses `pull_request` trigger (NOT pull_request_target) — no repo secrets
+#     are available and the untrusted PR code runs in a read-only context.
+#   - Diagnostic artifacts are size-capped and schema-validated before upload.
+#   - The PR comment is written in a separate privileged job that reads only
+#     the validated artifact — untrusted code never runs in that job.
+
+name: Agent Correction Loop
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'changelog/**'
+
+concurrency:
+  group: agent-loop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── job 1: validate (untrusted context, no secrets) ────────────────────────
+  validate:
+    name: Run agent-validate.sh
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    outputs:
+      status: ${{ steps.parse.outputs.status }}
+      failed_stage: ${{ steps.parse.outputs.failed_stage }}
+      head_sha: ${{ steps.parse.outputs.head_sha }}
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-loop-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-loop-
+
+      - name: Run agent-validate.sh
+        id: validate
+        continue-on-error: true
+        run: |
+          chmod +x scripts/agent-validate.sh
+          bash scripts/agent-validate.sh changed \
+            --attempt ${{ github.run_attempt }}
+        # continue-on-error: true — allows exit codes 1 (failed) and 3
+        # (no_progress) to proceed to the schema-validation step without
+        # aborting the job. The fallback trap in the script guarantees
+        # agent-validation.json is always written before exit.
+
+      - name: Validate result schema
+        id: parse
+        run: |
+          python3 - <<'PYEOF'
+          import json, sys, os
+
+          path = "agent-validation.json"
+          if not os.path.exists(path):
+              print("::error::agent-validation.json not written by script")
+              sys.exit(1)
+
+          # Size cap: 512 KB
+          size = os.path.getsize(path)
+          if size > 512 * 1024:
+              print(f"::error::agent-validation.json too large ({size} bytes)")
+              sys.exit(1)
+
+          with open(path) as f:
+              data = json.load(f)
+
+          required = {"schema_version", "head_sha", "timestamp", "mode",
+                      "attempt", "status", "stages", "diagnostics"}
+          missing = required - data.keys()
+          if missing:
+              print(f"::error::Missing fields: {missing}")
+              sys.exit(1)
+
+          # Bind result to the PR HEAD SHA
+          expected_sha = os.environ.get("PR_HEAD_SHA", "")
+          if expected_sha and data["head_sha"] != expected_sha:
+              print(f"::error::head_sha mismatch: got {data['head_sha']}, expected {expected_sha}")
+              sys.exit(1)
+
+          # Cap diagnostics to 50 entries
+          data["diagnostics"] = data["diagnostics"][:50]
+          with open(path, "w") as f:
+              json.dump(data, f, indent=2)
+
+          # Expose outputs
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"status={data['status']}\n")
+              out.write(f"failed_stage={data.get('failed_stage') or ''}\n")
+              out.write(f"head_sha={data['head_sha']}\n")
+
+          print(f"Validation result: {data['status']} (attempt {data['attempt']})")
+          PYEOF
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+      - name: Upload validation artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-validation-${{ github.run_attempt }}
+          path: agent-validation*.json
+          retention-days: 14
+          if-no-files-found: warn
+
+  # ── job 2: comment (privileged context, reads only validated artifact) ──────
+  comment:
+    name: Post diagnostic comment
+    needs: validate
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Download validation artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: agent-validation-${{ github.run_attempt }}
+          path: artifacts
+
+      - name: Post bounded PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const files = fs.readdirSync('artifacts').filter(f => f.endsWith('.json'));
+            if (!files.length) {
+              console.log('No artifact to post.');
+              return;
+            }
+
+            const raw = fs.readFileSync(path.join('artifacts', files[0]), 'utf8');
+            const data = JSON.parse(raw);
+
+            const statusEmoji = {
+              passed: '✅',
+              failed: '❌',
+              no_progress: '🔴',
+            }[data.status] ?? '⚠️';
+
+            const diagLines = (data.diagnostics || [])
+              .slice(0, 10)
+              .map(d => `- \`${d.code || 'diag'}\` **${d.path || ''}** — ${(d.message || '').slice(0, 120)}`)
+              .join('\n') || '_No diagnostics._';
+
+            const stageLines = (data.stages || [])
+              .map(s => `| ${s.name} | ${s.status} | ${s.exit_code} | ${s.duration_s}s |`)
+              .join('\n');
+
+            const stageTable = stageLines
+              ? `| Stage | Status | Exit | Duration |\n|---|---|---|---|\n${stageLines}`
+              : '_No stage data._';
+
+            const body = [
+              `<!-- agent-correction-loop-result -->`,
+              `## ${statusEmoji} Agent Validation — \`${data.status}\``,
+              ``,
+              `| Field | Value |`,
+              `|---|---|`,
+              `| Attempt | ${data.attempt} |`,
+              `| Mode | ${data.mode} |`,
+              `| Head SHA | \`${data.head_sha.slice(0, 12)}\` |`,
+              `| Failed stage | ${data.failed_stage || '—'} |`,
+              `| Timestamp | ${data.timestamp} |`,
+              ``,
+              `### Stages`,
+              stageTable,
+              ``,
+              `### Diagnostics (top 10)`,
+              diagLines,
+              ``,
+              `---`,
+              `_This comment is written by the Agent Correction Loop workflow._`,
+              `_To approve a repair: reply with the exact approval phrase defined in [docs/agent-correction-loop.md](docs/agent-correction-loop.md)._`,
+            ].join('\n');
+
+            // Find and update existing agent-loop comment, or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c =>
+              c.body.includes('<!-- agent-correction-loop-result -->')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
