@@ -125,7 +125,7 @@ jobs:
           all_errors   = check_errors   + clippy_errors
           all_warnings = check_warnings + clippy_warnings
 
-          # ── fmt status ────────────────────────────────────────────────────
+          # \u2500\u2500 fmt status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
           fmt_ok = True
           try:
               with open("/tmp/fmt-raw.txt") as f:
@@ -134,7 +134,7 @@ jobs:
           except FileNotFoundError:
               fmt_output = ""
 
-          # ── markdown report (existing behaviour, unchanged) ───────────────
+          # \u2500\u2500 markdown report (existing behaviour, unchanged) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
           lines = []
           lines.append("## Rust AI Diagnostics Report")
           lines.append("")
@@ -191,13 +191,12 @@ jobs:
           with open("/tmp/diag-report.md", "w", encoding="utf-8") as fh:
               fh.write(report)
 
-          # ── agent-validation.json ─────────────────────────────────────────
-          # Determine status and failed_stage from actual tool outputs
+          # \u2500\u2500 agent-validation.json \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
           stages = []
           failed_stage = None
 
           def stage(name, ok):
-              nonlocal failed_stage
+              global failed_stage
               status = "passed" if ok else "failed"
               if not ok and failed_stage is None:
                   failed_stage = name
@@ -209,7 +208,6 @@ jobs:
 
           overall = "passed" if failed_stage is None else "failed"
 
-          # Build diagnostics list
           diagnostics = []
           for e in all_errors:
               fp = f"{e['code']}:{e['loc']}"
