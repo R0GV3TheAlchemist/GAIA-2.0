@@ -6,17 +6,34 @@
 //! [`DocumentChunk`] template, and delegates all splitting decisions to
 //! the chunker.
 //!
+//! After chunking, if an [`EmbeddingModel`] is provided via the `embedder`
+//! field, each chunk's `embedding` field is populated in a single batched
+//! call to [`EmbeddingModel::embed`].
+//!
 //! ## Usage
 //!
 //! ```rust,no_run
 //! use std::path::PathBuf;
 //! use gaia_ingest::IngestPipeline;
 //!
+//! // Without embedding (existing behaviour, unchanged)
 //! let chunks = IngestPipeline::default()
 //!     .from_path(PathBuf::from("docs/tablets/TERRA.md"))
 //!     .expect("ingestion failed");
 //!
 //! println!("Produced {} chunks", chunks.len());
+//! ```
+//!
+//! ```rust,no_run
+//! use gaia_ingest::{IngestPipeline, embed::PassthroughEmbedder};
+//!
+//! // With embedding
+//! let pipeline = IngestPipeline {
+//!     embedder: Some(Box::new(PassthroughEmbedder)),
+//!     ..Default::default()
+//! };
+//! let chunks = pipeline.from_path("docs/tablets/TERRA.md").unwrap();
+//! assert!(chunks[0].embedding.is_some());
 //! ```
 //!
 //! ## Template auto-fill rules
@@ -49,6 +66,7 @@ use crate::{
     document::{
         AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
     },
+    embed::{EmbeddingModel, EmbedError},
     lexicon::LexiconPlane,
     provenance::ProvenanceBuilder,
     schema::DataSource,
@@ -77,6 +95,8 @@ pub enum PipelineError {
     Provenance(#[from] crate::provenance::ProvenanceError),
     #[error("chunking error: {0}")]
     Chunking(#[from] ChunkError),
+    #[error("embedding error: {0}")]
+    Embedding(#[from] EmbedError),
 }
 
 // ── IngestPipeline ────────────────────────────────────────────────────────────
@@ -84,11 +104,11 @@ pub enum PipelineError {
 /// A thin pipeline that reads a file from disk and returns chunked
 /// [`DocumentChunk`] records ready for embedding and retrieval.
 ///
-/// Configure by replacing the public `chunker` field before calling
+/// Configure by replacing the public fields before calling
 /// [`IngestPipeline::from_path`].
 ///
 /// ```rust,no_run
-/// use gaia_ingest::{IngestPipeline, SlidingWindowChunker};
+/// use gaia_ingest::{IngestPipeline, SlidingWindowChunker, embed::PassthroughEmbedder};
 ///
 /// let pipeline = IngestPipeline {
 ///     chunker: SlidingWindowChunker {
@@ -96,12 +116,36 @@ pub enum PipelineError {
 ///         overlap_fraction: 0.12,
 ///         inject_heading_prefix: true,
 ///     },
+///     embedder: Some(Box::new(PassthroughEmbedder)),
 /// };
 /// ```
-#[derive(Debug, Clone, Default)]
 pub struct IngestPipeline {
     /// The chunking strategy to apply after reading the file.
     pub chunker: SlidingWindowChunker,
+    /// Optional embedding model.  When `Some`, every chunk produced by
+    /// `from_path` will have its `embedding` field populated via a single
+    /// batched call to [`EmbeddingModel::embed`].
+    ///
+    /// Defaults to `None` — existing callers are unaffected.
+    pub embedder: Option<Box<dyn EmbeddingModel>>,
+}
+
+impl std::fmt::Debug for IngestPipeline {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("IngestPipeline")
+            .field("chunker", &self.chunker)
+            .field("embedder", &self.embedder.as_ref().map(|e| e.model_id()))
+            .finish()
+    }
+}
+
+impl Default for IngestPipeline {
+    fn default() -> Self {
+        Self {
+            chunker:  SlidingWindowChunker::default(),
+            embedder: None,
+        }
+    }
 }
 
 impl IngestPipeline {
@@ -110,6 +154,10 @@ impl IngestPipeline {
     ///
     /// The caller supplies only a path; all template fields are derived
     /// automatically — see the module-level table for the exact rules.
+    ///
+    /// If `self.embedder` is `Some`, all chunks are embedded in a single
+    /// batched call after chunking and their `embedding` fields are
+    /// populated before returning.
     pub fn from_path(&self, path: impl AsRef<Path>) -> Result<Vec<DocumentChunk>, PipelineError> {
         let path = path.as_ref();
 
@@ -124,11 +172,6 @@ impl IngestPipeline {
 
         // ── 3. Timestamps ─────────────────────────────────────────────────────
         let fetched_at = unix_now();
-        // Clamp observed_at to fetched_at: on CI runners freshly checked-out
-        // files can have an mtime equal to or slightly ahead of the wall clock,
-        // which would cause ProvenanceBuilder::seal() to return
-        // FetchedBeforeObserved.  For real production files mtime is always in
-        // the past, so clamping here is semantically correct in all cases.
         let observed_at = mtime_unix(path).unwrap_or(fetched_at).min(fetched_at);
 
         // ── 4. Derive metadata from the path ──────────────────────────────────
@@ -173,11 +216,11 @@ impl IngestPipeline {
 
         // ── 6. Build the template ─────────────────────────────────────────────
         let template = DocumentChunk {
-            id:              String::new(), // filled by chunker
-            text:            String::new(), // filled by chunker
-            char_count:      0,             // filled by chunker
-            chunk_index:     0,             // filled by chunker
-            total_chunks:    0,             // filled by chunker
+            id:              String::new(),
+            text:            String::new(),
+            char_count:      0,
+            chunk_index:     0,
+            total_chunks:    0,
             document_title,
             document_uri,
             kind:            doc_kind,
@@ -198,7 +241,18 @@ impl IngestPipeline {
         };
 
         // ── 7. Chunk ──────────────────────────────────────────────────────────
-        Ok(self.chunker.chunk(&text, template)?)
+        let mut chunks = self.chunker.chunk(&text, template)?;
+
+        // ── 8. Embed (optional) ───────────────────────────────────────────────
+        if let Some(embedder) = &self.embedder {
+            let texts: Vec<&str> = chunks.iter().map(|c| c.text.as_str()).collect();
+            let vectors = embedder.embed(&texts)?;
+            for (chunk, vec) in chunks.iter_mut().zip(vectors) {
+                chunk.embedding = Some(vec);
+            }
+        }
+
+        Ok(chunks)
     }
 }
 
@@ -226,6 +280,7 @@ fn mtime_unix(path: &Path) -> Option<u64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::embed::PassthroughEmbedder;
     use std::io::Write;
     use tempfile::NamedTempFile;
 
@@ -323,5 +378,39 @@ mod tests {
         let f = tmp(&long_md(), "md");
         let chunks = IngestPipeline::default().from_path(f.path()).unwrap();
         assert!(chunks.iter().all(|c| c.access_tier == AccessTier::Public));
+    }
+
+    // ── Embedding integration tests ────────────────────────────────────────
+
+    #[test]
+    fn no_embedder_leaves_embedding_none() {
+        let f = tmp(&long_md(), "md");
+        let chunks = IngestPipeline::default().from_path(f.path()).unwrap();
+        assert!(chunks.iter().all(|c| c.embedding.is_none()));
+    }
+
+    #[test]
+    fn embedder_populates_all_chunks() {
+        let f = tmp(&long_md(), "md");
+        let pipeline = IngestPipeline {
+            embedder: Some(Box::new(PassthroughEmbedder)),
+            ..Default::default()
+        };
+        let chunks = pipeline.from_path(f.path()).unwrap();
+        assert!(!chunks.is_empty());
+        assert!(chunks.iter().all(|c| c.embedding.is_some()));
+    }
+
+    #[test]
+    fn embedder_vectors_have_correct_dim() {
+        let f = tmp(&long_md(), "md");
+        let pipeline = IngestPipeline {
+            embedder: Some(Box::new(PassthroughEmbedder)),
+            ..Default::default()
+        };
+        let chunks = pipeline.from_path(f.path()).unwrap();
+        for c in &chunks {
+            assert_eq!(c.embedding.as_ref().unwrap().dim(), 1);
+        }
     }
 }
