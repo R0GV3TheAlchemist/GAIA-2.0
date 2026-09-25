@@ -70,7 +70,7 @@ use crate::{
     schema::DataSource,
 };
 
-// ── PipelineError ────────────────────────────────────────────────────────────
+// ── PipelineError ────────────────────────────
 
 /// Errors produced by [`IngestPipeline`].
 ///
@@ -97,7 +97,7 @@ pub enum PipelineError {
     Embedding(#[from] EmbedError),
 }
 
-// ── IngestPipeline ───────────────────────────────────────────────────────────
+// ── IngestPipeline ─────────────────────────
 
 /// A thin pipeline that reads a file from disk and returns chunked
 /// [`DocumentChunk`] records ready for embedding and retrieval.
@@ -163,20 +163,20 @@ impl IngestPipeline {
     pub fn from_path(&self, path: impl AsRef<Path>) -> Result<Vec<DocumentChunk>, PipelineError> {
         let path = path.as_ref();
 
-        // ── 1. Read raw bytes ────────────────────────────────────────────────
+        // ── 1. Read raw bytes ────────────────────────
         let raw = std::fs::read(path).map_err(|e| PipelineError::Io {
             path: path.to_path_buf(),
             source: e,
         })?;
 
-        // ── 2. Decode as UTF-8 ───────────────────────────────────────────────
+        // ── 2. Decode as UTF-8 ───────────────────────
         let text = String::from_utf8_lossy(&raw).into_owned();
 
-        // ── 3. Timestamps ────────────────────────────────────────────────────
+        // ── 3. Timestamps ────────────────────────────
         let fetched_at = unix_now();
         let observed_at = mtime_unix(path).unwrap_or(fetched_at).min(fetched_at);
 
-        // ── 4. Derive metadata from the path ─────────────────────────────────
+        // ── 4. Derive metadata from the path ─────────────────
         let canonical = path
             .canonicalize()
             .unwrap_or_else(|_| path.to_path_buf());
@@ -206,7 +206,7 @@ impl IngestPipeline {
             (DataSource::InternalDocument, DocumentKind::SpecDocument)
         };
 
-        // ── 5. Seal provenance ───────────────────────────────────────────────
+        // ── 5. Seal provenance ───────────────────────
         let provenance = ProvenanceBuilder::new(
             data_source,
             &document_uri,
@@ -216,7 +216,7 @@ impl IngestPipeline {
         )
         .seal(&raw)?;
 
-        // ── 6. Build the template ────────────────────────────────────────────
+        // ── 6. Build the template ──────────────────────
         let template = DocumentChunk {
             id: String::new(),
             text: String::new(),
@@ -242,15 +242,25 @@ impl IngestPipeline {
             epistemic_state: None,
         };
 
-        // ── 7. Chunk ─────────────────────────────────────────────────────────
+        // ── 7. Chunk ─────────────────────────────
         let mut chunks = self.chunker.chunk(&text, template)?;
 
-        // ── 8. Embed (optional) ──────────────────────────────────────────────
+        // ── 8. Embed (optional) ──────────────────────
         if let Some(embedder) = &self.embedder {
-            let texts: Vec<&str> = chunks.iter().map(|c| c.text.as_str()).collect();
-            let vectors = embedder.embed(&texts)?;
-            for (chunk, vec) in chunks.iter_mut().zip(vectors) {
-                chunk.embedding = Some(vec);
+            if !chunks.is_empty() {
+                let texts: Vec<&str> = chunks.iter().map(|c| c.text.as_str()).collect();
+                let vectors = embedder.embed(&texts)?;
+                if vectors.len() != chunks.len() {
+                    return Err(PipelineError::Embedding(EmbedError::Backend(format!(
+                        "embedder {} returned {} vectors for {} chunks",
+                        embedder.model_id(),
+                        vectors.len(),
+                        chunks.len()
+                    ))));
+                }
+                for (chunk, vec) in chunks.iter_mut().zip(vectors) {
+                    chunk.embedding = Some(vec);
+                }
             }
         }
 
@@ -258,7 +268,7 @@ impl IngestPipeline {
     }
 }
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── helpers ─────────────────────────────────
 
 fn unix_now() -> u64 {
     SystemTime::now()
@@ -277,12 +287,12 @@ fn mtime_unix(path: &Path) -> Option<u64> {
         .map(|d| d.as_secs())
 }
 
-// ── Tests ────────────────────────────────────────────────────────────────────
+// ── Tests ────────────────────────────────
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::embed::PassthroughEmbedder;
+    use crate::embed::{EmbeddingVector, PassthroughEmbedder};
     use std::io::Write;
     use tempfile::NamedTempFile;
 
@@ -299,6 +309,22 @@ mod tests {
     fn long_md() -> String {
         let body = "This is a sentence about GAIA. ".repeat(60);
         format!("# Test Document\n\n{body}")
+    }
+
+    #[derive(Debug)]
+    struct ShortCountEmbedder;
+
+    impl EmbeddingModel for ShortCountEmbedder {
+        fn embed(&self, texts: &[&str]) -> Result<Vec<EmbeddingVector>, EmbedError> {
+            if texts.is_empty() {
+                return Err(EmbedError::EmptyInput);
+            }
+            Ok(vec![EmbeddingVector::new(vec![0.1]).unwrap()])
+        }
+
+        fn model_id(&self) -> &str {
+            "short-count-stub"
+        }
     }
 
     #[test]
@@ -379,7 +405,7 @@ mod tests {
         assert!(chunks.iter().all(|c| c.access_tier == AccessTier::Public));
     }
 
-    // ── Embedding integration tests ──────────────────────────────────────────
+    // ── Embedding integration tests ─────────────────────
 
     #[test]
     fn no_embedder_leaves_embedding_none() {
@@ -411,5 +437,17 @@ mod tests {
         for c in &chunks {
             assert_eq!(c.embedding.as_ref().unwrap().dim(), 1);
         }
+    }
+
+    #[test]
+    fn embedder_short_batch_is_error() {
+        let body = "Sentence about the Earth Twin system. ".repeat(200);
+        let f = tmp(&body, "md");
+        let pipeline = IngestPipeline {
+            embedder: Some(Box::new(ShortCountEmbedder)),
+            ..Default::default()
+        };
+        let result = pipeline.from_path(f.path());
+        assert!(matches!(result, Err(PipelineError::Embedding(EmbedError::Backend(_)))));
     }
 }
