@@ -30,7 +30,7 @@ use gaia_ingest::freshness::{evaluate, freshness_score, FreshnessVerdict};
 
 use crate::{AikdError, Layer};
 
-// ── Legacy types (unchanged) ───────────────────────────────
+// ── Legacy types (unchanged) ───────────────────────────
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
@@ -64,7 +64,7 @@ impl QueryHit {
     }
 }
 
-// ── RetrievedChunk ────────────────────────────
+// ── RetrievedChunk ──────────────────────
 
 /// A single chunk after retrieval, freshness annotation, provenance
 /// passthrough, and optional embedding attachment.
@@ -125,7 +125,7 @@ impl RetrievedChunk {
     }
 }
 
-// ── embed_query ───────────────────────────────
+// ── embed_query ─────────────────────────
 
 /// Embed a query string using `embedder` and return the resulting vector.
 ///
@@ -153,7 +153,19 @@ pub fn embed_query(
     Ok(vecs.remove(0))
 }
 
-// ── GenerationContext ───────────────────────
+// ── GenerationContext ─────────────────────
+
+/// Candidate row for [`GenerationContext::build_with_embeddings`].
+///
+/// Fields: `(raw_text, ttl_seconds, ingested_at, now, metadata, embedding)`.
+pub type EmbeddedCandidate = (
+    String,
+    Option<u64>,
+    u64,
+    u64,
+    ChunkMetadata,
+    Option<EmbeddingVector>,
+);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenerationContext {
@@ -190,7 +202,7 @@ impl GenerationContext {
     /// Use this when ingest already populated `DocumentChunk.embedding`.
     pub fn build_with_embeddings(
         caller: AgentId,
-        candidates: Vec<(String, Option<u64>, u64, u64, ChunkMetadata, Option<EmbeddingVector>)>,
+        candidates: Vec<EmbeddedCandidate>,
     ) -> Self {
         let filter = RetrievalFilter::new(caller.clone());
         let mut report = RetrievalReport::default();
@@ -216,7 +228,7 @@ impl GenerationContext {
     }
 }
 
-// ── Tests ─────────────────────────────────
+// ── Tests ─────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -242,7 +254,7 @@ mod tests {
     const NOW: u64 = 1_000_000;
     const TTL: u64 = 3_600;
 
-    // ── #941: stale flag ──────────────────────
+    // ── #941: stale flag ──────────────────
 
     #[test]
     fn stale_chunk_is_annotated() {
@@ -275,7 +287,7 @@ mod tests {
         assert!((chunk.freshness_score - 0.5).abs() < 1e-5);
     }
 
-    // ── #943: provenance passthrough ─────────────────────
+    // ── #943: provenance passthrough ───────────────
 
     #[test]
     fn metadata_present_on_retrieval_output() {
@@ -308,7 +320,7 @@ mod tests {
         assert!(!chunk.metadata.domain.contains("[STALE]"));
     }
 
-    // ── embedding field ─────────────────────────
+    // ── embedding field ───────────────────
 
     #[test]
     fn build_embedding_defaults_none() {
@@ -336,7 +348,7 @@ mod tests {
         assert!(chunk.text.starts_with("[STALE] "));
     }
 
-    // ── embed_query ────────────────────────────
+    // ── embed_query ──────────────────────
 
     #[test]
     fn embed_query_returns_vector() {
@@ -353,7 +365,7 @@ mod tests {
         assert_eq!(v.dim(), 1);
     }
 
-    // ── GenerationContext ───────────────────────
+    // ── GenerationContext ─────────────────
 
     #[test]
     fn unauthorized_chunk_excluded_from_context() {
