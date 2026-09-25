@@ -28,7 +28,7 @@ use gaia_ingest::freshness::{evaluate, freshness_score, FreshnessVerdict};
 
 use crate::{AikdError, Layer};
 
-// ── Legacy types (unchanged) ─────────────────────────────────────────────────
+// ── Legacy types (unchanged) ───────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
@@ -62,7 +62,7 @@ impl QueryHit {
     }
 }
 
-// ── RetrievedChunk ────────────────────────────────────────────────────────────
+// ── RetrievedChunk ────────────────────────────────────────
 
 /// A single chunk after retrieval, freshness annotation, provenance
 /// passthrough, and optional embedding attachment.
@@ -123,12 +123,12 @@ impl RetrievedChunk {
     }
 }
 
-// ── embed_query ───────────────────────────────────────────────────────────────
+// ── embed_query ───────────────────────────────────────────
 
 /// Embed a query string using `embedder` and return the resulting vector.
 ///
 /// This is the query-side counterpart of the document embedding done inside
-/// [`crate::ingest::IngestPipeline`].  The returned vector is ready for
+/// [`gaia_ingest::IngestPipeline`].  The returned vector is ready for
 /// cosine similarity ranking against stored chunk embeddings.
 ///
 /// # Errors
@@ -137,7 +137,7 @@ impl RetrievedChunk {
 /// # Example
 /// ```rust
 /// use gaia_ingest::embed::PassthroughEmbedder;
-/// use gaia_aikd::retrieve::embed_query;
+/// use gaia_aikd::embed_query;
 ///
 /// let embedder = PassthroughEmbedder;
 /// let vec = embed_query("what is the Earth Twin?", &embedder).unwrap();
@@ -151,7 +151,7 @@ pub fn embed_query(
     Ok(vecs.remove(0))
 }
 
-// ── GenerationContext ─────────────────────────────────────────────────────────
+// ── GenerationContext ───────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenerationContext {
@@ -193,7 +193,7 @@ impl GenerationContext {
     }
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ── Tests ─────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -219,7 +219,7 @@ mod tests {
     const NOW: u64 = 1_000_000;
     const TTL: u64 = 3_600;
 
-    // ── #941: stale flag ──────────────────────────────────────────────────
+    // ── #941: stale flag ──────────────────────────────────
 
     #[test]
     fn stale_chunk_is_annotated() {
@@ -252,7 +252,7 @@ mod tests {
         assert!((chunk.freshness_score - 0.5).abs() < 1e-5);
     }
 
-    // ── #943: provenance passthrough ──────────────────────────────────────
+    // ── #943: provenance passthrough ──────────────────────────
 
     #[test]
     fn metadata_present_on_retrieval_output() {
@@ -285,7 +285,7 @@ mod tests {
         assert!(!chunk.metadata.domain.contains("[STALE]"));
     }
 
-    // ── embedding field ────────────────────────────────────────────────────
+    // ── embedding field ──────────────────────────────────
 
     #[test]
     fn build_embedding_defaults_none() {
@@ -313,7 +313,7 @@ mod tests {
         assert!(chunk.text.starts_with("[STALE] "));
     }
 
-    // ── embed_query ────────────────────────────────────────────────────────
+    // ── embed_query ────────────────────────────────────
 
     #[test]
     fn embed_query_returns_vector() {
@@ -330,7 +330,7 @@ mod tests {
         assert_eq!(v.dim(), 1);
     }
 
-    // ── GenerationContext ─────────────────────────────────────────────────
+    // ── GenerationContext ─────────────────────────────
 
     #[test]
     fn unauthorized_chunk_excluded_from_context() {
