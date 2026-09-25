@@ -63,16 +63,14 @@ use std::{
 
 use crate::{
     chunker::{ChunkError, Chunker, SlidingWindowChunker},
-    document::{
-        AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
-    },
-    embed::{EmbeddingModel, EmbedError},
+    document::{AccessTier, ConfidenceTier, DocumentChunk, DocumentKind},
+    embed::{EmbedError, EmbeddingModel},
     lexicon::LexiconPlane,
     provenance::ProvenanceBuilder,
     schema::DataSource,
 };
 
-// ── PipelineError ───────────────────────────────────────────────────────────
+// ── PipelineError ────────────────────────────────────────────────────────────
 
 /// Errors produced by [`IngestPipeline`].
 ///
@@ -83,7 +81,7 @@ use crate::{
 pub enum PipelineError {
     #[error("I/O error reading {path}: {source}")]
     Io {
-        path:   PathBuf,
+        path: PathBuf,
         #[source]
         source: std::io::Error,
     },
@@ -99,7 +97,7 @@ pub enum PipelineError {
     Embedding(#[from] EmbedError),
 }
 
-// ── IngestPipeline ────────────────────────────────────────────────────────────
+// ── IngestPipeline ───────────────────────────────────────────────────────────
 
 /// A thin pipeline that reads a file from disk and returns chunked
 /// [`DocumentChunk`] records ready for embedding and retrieval.
@@ -165,20 +163,20 @@ impl IngestPipeline {
     pub fn from_path(&self, path: impl AsRef<Path>) -> Result<Vec<DocumentChunk>, PipelineError> {
         let path = path.as_ref();
 
-        // ── 1. Read raw bytes ─────────────────────────────────────────────────
+        // ── 1. Read raw bytes ────────────────────────────────────────────────
         let raw = std::fs::read(path).map_err(|e| PipelineError::Io {
-            path:   path.to_path_buf(),
+            path: path.to_path_buf(),
             source: e,
         })?;
 
-        // ── 2. Decode as UTF-8 ────────────────────────────────────────────────
+        // ── 2. Decode as UTF-8 ───────────────────────────────────────────────
         let text = String::from_utf8_lossy(&raw).into_owned();
 
-        // ── 3. Timestamps ─────────────────────────────────────────────────────
+        // ── 3. Timestamps ────────────────────────────────────────────────────
         let fetched_at = unix_now();
         let observed_at = mtime_unix(path).unwrap_or(fetched_at).min(fetched_at);
 
-        // ── 4. Derive metadata from the path ──────────────────────────────────
+        // ── 4. Derive metadata from the path ─────────────────────────────────
         let canonical = path
             .canonicalize()
             .unwrap_or_else(|_| path.to_path_buf());
@@ -208,7 +206,7 @@ impl IngestPipeline {
             (DataSource::InternalDocument, DocumentKind::SpecDocument)
         };
 
-        // ── 5. Seal provenance ────────────────────────────────────────────────
+        // ── 5. Seal provenance ───────────────────────────────────────────────
         let provenance = ProvenanceBuilder::new(
             data_source,
             &document_uri,
@@ -218,36 +216,36 @@ impl IngestPipeline {
         )
         .seal(&raw)?;
 
-        // ── 6. Build the template ─────────────────────────────────────────────
+        // ── 6. Build the template ────────────────────────────────────────────
         let template = DocumentChunk {
-            id:              String::new(),
-            text:            String::new(),
-            char_count:      0,
-            chunk_index:     0,
-            total_chunks:    0,
+            id: String::new(),
+            text: String::new(),
+            char_count: 0,
+            chunk_index: 0,
+            total_chunks: 0,
             document_title,
             document_uri,
-            kind:            doc_kind,
-            domain:          ext,
-            language:        "en".into(),
+            kind: doc_kind,
+            domain: ext,
+            language: "en".into(),
             authored_at_unix: Some(observed_at),
-            ttl_seconds:     None,
-            confidence:      ConfidenceTier::Canon,
-            access_tier:     AccessTier::Public,
-            access_control:  Vec::new(),
-            attributes:      BTreeMap::new(),
-            lexicon_plane:   LexiconPlane::Bridge,
-            lexicon_voice:   None,
+            ttl_seconds: None,
+            confidence: ConfidenceTier::Canon,
+            access_tier: AccessTier::Public,
+            access_control: Vec::new(),
+            attributes: BTreeMap::new(),
+            lexicon_plane: LexiconPlane::Bridge,
+            lexicon_voice: None,
             provenance,
-            artifact:        None,
-            embedding:       None,
+            artifact: None,
+            embedding: None,
             epistemic_state: None,
         };
 
-        // ── 7. Chunk ──────────────────────────────────────────────────────────
+        // ── 7. Chunk ─────────────────────────────────────────────────────────
         let mut chunks = self.chunker.chunk(&text, template)?;
 
-        // ── 8. Embed (optional) ───────────────────────────────────────────────
+        // ── 8. Embed (optional) ──────────────────────────────────────────────
         if let Some(embedder) = &self.embedder {
             let texts: Vec<&str> = chunks.iter().map(|c| c.text.as_str()).collect();
             let vectors = embedder.embed(&texts)?;
@@ -260,7 +258,7 @@ impl IngestPipeline {
     }
 }
 
-// ── helpers ───────────────────────────────────────────────────────────────────
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 fn unix_now() -> u64 {
     SystemTime::now()
@@ -279,7 +277,7 @@ fn mtime_unix(path: &Path) -> Option<u64> {
         .map(|d| d.as_secs())
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -365,15 +363,12 @@ mod tests {
     fn document_uri_starts_with_file() {
         let f = tmp(&long_md(), "md");
         let chunks = IngestPipeline::default().from_path(f.path()).unwrap();
-        assert!(chunks
-            .iter()
-            .all(|c| c.document_uri.starts_with("file://")));
+        assert!(chunks.iter().all(|c| c.document_uri.starts_with("file://")));
     }
 
     #[test]
     fn missing_file_returns_io_error() {
-        let result = IngestPipeline::default()
-            .from_path("/nonexistent/path/file.md");
+        let result = IngestPipeline::default().from_path("/nonexistent/path/file.md");
         assert!(matches!(result, Err(PipelineError::Io { .. })));
     }
 
@@ -384,7 +379,7 @@ mod tests {
         assert!(chunks.iter().all(|c| c.access_tier == AccessTier::Public));
     }
 
-    // ── Embedding integration tests ────────────────────────────────────────
+    // ── Embedding integration tests ──────────────────────────────────────────
 
     #[test]
     fn no_embedder_leaves_embedding_none() {
