@@ -15,19 +15,19 @@ use tempfile::TempDir;
 
 fn passing_result(sha: &str, attempt: u32) -> String {
     format!(
-        r#"{{"schema_version":"1.1","head_sha":"{sha}","timestamp":"2026-09-25T00:00:00Z","mode":"changed","attempt":{attempt},"status":"passed","failed_stage":null,"no_progress":false,"stages":[],"diagnostics":[]}}"
+        r#"{{"schema_version":"1.1","head_sha":"{sha}","timestamp":"2026-09-25T00:00:00Z","mode":"changed","attempt":{attempt},"status":"passed","failed_stage":null,"no_progress":false,"stages":[],"diagnostics":[]}}"#
     )
 }
 
 fn failed_result(sha: &str, attempt: u32, fp: &str) -> String {
     format!(
-        r#"{{"schema_version":"1.1","head_sha":"{sha}","timestamp":"2026-09-25T00:00:00Z","mode":"changed","attempt":{attempt},"status":"failed","failed_stage":"cargo-fmt","no_progress":false,"stages":[],"diagnostics":[{{"level":"error","code":"E0001","path":"src/lib.rs:1","message":"test error","fingerprint":"{fp}"}}]}}"
+        r#"{{"schema_version":"1.1","head_sha":"{sha}","timestamp":"2026-09-25T00:00:00Z","mode":"changed","attempt":{attempt},"status":"failed","failed_stage":"cargo-fmt","no_progress":false,"stages":[],"diagnostics":[{{"level":"error","code":"E0001","path":"src/lib.rs:1","message":"test error","fingerprint":"{fp}"}}]}}"#
     )
 }
 
 fn no_progress_result(sha: &str, attempt: u32) -> String {
     format!(
-        r#"{{"schema_version":"1.1","head_sha":"{sha}","timestamp":"2026-09-25T00:00:00Z","mode":"changed","attempt":{attempt},"status":"no_progress","failed_stage":"cargo-fmt","no_progress":true,"stages":[],"diagnostics":[{{"level":"error","code":"E0001","path":"src/lib.rs:1","message":"test error","fingerprint":"E0001:src/lib.rs:1"}}]}}"
+        r#"{{"schema_version":"1.1","head_sha":"{sha}","timestamp":"2026-09-25T00:00:00Z","mode":"changed","attempt":{attempt},"status":"no_progress","failed_stage":"cargo-fmt","no_progress":true,"stages":[],"diagnostics":[{{"level":"error","code":"E0001","path":"src/lib.rs:1","message":"test error","fingerprint":"E0001:src/lib.rs:1"}}]}}"#
     )
 }
 
