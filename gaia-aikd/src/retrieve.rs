@@ -18,6 +18,8 @@
 //! * [`embed_query`] provides the query-side counterpart: given a query
 //!   string and an [`EmbeddingModel`] it returns the query vector ready for
 //!   cosine similarity ranking.
+//! * [`GenerationContext::build_with_embeddings`] passes stored chunk
+//!   embeddings through authorization and freshness annotation.
 //!
 //! The lower-level [`QueryHit`] / [`Span`] types are retained unchanged
 //! for backwards compatibility with existing callers.
@@ -28,7 +30,7 @@ use gaia_ingest::freshness::{evaluate, freshness_score, FreshnessVerdict};
 
 use crate::{AikdError, Layer};
 
-// ── Legacy types (unchanged) ───────────────────────────────────────
+// ── Legacy types (unchanged) ───────────────────────────────
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Span {
@@ -62,7 +64,7 @@ impl QueryHit {
     }
 }
 
-// ── RetrievedChunk ────────────────────────────────────────
+// ── RetrievedChunk ────────────────────────────
 
 /// A single chunk after retrieval, freshness annotation, provenance
 /// passthrough, and optional embedding attachment.
@@ -123,7 +125,7 @@ impl RetrievedChunk {
     }
 }
 
-// ── embed_query ───────────────────────────────────────────
+// ── embed_query ───────────────────────────────
 
 /// Embed a query string using `embedder` and return the resulting vector.
 ///
@@ -151,7 +153,7 @@ pub fn embed_query(
     Ok(vecs.remove(0))
 }
 
-// ── GenerationContext ───────────────────────────────────────
+// ── GenerationContext ───────────────────────
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenerationContext {
@@ -164,36 +166,57 @@ impl GenerationContext {
     /// Build a [`GenerationContext`] from a candidate chunk list.
     ///
     /// Applies [`RetrievalFilter`] authorization, freshness annotation, and
-    /// `[STALE]` prefixing in a single pass.
+    /// `[STALE]` prefixing in a single pass. Embeddings default to `None`.
     ///
     /// `candidates` — `(raw_text, ttl_seconds, ingested_at, now, metadata)` tuples.
     pub fn build(
         caller: AgentId,
         candidates: Vec<(String, Option<u64>, u64, u64, ChunkMetadata)>,
     ) -> Self {
+        Self::build_with_embeddings(
+            caller,
+            candidates
+                .into_iter()
+                .map(|(text, ttl, ingested_at, now, metadata)| {
+                    (text, ttl, ingested_at, now, metadata, None)
+                })
+                .collect(),
+        )
+    }
+
+    /// Build a [`GenerationContext`] and pass through optional embeddings.
+    ///
+    /// Same authorization and freshness rules as [`GenerationContext::build`].
+    /// Use this when ingest already populated `DocumentChunk.embedding`.
+    pub fn build_with_embeddings(
+        caller: AgentId,
+        candidates: Vec<(String, Option<u64>, u64, u64, ChunkMetadata, Option<EmbeddingVector>)>,
+    ) -> Self {
         let filter = RetrievalFilter::new(caller.clone());
         let mut report = RetrievalReport::default();
         let mut chunks = Vec::with_capacity(candidates.len());
 
-        for (raw_text, ttl, ingested_at, now, metadata) in candidates {
+        for (raw_text, ttl, ingested_at, now, metadata, embedding) in candidates {
             if !filter.is_authorized(&metadata, &mut report) {
                 continue;
             }
             report.retrieved += 1;
-            chunks.push(RetrievedChunk::build(
+            let mut chunk = RetrievedChunk::build(
                 &raw_text,
                 ttl,
                 ingested_at,
                 now,
                 metadata,
-            ));
+            );
+            chunk.embedding = embedding;
+            chunks.push(chunk);
         }
 
         Self { chunks, caller, report }
     }
 }
 
-// ── Tests ─────────────────────────────────────────────
+// ── Tests ─────────────────────────────────
 
 #[cfg(test)]
 mod tests {
@@ -219,7 +242,7 @@ mod tests {
     const NOW: u64 = 1_000_000;
     const TTL: u64 = 3_600;
 
-    // ── #941: stale flag ──────────────────────────────────
+    // ── #941: stale flag ──────────────────────
 
     #[test]
     fn stale_chunk_is_annotated() {
@@ -252,7 +275,7 @@ mod tests {
         assert!((chunk.freshness_score - 0.5).abs() < 1e-5);
     }
 
-    // ── #943: provenance passthrough ──────────────────────────
+    // ── #943: provenance passthrough ─────────────────────
 
     #[test]
     fn metadata_present_on_retrieval_output() {
@@ -285,7 +308,7 @@ mod tests {
         assert!(!chunk.metadata.domain.contains("[STALE]"));
     }
 
-    // ── embedding field ──────────────────────────────────
+    // ── embedding field ─────────────────────────
 
     #[test]
     fn build_embedding_defaults_none() {
@@ -313,7 +336,7 @@ mod tests {
         assert!(chunk.text.starts_with("[STALE] "));
     }
 
-    // ── embed_query ────────────────────────────────────
+    // ── embed_query ────────────────────────────
 
     #[test]
     fn embed_query_returns_vector() {
@@ -330,7 +353,7 @@ mod tests {
         assert_eq!(v.dim(), 1);
     }
 
-    // ── GenerationContext ─────────────────────────────
+    // ── GenerationContext ───────────────────────
 
     #[test]
     fn unauthorized_chunk_excluded_from_context() {
@@ -355,5 +378,45 @@ mod tests {
         let ctx = GenerationContext::build(caller, candidates);
         assert_eq!(ctx.chunks.len(), 1);
         assert_eq!(ctx.report.unauthorized_excluded, 0);
+    }
+
+    #[test]
+    fn build_leaves_embedding_none() {
+        let caller = AgentId::new("agent-a");
+        let candidates = vec![("data".into(), None, 0, NOW, meta(vec![]))];
+        let ctx = GenerationContext::build(caller, candidates);
+        assert!(ctx.chunks[0].embedding.is_none());
+    }
+
+    #[test]
+    fn build_with_embeddings_passthrough() {
+        let caller = AgentId::new("agent-a");
+        let ev = EmbeddingVector::new(vec![0.25_f32, 0.75]).unwrap();
+        let candidates = vec![(
+            "data".into(),
+            None,
+            0,
+            NOW,
+            meta(vec![]),
+            Some(ev.clone()),
+        )];
+        let ctx = GenerationContext::build_with_embeddings(caller, candidates);
+        assert_eq!(ctx.chunks.len(), 1);
+        assert_eq!(ctx.chunks[0].embedding.as_ref().unwrap().as_slice(), ev.as_slice());
+    }
+
+    #[test]
+    fn build_with_embeddings_still_excludes_unauthorized() {
+        let caller = AgentId::new("agent-a");
+        let ev = EmbeddingVector::new(vec![0.1]).unwrap();
+        let candidates = vec![
+            ("open".into(), None, 0, NOW, meta(vec![]), Some(ev.clone())),
+            ("secret".into(), None, 0, NOW, meta(vec!["agent-b"]), Some(ev)),
+        ];
+        let ctx = GenerationContext::build_with_embeddings(caller, candidates);
+        assert_eq!(ctx.chunks.len(), 1);
+        assert_eq!(ctx.chunks[0].text, "open");
+        assert!(ctx.chunks[0].embedding.is_some());
+        assert_eq!(ctx.report.unauthorized_excluded, 1);
     }
 }
