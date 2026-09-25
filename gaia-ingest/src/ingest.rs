@@ -130,6 +130,10 @@ pub struct IngestPipeline {
     pub embedder: Option<Box<dyn EmbeddingModel>>,
 }
 
+// Clippy fires `derivable_impls` here, but #[derive(Default)] would fail:
+// Box<dyn EmbeddingModel> has no Default impl, so the derive would not
+// compile even though Option<Box<dyn EmbeddingModel>> defaults to None.
+#[allow(clippy::derivable_impls)]
 impl Default for IngestPipeline {
     fn default() -> Self {
         Self {
