@@ -5,3 +5,4 @@ gaia-sdk/typescript/dist
 __pycache__
 *.pyc
 .pytest_cache
+agent-validation.json
