@@ -14,10 +14,12 @@
 
 use gaia_gaian::{
     asr::AsrConfig,
-    honesty::live_whisper,
     Consent,
     VoiceProfile,
 };
+
+#[cfg(feature = "whisper")]
+use gaia_gaian::honesty::live_whisper;
 
 fn adult_self_consent() -> Consent {
     Consent {

@@ -52,6 +52,8 @@
 //! `DocumentChunk::embedding` is `None` immediately after chunking and is
 //! populated by the embed step before the chunk is inserted into the vector
 //! store.  Use [`EmbeddingVector`] to construct and validate embedding values.
+//! Use [`EmbeddingModel`] / [`PassthroughEmbedder`] to populate embeddings
+//! through [`IngestPipeline`].
 
 pub mod artifact;
 pub mod auth;
@@ -80,7 +82,7 @@ pub use dedup::{ChunkStore, IngestReport, IngestResult};
 pub use document::{
     AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
 };
-pub use embed::EmbeddingVector;
+pub use embed::{EmbedError, EmbeddingModel, EmbeddingVector, PassthroughEmbedder};
 pub use epistemic::{
     ClaimStatus, ContradictionRef, EpistemicConfidence, EpistemicError,
     EpistemicState, EpistemicStateBuilder, EvidenceKind,
