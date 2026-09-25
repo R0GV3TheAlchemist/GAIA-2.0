@@ -3,6 +3,7 @@
 
 pub mod affect;
 pub mod asr;
+pub mod resonance;
 mod agency;
 mod agent;
 mod capture;
@@ -24,6 +25,7 @@ mod wardrobe;
 pub use affect::{
     AffectLabel, AffectSource, AffectiveBuildError, AffectiveContext, AffectiveContextBuilder,
 };
+pub use resonance::ResonanceState;
 pub use agency::{Scope, ScopedAgent};
 pub use agent::{gaian_release_checklist, Agent, AgentAct, Grant};
 pub use capture::{equity_eval_labels, server_face_store, CaptureSession};
