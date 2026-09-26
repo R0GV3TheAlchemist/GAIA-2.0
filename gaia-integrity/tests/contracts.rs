@@ -179,3 +179,53 @@ fn rank_hits_ground_acp_invoke() {
     );
     assert!(r.executed);
 }
+
+#[test]
+fn retrieve_and_cite_scores_faithfulness() {
+    use gaia_ingest::{embed::EmbeddingModel, FileChunkStore, HashingEmbedder};
+    use gaia_runtime::score_faithfulness;
+    let climate = "the earth twin observes climate";
+    let piano = "purple piano recipes";
+    let path = std::env::temp_dir().join("gaia-integrity-retrieve-cite.jsonl");
+    let _ = std::fs::remove_file(&path);
+    let embedder = HashingEmbedder::new();
+    let vecs = embedder.embed(&[climate, piano]).unwrap();
+    let mut store = FileChunkStore::open(&path).unwrap();
+    store.record(climate, embedder.model_id(), Some(&vecs[0])).unwrap();
+    store.record(piano, embedder.model_id(), Some(&vecs[1])).unwrap();
+    let cited = gaia_aikd::retrieve_and_cite("earth twin climate", &store, &embedder, 1, 0.0)
+        .expect("retrieve");
+    assert_eq!(cited.hits[0].text, climate);
+    let sources: Vec<&str> = cited.hits.iter().map(|h| h.text.as_str()).collect();
+    let copied = score_faithfulness(climate, &sources);
+    assert!(copied.composite > 0.5);
+    assert!(copied.precision > 0.9);
+    let hallucinated = score_faithfulness(
+        "The treaty was signed in 1848 on Mars and banned water.",
+        &sources,
+    );
+    assert!(hallucinated.composite < 0.5);
+    let mut plane = gaia_acp::ControlPlane::start(1_700_000_000, "agent-a").unwrap();
+    let mut manifest = gaia_acp::CapabilityManifest::local_reader("agent-a", 1_700_000_000);
+    let action = gaia_acp::ProposedAction {
+        agent_id: "agent-a".into(),
+        tool: "local_read".into(),
+        method: "call".into(),
+        target: "docs/a.md".into(),
+        action_class: gaia_acp::ActionClass::LocalRead,
+        payload: climate.into(),
+        nonce: "nonce-agent-a".into(),
+        gateway_id: "gateway-local".into(),
+        server_id: "server-local".into(),
+        resource_id: "repo-local".into(),
+        wants_delegation: false,
+    };
+    let r = plane.invoke_grounded(
+        &mut manifest,
+        &action,
+        None,
+        None,
+        gaia_acp::GroundingClaim::required(cited.citation_ids),
+    );
+    assert!(r.executed);
+}
