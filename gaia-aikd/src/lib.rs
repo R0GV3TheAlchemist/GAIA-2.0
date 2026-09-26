@@ -29,6 +29,7 @@ mod retrieve;
 mod session;
 pub mod skills;
 mod taxonomy;
+mod tier2;
 mod verify;
 
 pub use agentic::{computer_use, world_model_claim, ToolResult};
@@ -73,6 +74,10 @@ pub use skills::{
     SkillLearningPath,
 };
 pub use taxonomy::{cannot_know_catalog, query_cannot_know, KnowledgeLayer, KnowledgeType, Status};
+pub use tier2::{
+    budget_hits, expand_query, flag_hit_conflicts, mmr_select, retrieval_confidence,
+    RetrievalConfidence,
+};
 pub use verify::Executed;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
