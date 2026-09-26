@@ -13,6 +13,7 @@ Thank you for contributing to GAIA 2.0. This project is an open, human-governed 
 
 - Keep changes narrowly scoped and explain *why* they are needed.
 - Add or update tests when changing behavior.
+- Every PR that closes an issue tagged `bug` or `defect` MUST include a regression test in `gaia-integrity/tests/regression.rs` (or a new `rNNNN` integration test in that crate) that would have caught the original defect.
 - Preserve privacy, consent, data sovereignty, and least-privilege principles.
 - Do not introduce credentials, personal data, or proprietary material into the repository.
 - Follow existing repository conventions unless an RFC or issue explicitly changes them.

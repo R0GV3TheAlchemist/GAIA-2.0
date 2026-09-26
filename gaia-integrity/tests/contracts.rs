@@ -1,0 +1,82 @@
+//! Contract tests for module boundaries that exist in this scaffold (#935).
+
+use gaia_acp::tool_auth::{authorize, AgentId, ToolCall, ToolId, ToolPermissionTier};
+use gaia_acp::{ToolAuditLog, ToolOutcome};
+use gaia_agents::tool_registry::{ToolId as RegToolId, ToolPermissionTier as RegTier, ToolRegistration, ToolRegistry};
+use gaia_aikd::GenerationContext;
+use gaia_ingest::auth::{AgentId as IngestAgent, ChunkMetadata};
+use gaia_ingest::embed::PassthroughEmbedder;
+use gaia_ingest::IngestPipeline;
+use gaia_runtime::{enforce_grounding, ChunkId, GroundedResponse};
+
+fn metadata() -> ChunkMetadata {
+    ChunkMetadata {
+        source: "fixture.md".into(),
+        date: "2026-09-25".into(),
+        author: None,
+        domain: "test".into(),
+        confidence: 1.0,
+        version: "1".into(),
+        authorized_for: vec![],
+    }
+}
+
+#[test]
+fn ingest_to_aikd_markdown_reaches_generation_context() {
+    let path = std::env::temp_dir().join("gaia-integrity-fixture.md");
+    std::fs::write(&path, "# Title\n\nThe river is blue.\n").expect("write fixture");
+    let pipeline = IngestPipeline {
+        embedder: Some(Box::new(PassthroughEmbedder)),
+        ..Default::default()
+    };
+    let chunks = pipeline.from_path(&path).expect("ingest");
+    assert!(!chunks.is_empty());
+    assert!(chunks[0].embedding.is_some());
+    assert!(!chunks[0].text.is_empty());
+    let caller = IngestAgent::new("agent-test");
+    let candidates = chunks
+        .into_iter()
+        .map(|c| (c.text, None, 0, 0, metadata()))
+        .collect();
+    let ctx = GenerationContext::build(caller, candidates);
+    assert!(!ctx.chunks.is_empty());
+}
+
+#[test]
+fn aikd_to_runtime_grounded_response_shape() {
+    let caller = IngestAgent::new("agent-test");
+    let ctx = GenerationContext::build(
+        caller,
+        vec![("The river is blue.".into(), None, 0, 0, metadata())],
+    );
+    let source = ChunkId("chunk-1".into());
+    let response = GroundedResponse::grounded(ctx.chunks[0].text.clone(), vec![source], 0.8)
+        .expect("grounded response");
+    enforce_grounding(true, &response.source_ids).expect("sources present");
+    assert!(!response.content.is_empty());
+}
+
+#[test]
+fn agents_to_acp_tool_call_writes_audit() {
+    let mut registry = ToolRegistry::default();
+    registry.register(ToolRegistration {
+        tool_id: RegToolId("echo".into()),
+        name: "echo".into(),
+        permission_tier: RegTier::Unrestricted,
+        description: "echo".into(),
+    });
+    assert!(registry.get(&RegToolId("echo".into())).is_some());
+    let mut log = ToolAuditLog::default();
+    let call = ToolCall {
+        agent_id: AgentId("a1".into()),
+        tool_id: ToolId("echo".into()),
+        allowed_agents: None,
+        tier: ToolPermissionTier::Unrestricted,
+        explicit_approval: false,
+        human_approval_token: None,
+        params: "{}".into(),
+    };
+    let entry = authorize(&call, &mut log).expect("unrestricted permitted");
+    assert_eq!(entry.outcome, ToolOutcome::Permitted);
+    assert_eq!(log.len(), 1);
+}
