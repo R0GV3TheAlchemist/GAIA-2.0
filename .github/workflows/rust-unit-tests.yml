@@ -5,17 +5,21 @@ on:
     branches: [ main, 'feat/**', 'fix/**' ]
     paths:
       - 'gaia-*/src/**'
+      - 'gaia-*/tests/**'
       - 'gaia-*/Cargo.toml'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'tests/regression/**'
       - '.github/workflows/rust-unit-tests.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'gaia-*/src/**'
+      - 'gaia-*/tests/**'
       - 'gaia-*/Cargo.toml'
       - 'Cargo.toml'
       - 'Cargo.lock'
+      - 'tests/regression/**'
       - '.github/workflows/rust-unit-tests.yml'
 
 jobs:
@@ -46,12 +50,10 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: cargo test --workspace --lib
-        # --lib: runs only the #[cfg(test)] blocks inside each crate's lib.rs.
-        # Integration tests (tests/ directories) are covered by #845.
-        # --no-fail-fast: report all crate failures, not just the first.
         run: cargo test --workspace --lib --no-fail-fast
 
+      - name: cargo test -p gaia-integrity --test regression (#936)
+        run: cargo test -p gaia-integrity --test regression --no-fail-fast
+
       - name: cargo clippy (warnings as errors)
-        # Keep the workspace lint-clean. Any new warning introduced by a PR
-        # is caught here before it reaches main.
         run: cargo clippy --workspace --lib -- -D warnings
