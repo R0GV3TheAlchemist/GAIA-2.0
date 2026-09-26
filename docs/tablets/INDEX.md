@@ -1,7 +1,7 @@
 # GAIA 2.0 — Hermetic Tablet Index
 
-**Version:** 1.0.5  
-**Updated:** 2026-09-23  
+**Version:** 1.0.6  
+**Updated:** 2026-09-26  
 **Source of Truth:** This file is the canonical tablet registry. `docs/color/color-map.json` must mirror it; when they diverge, this file is authoritative.
 
 ---
@@ -102,3 +102,15 @@ Amber, Amethyst, Aqua, Celestial, Lapis, Obsidian, Rose, Ruby, Sapphire, Shadow,
 | Document | Proof File |
 |----------|------------|
 | color-map.json | `proofs/PROOF-COLOR-MAP-001.md` |
+
+---
+
+## Related philosophy documents (#812)
+
+Canonical paths (underscore names). Corpus files with `GAIA 2.0 + GAIAN 2.0` titles remain on disk and are not deleted.
+
+| Document | Canonical path |
+|----------|----------------|
+| Kundalini Architecture | [`Documents/GAIA_Kundalini_Architecture.md`](../../Documents/GAIA_Kundalini_Architecture.md) |
+| Chakra-Layer Map | [`Documents/GAIA_Chakra_Layer_Map.md`](../../Documents/GAIA_Chakra_Layer_Map.md) |
+| Path note | [`docs/philosophy/PATHS.md`](../philosophy/PATHS.md) |
