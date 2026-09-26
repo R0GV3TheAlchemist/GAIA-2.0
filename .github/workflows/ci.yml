@@ -111,10 +111,9 @@ jobs:
       - name: Generate Cargo.lock if absent
         run: cargo generate-lockfile
       - name: Test Rust workspace (library crates only)
-        # gaia-cli integration tests use assert_cmd::Command::cargo_bin which
-        # requires the binary to be compiled first.  Exclude it here and run
-        # it in the dedicated rust-cli-integration job below.
         run: cargo test --workspace --exclude gaia-cli
+      - name: Regression locks (#936)
+        run: cargo test -p gaia-integrity --test regression --test contracts
 
   rust-cli-integration:
     runs-on: ubuntu-latest

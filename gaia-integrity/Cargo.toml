@@ -1,0 +1,22 @@
+[package]
+name = "gaia-integrity"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Cross-module contract and regression tests for the runtime-integrity scaffold"
+publish = false
+
+[dependencies]
+gaia-acp = { path = "../gaia-acp" }
+gaia-agents = { path = "../gaia-agents" }
+gaia-aikd = { path = "../gaia-aikd" }
+gaia-ingest = { path = "../gaia-ingest" }
+gaia-runtime = { path = "../gaia-runtime" }
+
+[[test]]
+name = "contracts"
+path = "tests/contracts.rs"
+
+[[test]]
+name = "regression"
+path = "tests/regression.rs"

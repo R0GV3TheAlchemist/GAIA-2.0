@@ -8,6 +8,7 @@ mod host;
 mod lifecycle;
 mod pack;
 mod runtime;
+pub mod tool_registry;
 mod wasm;
 
 pub use a2a::{
@@ -22,49 +23,24 @@ pub use pack::{catalog, find as find_pack, AgentKind, PackEntry};
 pub use runtime::{
     AgentManifest, AgentOutcome, AgentRuntime, Capability, ResourceLimits, RuntimeError,
 };
+pub use tool_registry::{
+    AgentId as ToolAgentId, ToolId, ToolPermissionTier, ToolRegistration, ToolRegistry,
+};
 pub use wasm::{WasiGrant, WasmOutcome, WasmRuntime};
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // -------------------------------------------------------------------------
-    // LifecycleStage — ordering invariants
-    // -------------------------------------------------------------------------
-
-    /// LifecycleStage variants must compare in the canonical DISCOVER→ARCHIVE
-    /// order defined by issue #722. If the ordering changes it is a breaking
-    /// architectural decision that must be reviewed and logged.
     #[test]
     fn lifecycle_stage_ordering() {
-        assert!(
-            LifecycleStage::Discover < LifecycleStage::Register,
-            "Discover must precede Register"
-        );
-        assert!(
-            LifecycleStage::Register < LifecycleStage::Initialize,
-            "Register must precede Initialize"
-        );
-        assert!(
-            LifecycleStage::Initialize < LifecycleStage::Run,
-            "Initialize must precede Run"
-        );
-        assert!(
-            LifecycleStage::Run < LifecycleStage::Pause,
-            "Run must precede Pause"
-        );
-        assert!(
-            LifecycleStage::Pause < LifecycleStage::Archive,
-            "Pause must precede Archive"
-        );
+        assert!(LifecycleStage::Discover < LifecycleStage::Register);
+        assert!(LifecycleStage::Register < LifecycleStage::Initialize);
+        assert!(LifecycleStage::Initialize < LifecycleStage::Run);
+        assert!(LifecycleStage::Run < LifecycleStage::Pause);
+        assert!(LifecycleStage::Pause < LifecycleStage::Archive);
     }
 
-    // -------------------------------------------------------------------------
-    // AgentManifest — default state
-    // -------------------------------------------------------------------------
-
-    /// A default AgentManifest must have an empty capabilities list.
-    /// Agents start with no capabilities; each must be explicitly granted.
     #[test]
     fn agent_manifest_default_capabilities_empty() {
         let manifest = AgentManifest {
@@ -73,51 +49,28 @@ mod tests {
             declared_capabilities: vec![],
             limits: ResourceLimits::default(),
         };
-        assert!(
-            manifest.declared_capabilities.is_empty(),
-            "default AgentManifest must have no capabilities"
-        );
+        assert!(manifest.declared_capabilities.is_empty());
     }
 
-    // -------------------------------------------------------------------------
-    // ResourceLimits — default values
-    // -------------------------------------------------------------------------
-
-    /// Default ResourceLimits must be non-zero and finite.
-    /// Zero limits would make every agent immediately non-schedulable.
     #[test]
     fn resource_limits_default_values() {
         let limits = ResourceLimits::default();
-        assert!(limits.memory_mib  > 0, "default memory limit must be non-zero");
-        assert!(limits.cpu_millis  > 0, "default CPU budget must be non-zero");
+        assert!(limits.memory_mib > 0);
+        assert!(limits.cpu_millis > 0);
     }
 
-    // -------------------------------------------------------------------------
-    // pack catalog — registry slice
-    // -------------------------------------------------------------------------
-
-    /// catalog() must return a non-empty slice — the pack registry is seeded
-    /// at compile time and must always have at least one entry.
     #[test]
     fn pack_catalog_returns_slice() {
-        let entries = catalog();
-        assert!(
-            !entries.is_empty(),
-            "pack catalog must contain at least one entry"
-        );
+        assert!(!catalog().is_empty());
     }
 
-    // -------------------------------------------------------------------------
-    // WasiGrant — debug output sanity
-    // -------------------------------------------------------------------------
-
-    /// WasiGrant must implement Debug and produce a non-empty string.
-    /// This guards against accidentally removing the derive and breaking
-    /// audit log formatting that relies on {:?} output.
     #[test]
     fn wasi_grant_debug_is_non_empty() {
-        let grant = WasiGrant { filesystem: false, network: false };
+        let grant = WasiGrant {
+            filesystem: false,
+            network: false,
+        };
         let s = format!("{grant:?}");
-        assert!(!s.is_empty(), "WasiGrant Debug output must be non-empty");
+        assert!(!s.is_empty());
     }
 }
