@@ -11,6 +11,7 @@ mod agentic;
 mod answer;
 pub mod benchmark_db;
 pub mod card;
+mod citations;
 pub mod domain;
 mod domains;
 mod eval;
@@ -33,6 +34,10 @@ pub use benchmark_db::{
     all_benchmarks, bench_by_id, benches_for_domain, superhuman_benches, BenchmarkEntry,
 };
 pub use card::{cannot_know, model_card, published_closed_score_is_ours, ModelCard, Tier};
+pub use citations::{
+    citations_from_chunks, citations_from_context, id_for_text, lookup as lookup_citations,
+    CitationError,
+};
 pub use domain::{all_domains, domain_by_id, Domain};
 pub use domains::Adapter;
 pub use eval::{
