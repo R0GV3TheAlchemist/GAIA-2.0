@@ -1,27 +1,74 @@
-//! Faithfulness scorer stub (#932). Not an LLM evaluator.
+//! Lexical faithfulness metrics (#932 / #1007). Not NLI. Not an LLM judge.
+//!
+//! | Metric | Meaning |
+//! | --- | --- |
+//! | `precision` | Share of response tokens that appear in the sources. |
+//! | `recall` | Share of source tokens that appear in the response. |
+//! | `jaccard` | Token-set intersection over union. |
+//! | `composite` | Mean of the three. Used as the gate value. |
 
-/// Score in `[0.0, 1.0]`. Stub: lexical overlap of response tokens against chunk text.
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct FaithfulnessScore(pub f32);
+pub struct FaithfulnessScore {
+    pub precision: f32,
+    pub recall: f32,
+    pub jaccard: f32,
+    pub composite: f32,
+}
+
+impl FaithfulnessScore {
+    pub fn value(self) -> f32 {
+        self.composite
+    }
+}
+
+fn tokens(text: &str) -> HashSet<String> {
+    text.split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|t| t.len() > 2)
+        .map(|t| t.to_ascii_lowercase())
+        .collect()
+}
+
+fn ratio(num: usize, den: usize) -> f32 {
+    if den == 0 {
+        0.0
+    } else {
+        num as f32 / den as f32
+    }
+}
 
 pub fn score_faithfulness(response: &str, chunk_texts: &[&str]) -> FaithfulnessScore {
     if response.trim().is_empty() || chunk_texts.is_empty() {
-        return FaithfulnessScore(0.0);
+        return FaithfulnessScore {
+            precision: 0.0,
+            recall: 0.0,
+            jaccard: 0.0,
+            composite: 0.0,
+        };
     }
-    let hay = chunk_texts.join(" ").to_ascii_lowercase();
-    let tokens: Vec<&str> = response
-        .split_whitespace()
-        .filter(|t| t.len() > 2)
-        .collect();
-    if tokens.is_empty() {
-        return FaithfulnessScore(0.0);
+    let resp = tokens(response);
+    let src = tokens(&chunk_texts.join(" "));
+    if resp.is_empty() && src.is_empty() {
+        return FaithfulnessScore {
+            precision: 0.0,
+            recall: 0.0,
+            jaccard: 0.0,
+            composite: 0.0,
+        };
     }
-    let hits = tokens
-        .iter()
-        .filter(|t| hay.contains(&t.to_ascii_lowercase()))
-        .count();
-    let raw = hits as f32 / tokens.len() as f32;
-    FaithfulnessScore(raw.clamp(0.0, 1.0))
+    let inter = resp.intersection(&src).count();
+    let union = resp.union(&src).count();
+    let precision = ratio(inter, resp.len());
+    let recall = ratio(inter, src.len());
+    let jaccard = ratio(inter, union);
+    let composite = (precision + recall + jaccard) / 3.0;
+    FaithfulnessScore {
+        precision,
+        recall,
+        jaccard,
+        composite: composite.clamp(0.0, 1.0),
+    }
 }
 
 #[cfg(test)]
@@ -29,10 +76,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn score_is_unit_interval() {
+    fn copied_answer_scores_high() {
         let s = score_faithfulness("the river is blue", &["the river is blue today"]);
-        assert!((0.0..=1.0).contains(&s.0));
-        assert!(s.0 > 0.5);
+        assert!((0.0..=1.0).contains(&s.composite));
+        assert!(s.composite > 0.5);
+        assert!(s.precision > 0.9);
     }
 
     #[test]
@@ -41,9 +89,16 @@ mod tests {
         let response = "The treaty was signed in 1848 on Mars and banned water.";
         let s = score_faithfulness(response, &chunks);
         assert!(
-            s.0 < 0.5,
+            s.composite < 0.5,
             "contradictory fixture must score below 0.5, got {}",
-            s.0
+            s.composite
         );
+        assert!(s.precision < s.recall || s.precision < 0.5);
+    }
+
+    #[test]
+    fn empty_inputs_are_zero() {
+        let s = score_faithfulness("", &["chunk"]);
+        assert_eq!(s.composite, 0.0);
     }
 }
