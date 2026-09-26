@@ -20,3 +20,7 @@ path = "tests/contracts.rs"
 [[test]]
 name = "regression"
 path = "tests/regression.rs"
+
+[[test]]
+name = "attribute_gate"
+path = "tests/attribute_gate.rs"
