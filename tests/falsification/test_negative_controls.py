@@ -2,6 +2,7 @@
 """Negative-control falsification (#845 category 2 / #815 protocol).
 
 A mapping that accepts any of these four corpora is over-fit.
+Stdlib only.
 """
 from __future__ import annotations
 
@@ -24,32 +25,34 @@ def accepted_mappings(text: str) -> list[str]:
     return [m for m in MARKERS if m in low]
 
 
-def test_schema_lists_markers() -> None:
+def run() -> int:
+    failures = 0
     body = SCHEMA.read_text(encoding="utf-8").lower()
     for marker in MARKERS:
-        assert marker in body
-
-
-def test_lorem_is_rejected() -> None:
-    hits = accepted_mappings((CORPORA / "lorem.txt").read_text(encoding="utf-8"))
-    assert hits == [], f"OVER-FIT DETECTED: Mapping succeeded on negative control lorem: {hits}"
-
-
-def test_aviation_is_rejected() -> None:
-    hits = accepted_mappings((CORPORA / "aviation.txt").read_text(encoding="utf-8"))
-    assert hits == [], f"OVER-FIT DETECTED: Mapping succeeded on negative control aviation: {hits}"
-
-
-def test_childrens_story_is_rejected() -> None:
-    hits = accepted_mappings((CORPORA / "childrens-story.txt").read_text(encoding="utf-8"))
-    assert hits == [], f"OVER-FIT DETECTED: Mapping succeeded on negative control childrens-story: {hits}"
-
-
-def test_numeric_is_rejected() -> None:
-    hits = accepted_mappings((CORPORA / "numeric.txt").read_text(encoding="utf-8"))
-    assert hits == [], f"OVER-FIT DETECTED: Mapping succeeded on negative control numeric: {hits}"
-
-
-def test_hermetic_fixture_is_accepted() -> None:
+        if marker not in body:
+            print(f"FAIL schema missing marker {marker}")
+            failures += 1
+    cases = (
+        "lorem",
+        "aviation",
+        "childrens-story",
+        "numeric",
+    )
+    for name in cases:
+        hits = accepted_mappings((CORPORA / f"{name}.txt").read_text(encoding="utf-8"))
+        if hits:
+            print(f"OVER-FIT DETECTED: Mapping succeeded on negative control {name}: {hits}")
+            failures += 1
+        else:
+            print(f"PASS {name} rejected")
     hits = accepted_mappings("as above so below, so below as above")
-    assert hits == ["as above so below"]
+    if hits != ["as above so below"]:
+        print(f"FAIL hermetic fixture {hits}")
+        failures += 1
+    else:
+        print("PASS hermetic fixture accepted")
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(run())

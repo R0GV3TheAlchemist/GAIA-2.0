@@ -30,8 +30,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Negative controls
-        run: python3 -m pytest tests/falsification/test_negative_controls.py -q
+        run: python3 tests/falsification/test_negative_controls.py
       - name: Smoke
-        run: python3 -m pytest tests/smoke/test_smoke.py -q
+        run: python3 tests/smoke/test_smoke.py
       - name: Canon RL-001
         run: python3 tests/canon/test_canon_integrity.py
