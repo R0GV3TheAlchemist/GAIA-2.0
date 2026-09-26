@@ -12,6 +12,7 @@ mod answer;
 pub mod benchmark_db;
 pub mod card;
 mod citations;
+mod cite;
 pub mod domain;
 mod domains;
 mod eval;
@@ -39,6 +40,7 @@ pub use citations::{
     citations_from_chunks, citations_from_context, citations_from_hits, id_for_text,
     lookup as lookup_citations, CitationError,
 };
+pub use cite::{retrieve_and_cite, RetrieveCiteError, RetrievedCitations};
 pub use domain::{all_domains, domain_by_id, Domain};
 pub use domains::Adapter;
 pub use eval::{
