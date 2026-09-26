@@ -1,7 +1,4 @@
 //! Live citation lookup against the ingest [`ChunkStore`].
-//!
-//! Claimed source ids must be 64-char hex [`gaia_ingest::ChunkId`] values
-//! that were recorded at ingest. Invented strings fail.
 
 use gaia_ingest::{ChunkId, ChunkStore};
 
@@ -13,7 +10,6 @@ pub enum CitationError {
     UnknownChunk(String),
 }
 
-/// Resolve claimed hex ids against the ingest store.
 pub fn lookup(store: &ChunkStore, claimed: &[String]) -> Result<Vec<String>, CitationError> {
     if claimed.is_empty() {
         return Err(CitationError::Empty);
@@ -28,9 +24,15 @@ pub fn lookup(store: &ChunkStore, claimed: &[String]) -> Result<Vec<String>, Cit
     Ok(out)
 }
 
-/// Hex ids from authorized retrieved chunks.
+fn raw_text(text: &str) -> &str {
+    text.strip_prefix("[STALE] ").unwrap_or(text)
+}
+
 pub fn citations_from_chunks(chunks: &[RetrievedChunk]) -> Vec<String> {
-    chunks.iter().map(|c| c.chunk_id.clone()).collect()
+    chunks
+        .iter()
+        .map(|c| ChunkId::from_text(raw_text(&c.text)).to_hex())
+        .collect()
 }
 
 pub fn citations_from_context(ctx: &GenerationContext) -> Vec<String> {
@@ -45,48 +47,6 @@ pub fn id_for_text(text: &str) -> String {
 mod tests {
     use super::*;
     use gaia_ingest::auth::{AgentId, ChunkMetadata};
-    use gaia_ingest::document::{
-        AccessTier, ConfidenceTier, DocumentChunk, DocumentKind,
-    };
-    use gaia_ingest::lexicon::LexiconPlane;
-    use gaia_ingest::provenance::ProvenanceReceipt;
-    use gaia_ingest::schema::DataSource;
-    use std::collections::BTreeMap;
-
-    fn chunk(text: &str) -> DocumentChunk {
-        DocumentChunk {
-            id: "00000000-0000-0000-0000-000000000001".into(),
-            text: text.into(),
-            char_count: text.chars().count(),
-            chunk_index: 0,
-            total_chunks: 1,
-            document_title: "t".into(),
-            document_uri: "file:///t.md".into(),
-            kind: DocumentKind::SpecDocument,
-            domain: "test".into(),
-            language: "en".into(),
-            authored_at_unix: Some(0),
-            ttl_seconds: None,
-            confidence: ConfidenceTier::Verified,
-            access_tier: AccessTier::Public,
-            access_control: Vec::new(),
-            attributes: BTreeMap::new(),
-            lexicon_plane: LexiconPlane::Bridge,
-            lexicon_voice: None,
-            provenance: ProvenanceReceipt {
-                source: DataSource::InternalDocument,
-                source_url: "file:///t.md".into(),
-                external_id: "t".into(),
-                fetched_at_unix: 1,
-                observed_at_unix: 1,
-                sha256: "a".repeat(64),
-                license: "proprietary".into(),
-            },
-            embedding: None,
-            artifact: None,
-            epistemic_state: None,
-        }
-    }
 
     fn meta() -> ChunkMetadata {
         ChunkMetadata {
@@ -103,19 +63,19 @@ mod tests {
     #[test]
     fn lookup_accepts_ingested_id() {
         let mut store = ChunkStore::new();
-        let c = chunk("treaty signed in 1992");
-        let id = ChunkId::from_chunk(&c);
+        let id = ChunkId::from_text("treaty signed in 1992");
         store.record(id);
         let hex = id.to_hex();
-        let got = lookup(&store, &[hex.clone()]).unwrap();
-        assert_eq!(got, vec![hex]);
+        assert_eq!(lookup(&store, &[hex.clone()]).unwrap(), vec![hex]);
     }
 
     #[test]
     fn lookup_rejects_invented_id() {
         let store = ChunkStore::new();
-        let err = lookup(&store, &["deadbeef".into()]).unwrap_err();
-        assert!(matches!(err, CitationError::UnknownChunk(_)));
+        assert!(matches!(
+            lookup(&store, &["deadbeef".into()]),
+            Err(CitationError::UnknownChunk(_))
+        ));
     }
 
     #[test]
