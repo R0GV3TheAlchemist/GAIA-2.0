@@ -106,7 +106,8 @@ impl FileChunkStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::embed::{EmbeddingModel, HashingEmbedder};
+    use crate::embed::EmbeddingModel;
+    use crate::hash_embed::HashingEmbedder;
 
     #[test]
     fn persist_survives_reopen() {
