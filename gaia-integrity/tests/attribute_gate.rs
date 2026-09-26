@@ -52,6 +52,6 @@ fn sentence_marker_on_overlap_only() {
         "The treaty was signed in 1992. Purple pianos exist.",
         &sources,
     );
-    assert!(out[0].marked.contains(&format!("[source: {id}]"));
+    assert!(out[0].marked.contains(&format!("[source: {id}]")));
     assert!(out[1].source_ids.is_empty());
 }
