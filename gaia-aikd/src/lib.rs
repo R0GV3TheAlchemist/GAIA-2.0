@@ -36,8 +36,8 @@ pub use benchmark_db::{
 };
 pub use card::{cannot_know, model_card, published_closed_score_is_ours, ModelCard, Tier};
 pub use citations::{
-    citations_from_chunks, citations_from_context, id_for_text, lookup as lookup_citations,
-    CitationError,
+    citations_from_chunks, citations_from_context, citations_from_hits, id_for_text,
+    lookup as lookup_citations, CitationError,
 };
 pub use domain::{all_domains, domain_by_id, Domain};
 pub use domains::Adapter;

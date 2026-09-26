@@ -139,3 +139,43 @@ fn persisted_store_reload_accepts_lookup() {
     let ids = gaia_aikd::lookup_citations(store.store(), &[hex]).expect("reloaded lookup");
     assert_eq!(ids.len(), 1);
 }
+
+#[test]
+fn rank_hits_ground_acp_invoke() {
+    use gaia_ingest::{embed::EmbeddingModel, FileChunkStore, HashingEmbedder};
+    let climate = "the earth twin observes climate";
+    let piano = "purple piano recipes";
+    let path = std::env::temp_dir().join("gaia-integrity-rank-ground.jsonl");
+    let _ = std::fs::remove_file(&path);
+    let embedder = HashingEmbedder::new();
+    let vecs = embedder.embed(&[climate, piano]).unwrap();
+    let mut store = FileChunkStore::open(&path).unwrap();
+    store.record(climate, embedder.model_id(), Some(&vecs[0])).unwrap();
+    store.record(piano, embedder.model_id(), Some(&vecs[1])).unwrap();
+    let hits = gaia_aikd::rank_persisted("earth twin climate", &store, &embedder, 1).unwrap();
+    assert_eq!(hits[0].text, climate);
+    let ids = gaia_aikd::citations_from_hits(store.store(), &hits).expect("ranked ids exist");
+    let mut plane = gaia_acp::ControlPlane::start(1_700_000_000, "agent-a").unwrap();
+    let mut manifest = gaia_acp::CapabilityManifest::local_reader("agent-a", 1_700_000_000);
+    let action = gaia_acp::ProposedAction {
+        agent_id: "agent-a".into(),
+        tool: "local_read".into(),
+        method: "call".into(),
+        target: "docs/a.md".into(),
+        action_class: gaia_acp::ActionClass::LocalRead,
+        payload: climate.into(),
+        nonce: "nonce-agent-a".into(),
+        gateway_id: "gateway-local".into(),
+        server_id: "server-local".into(),
+        resource_id: "repo-local".into(),
+        wants_delegation: false,
+    };
+    let r = plane.invoke_grounded(
+        &mut manifest,
+        &action,
+        None,
+        None,
+        gaia_acp::GroundingClaim::required(ids),
+    );
+    assert!(r.executed);
+}

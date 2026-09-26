@@ -2,6 +2,7 @@
 
 use gaia_ingest::{ChunkId, ChunkStore};
 
+use crate::rank::RankedHit;
 use crate::retrieve::{GenerationContext, RetrievedChunk};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,6 +38,15 @@ pub fn citations_from_chunks(chunks: &[RetrievedChunk]) -> Vec<String> {
 
 pub fn citations_from_context(ctx: &GenerationContext) -> Vec<String> {
     citations_from_chunks(&ctx.chunks)
+}
+
+/// Resolve ranked retrieval hits against the ingest store.
+pub fn citations_from_hits(
+    store: &ChunkStore,
+    hits: &[RankedHit],
+) -> Result<Vec<String>, CitationError> {
+    let ids: Vec<String> = hits.iter().map(|h| h.hex.clone()).collect();
+    lookup(store, &ids)
 }
 
 pub fn id_for_text(text: &str) -> String {
@@ -90,5 +100,11 @@ mod tests {
         let ids = citations_from_context(&ctx);
         assert_eq!(ids.len(), 1);
         assert!(store.contains_hex(&ids[0]));
+    }
+
+    #[test]
+    fn hits_empty_is_empty_error() {
+        let store = ChunkStore::new();
+        assert_eq!(citations_from_hits(&store, &[]), Err(CitationError::Empty));
     }
 }
