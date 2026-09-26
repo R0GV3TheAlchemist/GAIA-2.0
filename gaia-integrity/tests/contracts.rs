@@ -80,3 +80,43 @@ fn agents_to_acp_tool_call_writes_audit() {
     assert_eq!(entry.outcome, ToolOutcome::Permitted);
     assert_eq!(log.len(), 1);
 }
+
+#[test]
+fn invented_citation_fails_lookup() {
+    let store = gaia_ingest::ChunkStore::new();
+    let err = gaia_aikd::lookup_citations(&store, &["not-a-chunk".into()]).unwrap_err();
+    assert!(matches!(err, gaia_aikd::CitationError::UnknownChunk(_)));
+}
+
+#[test]
+fn ingested_citation_grounds_acp_invoke() {
+    let text = "The treaty was signed in 1992.";
+    let mut store = gaia_ingest::ChunkStore::new();
+    store.record(gaia_ingest::ChunkId::from_text(text));
+    let hex = gaia_aikd::id_for_text(text);
+    let ids = gaia_aikd::lookup_citations(&store, &[hex.clone()]).expect("live lookup");
+    let mut plane = gaia_acp::ControlPlane::start(1_700_000_000, "agent-a").unwrap();
+    let mut manifest = gaia_acp::CapabilityManifest::local_reader("agent-a", 1_700_000_000);
+    let action = gaia_acp::ProposedAction {
+        agent_id: "agent-a".into(),
+        tool: "local_read".into(),
+        method: "call".into(),
+        target: "docs/a.md".into(),
+        action_class: gaia_acp::ActionClass::LocalRead,
+        payload: text.into(),
+        nonce: "nonce-agent-a".into(),
+        gateway_id: "gateway-local".into(),
+        server_id: "server-local".into(),
+        resource_id: "repo-local".into(),
+        wants_delegation: false,
+    };
+    let r = plane.invoke_grounded(
+        &mut manifest,
+        &action,
+        None,
+        None,
+        gaia_acp::GroundingClaim::required(ids),
+    );
+    assert!(r.executed);
+    assert_eq!(hex.len(), 64);
+}
