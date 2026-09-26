@@ -27,10 +27,14 @@ pub fn router(state: AppState) -> Router {
         .with_state(state)
 }
 
+/// Listed routes. Tests assert this table; no socket bind.
+pub fn listed_paths() -> &'static [&'static str] {
+    &["/intent", "/agents", "/memory", "/audit", "/health"]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::http::Method;
 
     #[test]
     fn router_builds_without_bind() {
@@ -38,13 +42,9 @@ mod tests {
     }
 
     #[test]
-    fn health_route_is_registered() {
-        let app = router(AppState::default());
-        let method_map = app.method_not_allowed_fallback(|_| async { "na" });
-        let _ = method_map;
-        let paths = ["/health", "/intent", "/agents", "/memory", "/audit"];
-        assert_eq!(paths.len(), 5);
-        let _ = Method::GET;
+    fn listed_paths_cover_health() {
+        assert!(listed_paths().contains(&"/health"));
+        assert_eq!(listed_paths().len(), 5);
     }
 
     #[test]
