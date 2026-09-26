@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::chunk_id::ChunkId;
 use crate::dedup::ChunkStore;
+use crate::document::DocumentChunk;
 use crate::embed::EmbeddingVector;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -86,6 +87,19 @@ impl FileChunkStore {
         Ok(id)
     }
 
+    /// Persist ingest chunks. Dedupes by text fingerprint.
+    pub fn record_chunks(
+        &mut self,
+        chunks: &[DocumentChunk],
+        model_id: &str,
+    ) -> std::io::Result<usize> {
+        let before = self.len();
+        for chunk in chunks {
+            self.record(&chunk.text, model_id, chunk.embedding.as_ref())?;
+        }
+        Ok(self.len().saturating_sub(before))
+    }
+
     pub fn contains_hex(&self, hex_id: &str) -> bool {
         self.inner.contains_hex(hex_id)
     }
@@ -112,6 +126,7 @@ mod tests {
     use super::*;
     use crate::embed::EmbeddingModel;
     use crate::hash_embed::HashingEmbedder;
+    use crate::ingest::IngestPipeline;
 
     #[test]
     fn persist_survives_reopen() {
@@ -145,5 +160,27 @@ mod tests {
             .unwrap();
         assert_eq!(vecs[0].dim(), 384);
         assert!(store.contains_hex(&ChunkId::from_text("hello earth twin").to_hex()));
+    }
+
+    #[test]
+    fn record_chunks_from_pipeline() {
+        let dir = std::env::temp_dir().join(format!("gaia-persist-pipe-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let md = dir.join("doc.md");
+        std::fs::write(&md, "# Title\n\nThe earth twin observes climate.\n").unwrap();
+        let pipeline = IngestPipeline {
+            embedder: Some(Box::new(HashingEmbedder::new())),
+            ..Default::default()
+        };
+        let chunks = pipeline.from_path(&md).unwrap();
+        assert!(!chunks.is_empty());
+        let store_path = dir.join("chunks.jsonl");
+        let mut store = FileChunkStore::open(&store_path).unwrap();
+        let added = store
+            .record_chunks(&chunks, "hashing-384-offline-v0")
+            .unwrap();
+        assert!(added >= 1);
+        assert!(store.contains_hex(&ChunkId::from_text(&chunks[0].text).to_hex()));
+        assert!(store.rows()[0].embedding.is_some());
     }
 }
