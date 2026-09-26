@@ -8,7 +8,6 @@ Citrine housing: [`docs/tablets/CITRINE_TABLET.md`](../tablets/CITRINE_TABLET.md
 Terra path: [`docs/tablets/TERRA_TABLET.md`](../tablets/TERRA_TABLET.md).
 
 T/C/O first pass filed under this directory. Other hues: not filed.
-White pole: Alabaster / Albedo not on disk ([#804](https://github.com/R0GV3TheAvatar/GAIA-2.0/issues/804)).
 
 ## First-pass dimensions (#803)
 
@@ -18,7 +17,7 @@ White pole: Alabaster / Albedo not on disk ([#804](https://github.com/R0GV3TheAv
 | GREEN | [GREEN_TRANSPARENCY.md](GREEN_TRANSPARENCY.md) | [GREEN_CLARITY.md](GREEN_CLARITY.md) | [GREEN_OPACITY.md](GREEN_OPACITY.md) | [Emerald](../tablets/EMERALD_TABLET.md) / [Viriditas](../tablets/VIRIDITAS_TABLET.md) |
 | BROWN | [BROWN_TRANSPARENCY.md](BROWN_TRANSPARENCY.md) | [BROWN_CLARITY.md](BROWN_CLARITY.md) | [BROWN_OPACITY.md](BROWN_OPACITY.md) | [Terra](../tablets/TERRA_TABLET.md) |
 | BLACK | [BLACK_TRANSPARENCY.md](BLACK_TRANSPARENCY.md) | [BLACK_CLARITY.md](BLACK_CLARITY.md) | [BLACK_OPACITY.md](BLACK_OPACITY.md) | [Void](../tablets/VOID_TABLET.md) / [Obsidian](../tablets/OBSIDIAN_TABLET.md) / [Shadow](../tablets/SHADOW_TABLET.md) |
-| WHITE | [WHITE_TRANSPARENCY.md](WHITE_TRANSPARENCY.md) | [WHITE_CLARITY.md](WHITE_CLARITY.md) | [WHITE_OPACITY.md](WHITE_OPACITY.md) | Alabaster / Albedo listed only (#804) |
+| WHITE | [WHITE_TRANSPARENCY.md](WHITE_TRANSPARENCY.md) | [WHITE_CLARITY.md](WHITE_CLARITY.md) | [WHITE_OPACITY.md](WHITE_OPACITY.md) | [Alabaster](../tablets/ALABASTER_TABLET.md) / [Albedo](../tablets/ALBEDO_TABLET.md) listed drafts |
 
 ## Not filed (no 404 links)
 
@@ -41,7 +40,9 @@ Do not assign C211+ to these rows. C211+ stay research numbers.
 
 Amber #874, Amethyst #875, Aqua #876, Celestial #877, Lapis #880, Obsidian #881, Rose #882, Ruby #883, Sapphire #884, Shadow #885, Silver #886, Solar #887.
 
-Added rows vs prior map: Void, Celestial (unsealed tracker #877), Amber (#874).
+## Listed drafts, not in INDEX / color-map.json (#804)
+
+[Alabaster](../tablets/ALABASTER_TABLET.md) + [Albedo](../tablets/ALBEDO_TABLET.md). White pole only. Not sealed.
 
 ## Refuse
 

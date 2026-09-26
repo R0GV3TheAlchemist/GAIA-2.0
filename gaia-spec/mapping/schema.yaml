@@ -1,7 +1,7 @@
-# Mapping schema (#845 / #815 listed cut).
+# Mapping schema (#815 / #816 / #845).
 # A correspondence is an interpretation. Empty mappings are valid.
 
-version: 1
+version: 2
 fields:
   - source_corpus
   - edition_or_translation
@@ -11,12 +11,23 @@ fields:
   - extracted_structure
   - proposed_gaia_target
   - rationale
-  - confidence   # high | medium | low | inconclusive
+  - confidence   # high | medium | low | inconclusive | no_mapping
   - evidence_class
   - competing_interpretations
   - disconfirmation_conditions
   - reviewer
   - review_date
+  - corpus_id
+  - source_title
+  - language
+  - date_range
+  - cultural_context
+  - edition
+  - scholarly_source
+  - extracted_unit
+  - gaia_candidate
+  - null_result_notes
+  - provenance_notes
 
 evidence_class:
   - direct_textual_support
@@ -25,8 +36,6 @@ evidence_class:
   - computational_utility
   - speculative_analogy
 
-# Hermetic markers required before a mapping may be accepted.
-# Absence on a negative-control corpus is a pass, not a miss.
 hermetic_markers:
   - emerald tablet
   - as above so below

@@ -1,0 +1,42 @@
+# Cross-corpus registry — listed (#816)
+# No source texts ingested in this file.
+
+version: 1
+principle: traditions are not interchangeable; no_mapping is valid
+
+structural_vocabulary:
+  - hierarchy
+  - recursion
+  - polarity
+  - transformation
+  - scale-invariance
+  - mediation
+  - circulation
+
+corpora:
+  C210:
+    name: Hermetic corpus
+    status: schema-only
+    scholarly_anchor: Litwa 2018 Hermetica II listed, not ingested
+  C211:
+    name: Vedic corpus
+    status: schema-only
+  C212:
+    name: Taoist corpus
+    status: schema-only
+  C213:
+    name: Maya corpus
+    status: schema-only
+    provenance_notes: living tradition — exclude unless consent terms exist
+  C214:
+    name: I Ching corpus
+    status: schema-only
+  C215:
+    name: Gnostic corpus
+    status: schema-only
+  C216:
+    name: Book of Thoth corpus
+    status: schema-only
+
+comparison_matrix: not-run
+knowledge_graph: not-implemented
