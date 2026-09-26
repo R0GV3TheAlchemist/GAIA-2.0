@@ -14,6 +14,8 @@ mod policy;
 mod quota;
 mod registry;
 mod sandbox;
+pub mod tool_audit;
+pub mod tool_auth;
 mod trace;
 mod types;
 
@@ -34,6 +36,11 @@ pub use quota::{resource_quota_gate, ResourceQuota, ResourceUsage};
 pub use registry::{LocalAip, LocalRegistry};
 pub use sandbox::{
     classify_destination, classify_rebinding_host, classify_redirect, EgressClass, SandboxProfile,
+};
+pub use tool_audit::{ToolAuditEntry, ToolAuditLog, ToolOutcome};
+pub use tool_auth::{
+    authorize as authorize_tool, AgentId as ToolAgentId, ApprovalToken, AuthError, ToolCall,
+    ToolId as AuthToolId, ToolPermissionTier as AuthToolPermissionTier,
 };
 pub use trace::{
     execution_allowed, from_invoke, refuse_live_supabase, ClaimClass, GapLock, GateMode,
