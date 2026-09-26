@@ -11,5 +11,6 @@
 | [prompt-tools.md](prompt-tools.md) | #861 | `gaia-aispd`, `gaia-skills`, `gaia-si` |
 | [vector-dbs.md](vector-dbs.md) | #862 | `gaia-memos`, `gaia-aikd`, `gaia-ukd` |
 | [multi-agent.md](multi-agent.md) | #863 | `gaia-agents`, `gaia-acp` |
+| [no-code.md](no-code.md) | #864 | `gaia-interface`, `gaia-ui`, `gaia-sdk` |
 
-No new crate. No provider SDK. No Qdrant stand-up (#723 stays SFS). No ACP RFC publish.
+No new crate. No provider SDK. No Qdrant stand-up (#723 stays SFS). No ACP RFC publish. No studio runtime.
