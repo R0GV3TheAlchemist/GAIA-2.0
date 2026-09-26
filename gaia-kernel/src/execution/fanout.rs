@@ -46,32 +46,39 @@ pub enum FanoutOutcome {
     Partial(PartialFailure),
 }
 
+enum JobJoin {
+    Done { agent_id: String, output: String },
+    Failed { agent_id: String, message: String },
+    TimedOut { agent_id: String, elapsed: Duration },
+}
+
 /// Run `jobs` in parallel. Each job is bounded by `per_job_timeout`.
 pub async fn run_fanout(jobs: Vec<FanoutJob>, per_job_timeout: Duration) -> FanoutOutcome {
-    let mut set: JoinSet<(String, Result<Result<String, String>, Duration>)> = JoinSet::new();
+    let mut set: JoinSet<JobJoin> = JoinSet::new();
 
     for job in jobs {
-        let agent_id = job.agent_id.clone();
-        let work = job.work;
-        let fail = job.fail;
         set.spawn(async move {
+            let agent_id = job.agent_id.clone();
             let started = Instant::now();
-            let ran = timeout(per_job_timeout, async move {
-                if !work.is_zero() {
-                    tokio::time::sleep(work).await;
+            match timeout(per_job_timeout, async {
+                if !job.work.is_zero() {
+                    tokio::time::sleep(job.work).await;
                 }
-                if fail {
+                if job.fail {
                     Err(format!("job failed: {agent_id}"))
                 } else {
                     Ok(format!("ok:{agent_id}"))
                 }
             })
-            .await;
-            let mapped = match ran {
-                Ok(inner) => Ok(inner),
-                Err(_) => Err(started.elapsed()),
-            };
-            (job.agent_id, mapped)
+            .await
+            {
+                Ok(Ok(output)) => JobJoin::Done { agent_id, output },
+                Ok(Err(message)) => JobJoin::Failed { agent_id, message },
+                Err(_) => JobJoin::TimedOut {
+                    agent_id,
+                    elapsed: started.elapsed(),
+                },
+            }
         });
     }
 
@@ -81,9 +88,11 @@ pub async fn run_fanout(jobs: Vec<FanoutJob>, per_job_timeout: Duration) -> Fano
 
     while let Some(joined) = set.join_next().await {
         match joined {
-            Ok((agent_id, Ok(Ok(output)))) => successes.push(JobOk { agent_id, output }),
-            Ok((agent_id, Ok(Err(message)))) => errors.push(JobError { agent_id, message }),
-            Ok((agent_id, Err(elapsed))) => timeouts.push(TaskTimeout { agent_id, elapsed }),
+            Ok(JobJoin::Done { agent_id, output }) => successes.push(JobOk { agent_id, output }),
+            Ok(JobJoin::Failed { agent_id, message }) => errors.push(JobError { agent_id, message }),
+            Ok(JobJoin::TimedOut { agent_id, elapsed }) => {
+                timeouts.push(TaskTimeout { agent_id, elapsed })
+            }
             Err(join_err) => errors.push(JobError {
                 agent_id: "unknown".into(),
                 message: format!("join: {join_err}"),
