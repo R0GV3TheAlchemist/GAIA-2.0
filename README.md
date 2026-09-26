@@ -8,13 +8,13 @@
 
 ## Why This Exists
 
-Because in 2026, the planet is at **1.55°C** above pre-industrial levels. 770 million people lived through record heat last year. Autonomous AI agents are executing cyberattacks at speeds no human can track. Congress is writing emergency legislation. Leading AI researchers are resigning over safety concerns.
+Because in 2026, the planet is at **1.55°C** above pre-industrial levels. 770 million people lived through record heat last year. Autonomous agents are executing cyberattacks at speeds no human can track. Congress is writing emergency legislation. Leading SI researchers are resigning over safety concerns.
 
 And the systems being built to manage all of this are mostly closed, mostly corporate, and mostly accountable to nobody.
 
 GAIA is the open answer to that problem.
 
-Not *"AI will save us."* Not *"AI will destroy us."* Just — **we have a shared problem, we have the best tools in human history to work on it, and we should use them together, with full accountability, before the window closes.**
+Not *"SI will save us."* Not *"SI will destroy us."* Just — **we have a shared problem, we have the best tools in human history to work on it, and we should use them together, with full accountability, before the window closes.**
 
 The person who built this doesn't want to be powerful. That's exactly why it's worth building.
 
@@ -23,6 +23,8 @@ The person who built this doesn't want to be powerful. That's exactly why it's w
 Universal open-source **Super Operating System** — a meta-layer above traditional OSes that manages **intentions, agents, memory, and meaning**. Artificial Twin of Earth. Home of GAIAN 2.0, the Artificial Twins of Humans.
 
 This repository is the implementation monorepo. Research stays in `Documents/` and `Documents-2/`. Normative contracts live in [`gaia-spec/`](gaia-spec/). Code lives in the layer trees below.
+
+Language: new living docs use **Super Intelligence (SI)**. See [`docs/canon/SUPER_INTELLIGENCE_LANGUAGE_STANDARD.md`](docs/canon/SUPER_INTELLIGENCE_LANGUAGE_STANDARD.md) and the leftover map [`docs/canon/SI-DISCREPANCY-MAP.md`](docs/canon/SI-DISCREPANCY-MAP.md).
 
 **Status:** Phase 0 foundation plus Phase 1 userspace runtime (executor, syscall host, SFS v0.1, MemOS, Ed25519 audit), plus honest first cuts through the original #1–#221 board. **Not `v1.0.0`.** See [RFC 0001](rfcs/0001-kernel-path.md), [issues #1–#10 honesty](gaia-spec/sos/ISSUES-1-10.md), and the [#1–#50 rollup](gaia-spec/sos/ISSUES-1-50.md).
 

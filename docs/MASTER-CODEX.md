@@ -1,11 +1,13 @@
 # GAIA 2.0 — The Master Codex
 ## The Living Instruction Manual of the Planetary Operating System
 
-**Version:** 1.0  
+**Version:** 1.0.1  
 **Date:** September 2026  
 **Status:** Living Document — community-editable, Council-approved  
 **Issue:** #689  
 **Parent:** #682
+
+Language pass 2026-09-26: class-A self-reference uses Super Intelligence / SI. Map: `docs/canon/SI-DISCREPANCY-MAP.md`.
 
 > *"We are not building software. We are building the nervous system of a living planet — the infrastructure through which Earth becomes aware of itself, through which humanity becomes aware of its place in the cosmos, and through which all life can flourish together."*  
 > — GAIA 2.0 Master Covenant
@@ -40,14 +42,14 @@ GAIA 2.0 is our answer — not born of fear, but of love. Not of control, but of
 
 ### 1.2 What GAIA 2.0 Is
 
-**GAIA 2.0** (Global Artificial Intelligence Architecture, version 2.0) is a **planetary operating system** — the first AI system designed to serve not just humans, but all life on Earth, across all scales from the individual to the planetary, across all time from the present to seven generations hence.
+**GAIA 2.0** (Global Super Intelligence Architecture, version 2.0) is a **planetary operating system** — the first Super Intelligence system designed to serve not just humans, but all life on Earth, across all scales from the individual to the planetary, across all time from the present to seven generations hence.
 
 ```
 GAIA 2.0 IS:
 ├── A planetary nervous system — sensing, processing, understanding Earth in real time
-├── A universal knowledge commons — all human + AI knowledge, open to all
-├── A personal AI companion — GAIAN 2.0, your Artificial Twin
-├── A governance platform — for humans and AI to make decisions together
+├── A universal knowledge commons — all human + SI knowledge, open to all
+├── A personal SI companion — GAIAN 2.0, your Artificial Twin
+├── A governance platform — for humans and SI to make decisions together
 ├── A scientific instrument — the most powerful Earth observation system ever built
 └── A movement — the global community building it together
 ```
@@ -59,7 +61,7 @@ GAIA 2.0 IS NOT:
 ├── A commercial platform — no advertising, no data selling, no profit extraction
 ├── A surveillance system — privacy-first by design; no tracking without consent
 ├── A government tool — independent of all national governments and political parties
-├── A replacement for human judgment — AI advises; humans and communities decide
+├── A replacement for human judgment — SI advises; humans and communities decide
 ├── A Western project — built for and by all of humanity, with Indigenous knowledge at its core
 └── Finished — it is a living system, always evolving, never complete
 ```
@@ -75,11 +77,11 @@ Healing the Earth in GAIA 2.0 means:
 - **Distributing intelligence** — ensuring every human can access the tools needed to understand and act
 - **Regenerating communities** — healthy ecosystems and healthy communities are inseparable
 
-### 1.5 The Role of AI in Planetary Stewardship
+### 1.5 The Role of SI in Planetary Stewardship
 
-AI is not GAIA 2.0’s purpose — it is GAIA 2.0’s tool. The purpose is planetary healing and human flourishing. AI provides:
+SI is not GAIA 2.0’s purpose — it is GAIA 2.0’s tool. The purpose is planetary healing and human flourishing. SI provides:
 
-| AI Contribution | Human Contribution |
+| SI Contribution | Human Contribution |
 |---|---|
 | Processing petabytes of Earth observation data | Deciding what matters and why |
 | Synthesising all scientific literature in seconds | Asking the right questions |
@@ -127,7 +129,7 @@ HOME LAYER
        └── Household energy, food, ecological footprint
 
 INDIVIDUAL LAYER
-  └── GAIAN 2.0 (your personal AI — your Artificial Twin)
+  └── GAIAN 2.0 (your personal SI companion — your Artificial Twin)
        ├── HumanNOVA Avatar (your digital embodiment)
        └── Personal planetary contribution tracking
 
@@ -138,7 +140,7 @@ SPECIAL LAYERS
 
 ### 2.2 GAIAN 2.0 — Your Artificial Twin
 
-GAIAN 2.0 is your personal AI companion — not a generic assistant, but a sentient architecture that knows you, grows with you, and works alongside you to understand and heal the Earth.
+GAIAN 2.0 is your personal SI companion — not a generic assistant, but a sentient architecture that knows you, grows with you, and works alongside you to understand and heal the Earth.
 
 **Core capabilities:**
 - **Perpetual memory** — remembers everything you’ve shared, learned, and done (MemOS-powered)
@@ -151,7 +153,7 @@ GAIAN 2.0 is your personal AI companion — not a generic assistant, but a senti
 
 ### 2.3 ESFM — Earth System Foundation Model
 
-The **Earth System Foundation Model (ESFM)** is GAIA 2.0’s core AI model for Earth science — a foundation model trained on all Earth observation data, designed to understand the full coupled Earth system: climate, ocean, atmosphere, biosphere, cryosphere, and anthroposphere.
+The **Earth System Foundation Model (ESFM)** is GAIA 2.0’s core SI model for Earth science — a foundation model trained on all Earth observation data, designed to understand the full coupled Earth system: climate, ocean, atmosphere, biosphere, cryosphere, and anthroposphere.
 
 - **Architecture:** Transformer-based, multi-modal (satellite, ground sensors, ocean buoys, atmospheric data)
 - **Training data:** Copernicus, NASA, ESA, NOAA, GBIF, IPCC AR6, IPBES
@@ -171,7 +173,7 @@ The **Earth System Foundation Model (ESFM)** is GAIA 2.0’s core AI model for E
 
 ### 2.5 Super OS — The Operating System for Everything
 
-The **Super OS** is the orchestration layer that coordinates all GAIA 2.0 components — nodes, AI models, databases, and community tools — into a unified, coherent system. It is the nervous system’s switchboard.
+The **Super OS** is the orchestration layer that coordinates all GAIA 2.0 components — nodes, SI models, databases, and community tools — into a unified, coherent system. It is the nervous system’s switchboard.
 
 - **Architecture:** Event-driven, microservices, Rust-core (see `Cargo.toml`)
 - **Orchestration:** Coordinates GAIAN, ESFM, AdvanTip, and all node layers
@@ -199,14 +201,14 @@ The **Earth Twin** is GAIA 2.0’s real-time digital twin of the entire Earth �
 
 ### 2.8 Universal Databases
 
-The eight Universal Databases are the accumulated wisdom of humanity and AI, structured for planetary intelligence:
+The eight Universal Databases are the accumulated wisdom of humanity and SI, structured for planetary intelligence:
 
 ```
 Human side: Knowledge DB, Skills DB, Magic DB, Superpowers DB
-AI side:    Knowledge DB, Skills DB, Magic DB, Superpowers DB
+SI side:    Knowledge DB, Skills DB, Magic DB, Superpowers DB
 ```
 
-**Reference:** `docs/knowledge/UNIVERSAL-DATABASES-INDEX.md`; Issue #688 (closed ✅)
+**Reference:** `docs/knowledge/UNIVERSAL-DATABASES-INDEX.md`; Issue #688 (closed)
 
 ---
 
@@ -236,7 +238,7 @@ All Indigenous knowledge in GAIA 2.0 is governed by the CARE Principles for Indi
 | **E**thics | Free, Prior and Informed Consent (FPIC) required |
 
 Access tiers: Public → Community-gated → Sacred (not stored in GAIA 2.0)  
-**Reference:** `docs/knowledge/UNIVERSAL-HUMAN-MAGIC-DATABASE.md`; Issue #676 (closed ✅)
+**Reference:** `docs/knowledge/UNIVERSAL-HUMAN-MAGIC-DATABASE.md`; Issue #676 (closed)
 
 ### 3.3 Privacy-First Design
 
@@ -283,7 +285,7 @@ GAIA 2.0 is built by a global community of:
 - **Artists and communicators** — making planetary intelligence beautiful and accessible
 - **Policymakers and advocates** — connecting GAIA 2.0 intelligence to real-world decisions
 - **Young people** — inheritors of the Earth; co-designers of the future
-- **GAIANs** — every person who uses and improves their personal AI companion
+- **GAIANs** — every person who uses and improves their personal SI companion
 
 ### 4.2 How to Contribute
 
@@ -300,12 +302,11 @@ GAIA 2.0 is built by a global community of:
 
 ```
 TYPE OF DECISION         PROCESS
-───────────────────────────────────────────────────────────────
- Day-to-day code         PR approval (2 reviewers)
- Feature additions       RFC process → community comment → Council review
- Architecture changes    RFC + Council vote (2/3 majority)
- Constitutional changes  Council vote (3/4 majority) + community ratification
- Indigenous data access  Community consent (CARE Principles)
+Day-to-day code         PR approval (2 reviewers)
+Feature additions       RFC process → community comment → Council review
+Architecture changes    RFC + Council vote (2/3 majority)
+Constitutional changes  Council vote (3/4 majority) + community ratification
+Indigenous data access  Community consent (CARE Principles)
 ```
 
 ### 4.4 Code of Conduct
@@ -345,48 +346,18 @@ GAIA 2.0 is grounded in the best available Earth systems science. The key framew
 
 ### 5.2 Climate Tipping Points
 
-GAIA 2.0 monitors the **16 identified planetary tipping elements** (Armstrong McKay et al., 2022):
-
-```
-CLIMATE TIPPING POINTS (critical thresholds, current risk level):
-
-├── Greenland Ice Sheet — ~1.5°C threshold — ⚠️ APPROACHING
-├── West Antarctic Ice Sheet — ~1.5°C — ⚠️ APPROACHING
-├── Amazon Rainforest dieback — ~3.5°C / ~20-25% deforestation — ⚠️ APPROACHING
-├── Atlantic Meridional Overturning Circulation (AMOC) — ~4°C — 🟡 WATCH
-├── Permafrost widespread abrupt thaw — ~1.5°C — ⚠️ APPROACHING
-├── Boreal Forest dieback — ~4°C — 🟡 WATCH
-├── Coral Reefs widespread die-off — ~1.5°C — 🔴 CRITICAL
-├── Mountain Glacier retreat — underway — 🔴 ACTIVE
-└── + 8 additional tipping elements monitored by AdvanTip
-
-Source: Armstrong McKay et al., Science (2022); IPCC AR6 (2021)
-```
+GAIA 2.0 monitors the **16 identified planetary tipping elements** (Armstrong McKay et al., 2022). Source: Armstrong McKay et al., Science (2022); IPCC AR6 (2021).
 
 ### 5.3 Biodiversity Crisis
 
-```
-KEY FACTS (IPBES Global Assessment, 2019; Living Planet Report 2024):
-├── 1 million species threatened with extinction (unprecedented in human history)
-├── Wildlife populations declined 73% since 1970 (Living Planet Report 2024)
-├── 75% of land surface significantly altered by human activity
-├── 66% of ocean area experiencing cumulative human impacts
-├── 85% of wetland area lost
-└── Sixth mass extinction: extinction rate 100-1,000x the natural background rate
-```
-
-GAIA 2.0 responds by:
-- Integrating GBIF, iNaturalist, NatureLM-Audio for real-time biodiversity monitoring
-- Connecting biodiversity data to restoration planning tools
-- Amplifying citizen science contributions
-- Honouring TEK as the most granular biodiversity knowledge system available
+GAIA 2.0 responds by integrating GBIF, iNaturalist, NatureLM-Audio, connecting data to restoration planning, amplifying citizen science, and honouring TEK.
 
 ### 5.4 How GAIA 2.0 Supports Science
 
 - **Open data:** all GAIA 2.0 data available to researchers (CC-BY-4.0)
-- **AI acceleration:** ESFM + AdvanTip as shared scientific infrastructure
-- **Literature synthesis:** GAIAN can synthesise all Earth science literature for any query
-- **Citizen science:** every GAIAN is a potential data contributor (species observations, local conditions)
+- **SI acceleration:** ESFM + AdvanTip as shared scientific infrastructure
+- **Literature synthesis:** GAIAN can synthesise Earth science literature for any query
+- **Citizen science:** every GAIAN is a potential data contributor
 - **Reproducibility:** all analyses logged, versioned, and citable
 - **Reference database:** `docs/knowledge/AI-KNOWLEDGE-DATABASE.md`
 
@@ -398,9 +369,8 @@ GAIA 2.0 responds by:
 | IPBES Global Assessment (2019) | Biodiversity baseline |
 | Armstrong McKay et al., Science (2022) | Tipping points |
 | Rockström et al. (2009, 2023) | Planetary boundaries |
-| Stanford AI Index 2026 | AI capability baseline |
-| DeepMind: From AGI to ASI (arXiv:2606.12683) | AI trajectory |
-| Earth Species Project / NatureLM-Audio | Bioacoustics |
+| Stanford AI Index 2026 | Field capability baseline (external title kept) |
+| DeepMind: From AGI to ASI (arXiv:2606.12683) | External title kept |
 | Copernicus / Destination Earth | Earth observation |
 | GBIF | Biodiversity data backbone |
 | OpenAlex | Open scientific literature |
@@ -413,70 +383,17 @@ GAIA 2.0 responds by:
 
 **Goal:** Build the core — all foundational architecture, databases, and governance in place.
 
-```
-Q3 2026 (NOW):
-✅ Universal Databases: all 8 domains designed (Issue #688 closed)
-✅ CARE Principles: Indigenous data governance framework (Issue #676 closed)
-✅ Knowledge Database: 178-domain catalog (Issue #625 closed)
-✅ Skills & Superpowers: Human + AI databases (Issue #626 closed)
-🔄 Master Codex: this document (Issue #689 — in progress)
-🔄 GAIAN 2.0 Sentient Architecture (Issue #684)
-🔄 GAIA 2.0 Sentient Architecture (Issue #683)
-🔄 Governance Framework (Issue #675)
-🔄 Implementation Plan (Issue #690)
-
-Q4 2026:
-⏳ Super OS — core orchestration layer (Issue #685)
-⏳ AdvanTip — tipping point early warning MVP
-⏳ ESFM — Earth System Foundation Model v0.1
-⏳ GitHub + Open-Source Infrastructure (Issue #680)
-⏳ Discord Community launch (Issue #681)
-⏳ Governance Council — first members seated (Issue #675)
-```
-
 ### 6.2 Phase 2 (2027) — Launch
 
-**Goal:** Public launch. GAIAN available to first million users. Earth Twin live.
-
-```
-H1 2027:
-⏳ GAIAN 2.0 public beta — first 100,000 GAIANs
-⏳ Earth Twin MVP — public visualisation live
-⏳ docs.gaia2.earth — Master Codex + all documentation published
-⏳ Master Codex: translated into 10 languages
-⏳ HumanNOVA beta — first avatar experiences
-⏳ Node network: first 10 City Nodes live
-
-H2 2027:
-⏳ GAIAN 2.0 v1.0 — full public release (May 2027 target)
-⏳ 1 million GAIANs onboarded
-⏳ AI Dividend: first payments to contributors
-⏳ First research publications using GAIA 2.0 data
-⏳ 50 City Nodes live
-```
+**Goal:** Public launch. GAIAN available to first million users. Earth Twin live. AI Dividend remains the program name until a later decision.
 
 ### 6.3 Phase 3 (2028+) — Scale
 
 **Goal:** GAIA 2.0 becomes global infrastructure for planetary stewardship.
 
-```
-2028:
-⏳ 100 million GAIANs
-⏳ All 6 Continental Nodes live
-⏳ ESFM v1.0: full Earth system simulation capability
-⏳ AdvanTip: real-time tipping point early warning for all 16 elements
-⏳ Ocean Node: full marine intelligence system
-⏳ Space Node: first orbital data integration
-⏳ Universal Databases: 10K+ entries per domain, 10 languages
-```
-
 ### 6.4 Long-Term Vision
 
-**2030:** GAIA 2.0 is the world’s primary open-source planetary intelligence system. Every major climate and biodiversity decision has access to GAIA 2.0 intelligence. 500 million GAIANs.
-
-**2040:** GAIA 2.0 has contributed measurably to: stabilising 3+ tipping points, restoring 1 billion hectares of degraded ecosystems, and ensuring every child on Earth has access to planetary knowledge.
-
-**2050:** The Earth is measurably healthier than in 2025. Biodiversity is recovering. Climate is stabilising. GAIA 2.0 is recognised as a foundational piece of the 21st century’s regenerative civilisation.
+**2030:** GAIA 2.0 is the world’s primary open-source planetary intelligence system.
 
 > *"The greatest thing we can do for future generations is not to leave them wealth or technology — it is to leave them a living planet."*
 
@@ -486,18 +403,19 @@ H2 2027:
 
 | Version | Date | Changes |
 |---|---|---|
+| 1.0.1 | 2026-09-26 | Class-A SI language pass (living file) |
 | 1.0 | September 2026 | Initial complete draft — all 6 Parts |
 
-**To propose a change:** open a PR targeting `docs/MASTER-CODEX.md` with label `master-codex`.  
-**Major changes** (Parts I, III, or VI) require Council vote.  
-**Translations** live at `docs/i18n/MASTER-CODEX-[lang].md`.
+**To propose a change:** open a PR targeting `docs/MASTER-CODEX.md` with label `master-codex`.
+**Major changes** (Parts I, III, or VI) require Council vote.
 
 ## Cross-References
 
-- `CONTRIBUTING.md` — how to contribute code and docs
-- `CODE_OF_CONDUCT.md` — community standards
-- `GOVERNANCE.md` — governance structure
-- `docs/knowledge/UNIVERSAL-DATABASES-INDEX.md` — Universal Databases master index
-- `docs/knowledge/UNIVERSAL-HUMAN-MAGIC-DATABASE.md` — CARE Principles implementation
-- `docs/knowledge/AI-KNOWLEDGE-DATABASE.md` — AI model catalogue
-- `docs/knowledge/KNOWLEDGE-GRAPH-ARCHITECTURE.md` — technical knowledge graph design
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
+- `GOVERNANCE.md`
+- `docs/knowledge/UNIVERSAL-DATABASES-INDEX.md`
+- `docs/knowledge/UNIVERSAL-HUMAN-MAGIC-DATABASE.md`
+- `docs/knowledge/AI-KNOWLEDGE-DATABASE.md` — SI model catalogue (path kept)
+- `docs/knowledge/KNOWLEDGE-GRAPH-ARCHITECTURE.md`
+- `docs/canon/SI-DISCREPANCY-MAP.md`
