@@ -94,6 +94,10 @@ impl FileChunkStore {
         &self.inner
     }
 
+    pub fn rows(&self) -> &[PersistedChunk] {
+        &self.rows
+    }
+
     pub fn len(&self) -> usize {
         self.inner.len()
     }
@@ -124,6 +128,7 @@ mod tests {
         let hex = ChunkId::from_text(text).to_hex();
         assert!(store.contains_hex(&hex));
         assert_eq!(store.len(), 1);
+        assert_eq!(store.rows().len(), 1);
     }
 
     #[test]
