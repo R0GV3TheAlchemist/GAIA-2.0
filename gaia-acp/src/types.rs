@@ -92,6 +92,8 @@ pub enum ReasonCode {
     LifeSafetyDenied,
     ResourceQuotaExceeded,
     SyntheticDisclosureRequired,
+    GroundingViolation,
+    UngroundedOptInRequired,
 }
 
 impl ReasonCode {
@@ -134,6 +136,8 @@ impl ReasonCode {
             ReasonCode::LifeSafetyDenied => "GAIA_ACP_LIFE_SAFETY_DENIED",
             ReasonCode::ResourceQuotaExceeded => "GAIA_ACP_RESOURCE_QUOTA_EXCEEDED",
             ReasonCode::SyntheticDisclosureRequired => "GAIA_ACP_SYNTHETIC_DISCLOSURE_REQUIRED",
+            ReasonCode::GroundingViolation => "GAIA_ACP_GROUNDING_VIOLATION",
+            ReasonCode::UngroundedOptInRequired => "GAIA_ACP_UNGROUNDED_OPT_IN_REQUIRED",
         }
     }
 }
@@ -249,6 +253,8 @@ mod tests {
             ReasonCode::AutonomyCap,
             ReasonCode::ResourceQuotaExceeded,
             ReasonCode::SyntheticDisclosureRequired,
+            ReasonCode::GroundingViolation,
+            ReasonCode::UngroundedOptInRequired,
         ] {
             assert!(
                 code.as_str().starts_with("GAIA_ACP_"),
