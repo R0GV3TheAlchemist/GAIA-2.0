@@ -120,3 +120,22 @@ fn ingested_citation_grounds_acp_invoke() {
     assert!(r.executed);
     assert_eq!(hex.len(), 64);
 }
+
+#[test]
+fn persisted_store_reload_accepts_lookup() {
+    use gaia_ingest::{embed::EmbeddingModel, FileChunkStore, HashingEmbedder};
+    let text = "Persistent treaty clause.";
+    let path = std::env::temp_dir().join("gaia-integrity-chunks.jsonl");
+    let _ = std::fs::remove_file(&path);
+    let embedder = HashingEmbedder::new();
+    let vecs = embedder.embed(&[text]).unwrap();
+    assert_eq!(vecs[0].dim(), 384);
+    {
+        let mut store = FileChunkStore::open(&path).unwrap();
+        store.record(text, embedder.model_id(), Some(&vecs[0])).unwrap();
+    }
+    let store = FileChunkStore::open(&path).unwrap();
+    let hex = gaia_aikd::id_for_text(text);
+    let ids = gaia_aikd::lookup_citations(store.store(), &[hex]).expect("reloaded lookup");
+    assert_eq!(ids.len(), 1);
+}
