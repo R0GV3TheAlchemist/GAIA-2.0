@@ -3,7 +3,7 @@
 
 use gaia_acp::GroundingClaim;
 use gaia_aikd::rank_lexical;
-use gaia_ingest::{embed::EmbeddingModel, FileChunkStore, HashingEmbedder};
+use gaia_ingest::FileChunkStore;
 use gaia_runtime::score_faithfulness;
 
 #[test]
@@ -35,13 +35,11 @@ fn r0003_stage_helper_uses_global_not_nonlocal() {
 fn r0004_lexical_idf_nonzero_on_two_docs() {
     let path = std::env::temp_dir().join(format!("gaia-r0004-{}.jsonl", std::process::id()));
     let _ = std::fs::remove_file(&path);
-    let embedder = HashingEmbedder::new();
     let drug = "patient prescribed lisinopril twenty milligrams daily";
     let piano = "purple piano recipes";
-    let v = embedder.embed(&[drug, piano]).expect("embed");
     let mut store = FileChunkStore::open(&path).expect("open store");
-    store.record(drug, embedder.model_id(), Some(&v[0])).expect("record drug");
-    store.record(piano, embedder.model_id(), Some(&v[1])).expect("record piano");
+    store.record(drug, "hashing-384-offline-v0", None).expect("record drug");
+    store.record(piano, "hashing-384-offline-v0", None).expect("record piano");
     let hits = rank_lexical("lisinopril dose", &store, 2);
     assert_eq!(hits.len(), 2);
     assert!(hits[0].score > hits[1].score, "exact token must outrank piano");
@@ -51,13 +49,8 @@ fn r0004_lexical_idf_nonzero_on_two_docs() {
 /// Regression: #1009 / PR #1010 — empty sources must not claim grounded.
 #[test]
 fn r0005_grounding_claim_empty_sources_is_violation() {
-    let claim = GroundingClaim {
-        content: "ungrounded".into(),
-        source_ids: vec![],
-        grounding_required: true,
-        faithfulness: None,
-    };
-    assert!(claim.enforce().is_err(), "empty sources + required must violate");
+    let err = GroundingClaim::required(vec![]).enforce();
+    assert!(err.is_err(), "empty sources + required must violate");
 }
 
 /// Regression: #1007 / PR #1008 — copied answer stays high; invented answer stays low.
