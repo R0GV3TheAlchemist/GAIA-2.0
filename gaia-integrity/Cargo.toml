@@ -6,11 +6,16 @@ license.workspace = true
 description = "Cross-module contract and regression tests for the runtime-integrity scaffold"
 publish = false
 
+[features]
+default = []
+contracts = []
+
 [dependencies]
 gaia-acp = { path = "../gaia-acp" }
 gaia-agents = { path = "../gaia-agents" }
 gaia-aikd = { path = "../gaia-aikd" }
 gaia-ingest = { path = "../gaia-ingest" }
+gaia-memos = { path = "../gaia-memos" }
 gaia-runtime = { path = "../gaia-runtime" }
 
 [[test]]
@@ -24,3 +29,11 @@ path = "tests/regression.rs"
 [[test]]
 name = "attribute_gate"
 path = "tests/attribute_gate.rs"
+
+[[test]]
+name = "ingest_to_memos"
+path = "tests/ingest_to_memos.rs"
+
+[[test]]
+name = "memos_to_aikd"
+path = "tests/memos_to_aikd.rs"
