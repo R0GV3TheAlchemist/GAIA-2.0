@@ -2,6 +2,7 @@ use crate::adapter::{FakeAdapter, RecordingAdapter};
 use crate::approval::HumanApprovalReceipt;
 use crate::audit::{ActionReceipt, AuditChain, AuditPushInput, PlaneEvent, PlaneState};
 use crate::autonomy::{gate, AutonomyLevel};
+use crate::grounding::GroundingClaim;
 use crate::manifest::{CapabilityManifest, RevocationList};
 use crate::policy::{PolicyDecision, PolicyEngine, PolicyEvaluationContext};
 use crate::trace::{from_invoke, ClaimClass, InvokeTraceInput, MemoryTraceSink, TraceKind, TraceSink};
@@ -19,6 +20,7 @@ pub struct ControlPlane {
     pub traces: MemoryTraceSink,
     pub autonomy: AutonomyLevel,
     deny_streak: u32,
+    pending_grounding: Option<GroundingClaim>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +49,7 @@ impl ControlPlane {
             traces: MemoryTraceSink::default(),
             autonomy: AutonomyLevel::BoundedRemediate,
             deny_streak: 0,
+            pending_grounding: None,
         };
         plane.transition(PlaneState::Registered, agent_id)?;
         plane.transition(PlaneState::Verified, agent_id)?;
@@ -109,12 +112,10 @@ impl ControlPlane {
         });
     }
 
-    /// Owner mid-task pause. Next invoke is denied until resume. Not a kill.
     pub fn pause(&mut self, agent_id: &str) -> Result<(), ReasonCode> {
         self.transition(PlaneState::Stopped, agent_id)
     }
 
-    /// Resume only from Stopped. Killed stays dead.
     pub fn resume(&mut self, agent_id: &str) -> Result<(), ReasonCode> {
         if self.emergency_stop || self.state == PlaneState::Killed {
             return Err(ReasonCode::EmergencyStop);
@@ -148,6 +149,18 @@ impl ControlPlane {
         self.invoke_with_adapter(manifest, action, approval, untrusted, &mut adapter)
     }
 
+    pub fn invoke_grounded(
+        &mut self,
+        manifest: &mut CapabilityManifest,
+        action: &ProposedAction,
+        approval: Option<&HumanApprovalReceipt>,
+        untrusted: Option<&UntrustedContent>,
+        claim: GroundingClaim,
+    ) -> InvokeResult {
+        self.pending_grounding = Some(claim);
+        self.invoke(manifest, action, approval, untrusted)
+    }
+
     pub fn invoke_with_adapter<A: FakeAdapter>(
         &mut self,
         manifest: &mut CapabilityManifest,
@@ -166,6 +179,8 @@ impl ControlPlane {
             outcome: "proposed",
         });
 
+        let claim = self.pending_grounding.take();
+
         if !self.state.allows_calls() {
             let receipt = self.deny(action, ReasonCode::StateInvalid);
             return InvokeResult {
@@ -174,6 +189,18 @@ impl ControlPlane {
                 reason: ReasonCode::StateInvalid,
                 receipt,
             };
+        }
+
+        if let Some(claim) = claim {
+            if let Err(reason) = claim.enforce() {
+                let receipt = self.deny(action, reason);
+                return InvokeResult {
+                    allowed: false,
+                    executed: false,
+                    reason,
+                    receipt,
+                };
+            }
         }
 
         if let Err(reason) = gate(self.autonomy, action, approval) {
