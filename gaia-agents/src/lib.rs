@@ -27,3 +27,50 @@ pub use tool_registry::{
     AgentId as ToolAgentId, ToolId, ToolPermissionTier, ToolRegistration, ToolRegistry,
 };
 pub use wasm::{WasiGrant, WasmOutcome, WasmRuntime};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lifecycle_stage_ordering() {
+        assert!(LifecycleStage::Discover < LifecycleStage::Register);
+        assert!(LifecycleStage::Register < LifecycleStage::Initialize);
+        assert!(LifecycleStage::Initialize < LifecycleStage::Run);
+        assert!(LifecycleStage::Run < LifecycleStage::Pause);
+        assert!(LifecycleStage::Pause < LifecycleStage::Archive);
+    }
+
+    #[test]
+    fn agent_manifest_default_capabilities_empty() {
+        let manifest = AgentManifest {
+            name: String::new(),
+            version: String::new(),
+            declared_capabilities: vec![],
+            limits: ResourceLimits::default(),
+        };
+        assert!(manifest.declared_capabilities.is_empty());
+    }
+
+    #[test]
+    fn resource_limits_default_values() {
+        let limits = ResourceLimits::default();
+        assert!(limits.memory_mib > 0);
+        assert!(limits.cpu_millis > 0);
+    }
+
+    #[test]
+    fn pack_catalog_returns_slice() {
+        assert!(!catalog().is_empty());
+    }
+
+    #[test]
+    fn wasi_grant_debug_is_non_empty() {
+        let grant = WasiGrant {
+            filesystem: false,
+            network: false,
+        };
+        let s = format!("{grant:?}");
+        assert!(!s.is_empty());
+    }
+}
