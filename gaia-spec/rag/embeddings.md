@@ -72,6 +72,12 @@ No production adapter is wired yet.
 - `GenerationContext::build_with_embeddings` passes stored vectors through.
 - Provenance should record `model_id` + dimensions when a real adapter ships.
 
+## Scaffold status (2026-09-25)
+
+Design AC from #945 is satisfied on main via #946 / #947 / #981 plus this
+file. Remaining work is a production offline embedder, not another trait.
+This batch does not download MiniLM.
+
 ## Refuse
 
 - No cloud embedding API in Tier 1
