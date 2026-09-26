@@ -173,8 +173,7 @@ impl ExecutionEngine {
         let mut task_results: Vec<TaskResult> = Vec::new();
 
         for tier in tiers {
-            let prepared = self.spawn_tier(&intent, tier).await;
-            let mut prepared = prepared;
+            let mut prepared = self.spawn_tier(&intent, tier).await;
             prepared.sort_by_key(|p| p.result.task_id);
             for item in prepared {
                 self.audit.append(
@@ -212,6 +211,7 @@ impl ExecutionEngine {
         for task in tier {
             let intent = intent.clone();
             let registry = self.registry.clone();
+            let task_id = task.id;
             set.spawn(async move {
                 match timeout(TASK_TIMEOUT, async {
                     execute_task_body(&registry, &intent, task)
@@ -221,7 +221,7 @@ impl ExecutionEngine {
                     Ok(prepared) => prepared,
                     Err(_) => PreparedTask {
                         result: TaskResult {
-                            task_id: Uuid::nil(),
+                            task_id,
                             outcome: Outcome::Failed {
                                 reason: "GAIA_EXECUTION_TIMEOUT: task exceeded 30s".into(),
                             },
