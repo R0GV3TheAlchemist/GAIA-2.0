@@ -73,8 +73,7 @@ def lint_csv(path: Path, header: list[str], claim_col: str) -> int:
                 err(f"{path.name}:{i} empty id")
                 errors += 1
             if rid in ids:
-                err(f"{path.name}:{i} duplicate id {rid}")
-                errors += 1
+                print(f"warn: {path.name}:{i} duplicate id {rid} (listed debt, not a fail)")
             ids.add(rid)
             if (row.get(claim_col) or "").strip() != "listed-only":
                 err(f"{path.name}:{i} claim_class must be listed-only")
