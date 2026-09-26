@@ -13,6 +13,16 @@ pub struct RankedHit {
     pub score: f32,
 }
 
+impl RankedHit {
+    pub fn meets(&self, min_score: f32) -> bool {
+        self.score >= min_score
+    }
+
+    pub fn filter(hits: Vec<Self>, min_score: f32) -> Vec<Self> {
+        hits.into_iter().filter(|h| h.meets(min_score)).collect()
+    }
+}
+
 /// Embed `query` and return the top `k` persisted rows by cosine.
 ///
 /// Rows without an embedding, or with a dimension mismatch, are skipped.
@@ -70,6 +80,9 @@ mod tests {
         assert_eq!(hits.len(), 2);
         assert_eq!(hits[0].text, climate);
         assert!(hits[0].score > hits[1].score);
+        let tight = RankedHit::filter(hits.clone(), hits[0].score);
+        assert_eq!(tight.len(), 1);
+        assert_eq!(tight[0].text, climate);
     }
 
     #[test]
