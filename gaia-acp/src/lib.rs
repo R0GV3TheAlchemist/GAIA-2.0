@@ -8,6 +8,7 @@ mod autonomy;
 mod claim;
 mod config;
 mod gateway;
+mod grounding;
 mod live_trace;
 mod manifest;
 mod policy;
@@ -26,6 +27,7 @@ pub use autonomy::{gate as autonomy_gate, AutonomyLevel, ConfirmDomain, PeerEnve
 pub use claim::{claim_gate, Claim};
 pub use config::{description_is_untrusted, digest_pinned, lint_mcp_config, McpServerConfig};
 pub use gateway::{ControlPlane, InvokeResult};
+pub use grounding::GroundingClaim;
 pub use live_trace::{
     credential_is_absent, map_row, try_forward, LiveSendError, LiveTraceConfig, LiveTraceMode,
     LiveTraceRole, LiveTraceRow, LiveTraceTransport, RecordingLiveTransport,
