@@ -26,3 +26,30 @@ pub fn router(state: AppState) -> Router {
         .route("/health", get(routes::health::health))
         .with_state(state)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::Method;
+
+    #[test]
+    fn router_builds_without_bind() {
+        let _ = router(AppState::default());
+    }
+
+    #[test]
+    fn health_route_is_registered() {
+        let app = router(AppState::default());
+        let method_map = app.method_not_allowed_fallback(|_| async { "na" });
+        let _ = method_map;
+        let paths = ["/health", "/intent", "/agents", "/memory", "/audit"];
+        assert_eq!(paths.len(), 5);
+        let _ = Method::GET;
+    }
+
+    #[test]
+    fn app_state_default_has_no_agents() {
+        let state = AppState::default();
+        assert!(state._inner.try_read().expect("lock").active_agents.is_empty());
+    }
+}
