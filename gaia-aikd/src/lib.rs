@@ -21,6 +21,7 @@ mod meta;
 pub mod model_registry;
 mod packs;
 pub mod quality;
+mod rank;
 mod registry;
 mod retrieve;
 mod session;
@@ -58,6 +59,7 @@ pub use quality::{
     temporal_validation, tier_for_claim, ContradictionFlag, EntityFlag, KnowledgeClaim,
     QualityTier, SourceType, TemporalValidation,
 };
+pub use rank::{rank_persisted, RankedHit};
 pub use registry::{system_tags, BenchRow};
 pub use retrieve::{embed_query, GenerationContext, QueryHit, RetrievedChunk};
 pub use session::{embodied_enabled, sandbox_breakout, ToolCube};
