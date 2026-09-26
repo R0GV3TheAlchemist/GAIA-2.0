@@ -16,7 +16,11 @@ fn ingest_chunk_is_recallable_from_memos() {
     let chunks = pipeline.from_path(&path).expect("ingest");
     assert!(!chunks.is_empty());
     let mut mem = MemOs::new();
-    let cube = MemCube::new(CubeType::Semantic, chunks[0].text.clone(), chunks[0].source.clone());
+    let cube = MemCube::new(
+        CubeType::Semantic,
+        chunks[0].text.clone(),
+        chunks[0].document_uri.clone(),
+    );
     mem.put(cube);
     let hits = mem.recall("river blue", 3);
     assert!(!hits.is_empty(), "memos must recall ingested chunk text");
