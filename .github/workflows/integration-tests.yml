@@ -1,0 +1,37 @@
+# Advisory integration / falsification suite (#845).
+# Not a merge blocker. Promote after a 30-day green run.
+
+name: integration-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'tests/falsification/**'
+      - 'tests/smoke/**'
+      - 'tests/canon/**'
+      - 'gaia-integrity/tests/**'
+      - 'gaia-spec/mapping/**'
+      - 'docs/color/color-map.json'
+      - '.github/workflows/integration-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  advisory:
+    name: Falsification + smoke (#845 advisory)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Negative controls
+        run: python3 tests/falsification/test_negative_controls.py
+      - name: Smoke
+        run: python3 tests/smoke/test_smoke.py
+      - name: Canon RL-001
+        run: python3 tests/canon/test_canon_integrity.py

@@ -1,0 +1,3 @@
+Inspect the left main landing gear for hydraulic seepage. Torque the
+oleo gland nut to the value in the maintenance manual. Record the cycle
+count in the airframe log. Do not dispatch with an unresolved MEL item.

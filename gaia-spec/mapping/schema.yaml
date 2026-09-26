@@ -1,0 +1,34 @@
+# Mapping schema (#845 / #815 listed cut).
+# A correspondence is an interpretation. Empty mappings are valid.
+
+version: 1
+fields:
+  - source_corpus
+  - edition_or_translation
+  - translator
+  - date
+  - excerpt_locator
+  - extracted_structure
+  - proposed_gaia_target
+  - rationale
+  - confidence   # high | medium | low | inconclusive
+  - evidence_class
+  - competing_interpretations
+  - disconfirmation_conditions
+  - reviewer
+  - review_date
+
+evidence_class:
+  - direct_textual_support
+  - historical_contextual_support
+  - structural_similarity
+  - computational_utility
+  - speculative_analogy
+
+# Hermetic markers required before a mapping may be accepted.
+# Absence on a negative-control corpus is a pass, not a miss.
+hermetic_markers:
+  - emerald tablet
+  - as above so below
+  - solve et coagula
+  - prima materia
