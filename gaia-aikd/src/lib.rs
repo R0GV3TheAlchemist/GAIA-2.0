@@ -18,6 +18,7 @@ mod domains;
 mod eval;
 mod hallucination;
 mod honesty;
+mod hybrid;
 mod meta;
 pub mod model_registry;
 mod packs;
@@ -40,7 +41,7 @@ pub use citations::{
     citations_from_chunks, citations_from_context, citations_from_hits, id_for_text,
     lookup as lookup_citations, CitationError,
 };
-pub use cite::{retrieve_and_cite, RetrieveCiteError, RetrievedCitations};
+pub use cite::{retrieve_and_cite, retrieve_and_cite_hybrid, RetrieveCiteError, RetrievedCitations};
 pub use domain::{all_domains, domain_by_id, Domain};
 pub use domains::Adapter;
 pub use eval::{
@@ -51,6 +52,7 @@ pub use hallucination::{
     hallucination_warning, propagate_uncertainty, tier_floor, uncertainty_band,
     Generation, HallucinationClass, HallucinationKind, HallucinationWarning, UncertaintyBand,
 };
+pub use hybrid::{rank_hybrid, rank_lexical};
 pub use meta::{aikd_v1_tagged, audit_report, knows_everything};
 pub use model_registry::{model_by_id, models_for_domain, open_models, ModelEntry};
 pub use packs::{
