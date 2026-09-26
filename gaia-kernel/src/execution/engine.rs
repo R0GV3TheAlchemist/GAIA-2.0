@@ -1,12 +1,14 @@
 //! [`ExecutionEngine`] — the 12-stage GAIA intent execution pipeline.
 //!
-//! Tasks in the same DAG tier are dispatched through [`super::fanout::run_fanout`] (#937).
-//! Audit and memory writes stay on the engine task after joins.
+//! Same-tier tasks run stages 4–10 on `tokio::spawn`. Audit and MemOS writes
+//! apply on the engine task after the join, in `task_id` order (#993 / #937).
 
 use std::collections::HashMap;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use tokio::task::JoinSet;
+use tokio::time::timeout;
 use uuid::Uuid;
 
 use crate::{
@@ -14,7 +16,6 @@ use crate::{
     execution::{
         dag::Task,
         error::ExecutionError,
-        fanout::{run_fanout, FanoutJob},
         metrics::IntentSpan,
     },
     identity::{sha256_hex, verify, Principal},
@@ -23,6 +24,8 @@ use crate::{
 };
 
 use gaia_memos::{CubeType, MemCube, MemOs};
+
+const TASK_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Intent {
@@ -118,6 +121,12 @@ pub struct ExecutionResult {
     pub total_ms: u64,
 }
 
+struct PreparedTask {
+    result: TaskResult,
+    audit_detail: String,
+    cube_body: Option<String>,
+}
+
 pub struct ExecutionEngine {
     pub planner: Planner,
     pub replanner: Replanner,
@@ -164,22 +173,29 @@ impl ExecutionEngine {
         let mut task_results: Vec<TaskResult> = Vec::new();
 
         for tier in tiers {
-            let jobs: Vec<FanoutJob> = tier
-                .iter()
-                .map(|t| FanoutJob {
-                    agent_id: t.capability.clone(),
-                    work: Duration::ZERO,
-                    fail: false,
-                })
-                .collect();
-            let _ = run_fanout(jobs, Duration::from_secs(30)).await;
-
-            let mut tier_results: Vec<TaskResult> = Vec::with_capacity(tier.len());
-            for task in tier {
-                let result = self.execute_task(&intent, task, &mut span).await;
-                tier_results.push(result);
+            let mut prepared = self.spawn_tier(&intent, tier).await;
+            prepared.sort_by_key(|p| p.result.task_id);
+            for item in prepared {
+                self.audit.append(
+                    &self.principal,
+                    "execution",
+                    &format!(
+                        "intent:{}:task:{}:{}",
+                        intent.id, item.result.task_id, item.audit_detail
+                    ),
+                );
+                if let Some(body) = item.cube_body {
+                    self.memory.put(MemCube::new(
+                        CubeType::Episodic,
+                        body,
+                        "execution-engine",
+                    ));
+                }
+                for (i, &ms) in item.result.stage_ms.iter().enumerate() {
+                    span.record_stage(i as u8 + 1, ms);
+                }
+                task_results.push(item.result);
             }
-            task_results.extend(tier_results);
         }
 
         let total_ms = span.finish(true);
@@ -190,36 +206,90 @@ impl ExecutionEngine {
         })
     }
 
-    async fn execute_task(&mut self, intent: &Intent, task: Task, span: &mut IntentSpan) -> TaskResult {
-        let task_id = task.id;
-        let mut stage_ms = [0u64; 12];
+    async fn spawn_tier(&self, intent: &Intent, tier: Vec<Task>) -> Vec<PreparedTask> {
+        let mut set: JoinSet<PreparedTask> = JoinSet::new();
+        for task in tier {
+            let intent = intent.clone();
+            let registry = self.registry.clone();
+            let task_id = task.id;
+            set.spawn(async move {
+                match timeout(TASK_TIMEOUT, async {
+                    execute_task_body(&registry, &intent, task)
+                })
+                .await
+                {
+                    Ok(prepared) => prepared,
+                    Err(_) => PreparedTask {
+                        result: TaskResult {
+                            task_id,
+                            outcome: Outcome::Failed {
+                                reason: "GAIA_EXECUTION_TIMEOUT: task exceeded 30s".into(),
+                            },
+                            stage_ms: [0; 12],
+                        },
+                        audit_detail: "timeout".into(),
+                        cube_body: None,
+                    },
+                }
+            });
+        }
 
-        let s4 = crate::execution::metrics::StageSpan::begin(4);
-        let candidates = self.registry.find(&task.capability);
-        stage_ms[3] = s4.finish();
+        let mut out = Vec::new();
+        while let Some(joined) = set.join_next().await {
+            match joined {
+                Ok(item) => out.push(item),
+                Err(join_err) => out.push(PreparedTask {
+                    result: TaskResult {
+                        task_id: Uuid::nil(),
+                        outcome: Outcome::Failed {
+                            reason: format!("GAIA_EXECUTION_TIMEOUT: join {join_err}"),
+                        },
+                        stage_ms: [0; 12],
+                    },
+                    audit_detail: "join-error".into(),
+                    cube_body: None,
+                }),
+            }
+        }
+        out
+    }
+}
 
-        if candidates.is_empty() {
-            self.write_audit(intent, &task, "no_capable_agent");
-            return TaskResult {
+fn execute_task_body(registry: &AgentRegistry, intent: &Intent, task: Task) -> PreparedTask {
+    let task_id = task.id;
+    let mut stage_ms = [0u64; 12];
+    let scheduler = Scheduler::new();
+    let replanner = Replanner::new();
+
+    let s4 = crate::execution::metrics::StageSpan::begin(4);
+    let candidates = registry.find(&task.capability);
+    stage_ms[3] = s4.finish();
+
+    if candidates.is_empty() {
+        return PreparedTask {
+            result: TaskResult {
                 task_id,
                 outcome: Outcome::Failed {
                     reason: format!("GAIA_NO_CAPABLE_AGENT: {}", task.capability),
                 },
                 stage_ms,
-            };
-        }
+            },
+            audit_detail: "no_capable_agent".into(),
+            cube_body: None,
+        };
+    }
 
-        let s5 = crate::execution::metrics::StageSpan::begin(5);
-        let agent = self.registry.select(candidates);
-        stage_ms[4] = s5.finish();
+    let s5 = crate::execution::metrics::StageSpan::begin(5);
+    let agent = registry.select(candidates);
+    stage_ms[4] = s5.finish();
 
-        let s6 = crate::execution::metrics::StageSpan::begin(6);
-        let policy_ok = agent.capabilities.contains(&task.capability);
-        stage_ms[5] = s6.finish();
+    let s6 = crate::execution::metrics::StageSpan::begin(6);
+    let policy_ok = agent.capabilities.contains(&task.capability);
+    stage_ms[5] = s6.finish();
 
-        if !policy_ok {
-            self.write_audit(intent, &task, "capability_denied");
-            return TaskResult {
+    if !policy_ok {
+        return PreparedTask {
+            result: TaskResult {
                 task_id,
                 outcome: Outcome::Failed {
                     reason: format!(
@@ -228,78 +298,128 @@ impl ExecutionEngine {
                     ),
                 },
                 stage_ms,
-            };
-        }
-
-        let s7 = crate::execution::metrics::StageSpan::begin(7);
-        let _quota = self.scheduler.allocate(&task);
-        stage_ms[6] = s7.finish();
-
-        let s8 = crate::execution::metrics::StageSpan::begin(8);
-        let mut outcome = Outcome::Success {
-            output: format!("executed:{}:{}", agent.id, task.capability),
+            },
+            audit_detail: "capability_denied".into(),
+            cube_body: None,
         };
-        stage_ms[7] = s8.finish();
+    }
 
-        let s9 = crate::execution::metrics::StageSpan::begin(9);
-        stage_ms[8] = s9.finish();
+    let s7 = crate::execution::metrics::StageSpan::begin(7);
+    let _quota = scheduler.allocate(&task);
+    stage_ms[6] = s7.finish();
 
-        let s10 = crate::execution::metrics::StageSpan::begin(10);
-        if let Outcome::Failed { ref reason } = outcome {
-            match self.replanner.fallback(&task, reason) {
-                Some(fallback) => {
-                    outcome = Outcome::Success {
-                        output: format!("fallback:{}:{}", agent.id, fallback.capability),
-                    };
-                }
-                None => {
-                    stage_ms[9] = s10.finish();
-                    self.write_audit(intent, &task, "replan_exhausted");
-                    return TaskResult {
+    let s8 = crate::execution::metrics::StageSpan::begin(8);
+    let mut outcome = Outcome::Success {
+        output: format!("executed:{}:{}", agent.id, task.capability),
+    };
+    stage_ms[7] = s8.finish();
+
+    let s9 = crate::execution::metrics::StageSpan::begin(9);
+    stage_ms[8] = s9.finish();
+
+    let s10 = crate::execution::metrics::StageSpan::begin(10);
+    if let Outcome::Failed { ref reason } = outcome {
+        match replanner.fallback(&task, reason) {
+            Some(fallback) => {
+                outcome = Outcome::Success {
+                    output: format!("fallback:{}:{}", agent.id, fallback.capability),
+                };
+            }
+            None => {
+                stage_ms[9] = s10.finish();
+                return PreparedTask {
+                    result: TaskResult {
                         task_id,
                         outcome: Outcome::Failed {
                             reason: format!("GAIA_REPLAN_EXHAUSTED: {}", task.capability),
                         },
                         stage_ms,
-                    };
-                }
+                    },
+                    audit_detail: "replan_exhausted".into(),
+                    cube_body: None,
+                };
             }
         }
-        stage_ms[9] = s10.finish();
+    }
+    stage_ms[9] = s10.finish();
 
-        let s11 = crate::execution::metrics::StageSpan::begin(11);
-        self.write_audit(intent, &task, "success");
-        stage_ms[10] = s11.finish();
+    let s11 = crate::execution::metrics::StageSpan::begin(11);
+    stage_ms[10] = s11.finish();
 
-        let s12 = crate::execution::metrics::StageSpan::begin(12);
-        let output_str = match &outcome {
-            Outcome::Success { output } => output.clone(),
-            Outcome::Failed { reason } => reason.clone(),
-        };
-        let cube = MemCube::new(
-            CubeType::Episodic,
-            format!("intent:{}:task:{}:{}", intent.id, task_id, output_str),
-            "execution-engine",
-        );
-        self.memory.put(cube);
-        stage_ms[11] = s12.finish();
+    let s12 = crate::execution::metrics::StageSpan::begin(12);
+    let output_str = match &outcome {
+        Outcome::Success { output } => output.clone(),
+        Outcome::Failed { reason } => reason.clone(),
+    };
+    let cube_body = Some(format!(
+        "intent:{}:task:{}:{}",
+        intent.id, task_id, output_str
+    ));
+    stage_ms[11] = s12.finish();
 
-        for (i, &ms) in stage_ms.iter().enumerate() {
-            span.record_stage(i as u8 + 1, ms);
-        }
-
-        TaskResult {
+    PreparedTask {
+        result: TaskResult {
             task_id,
             outcome,
             stage_ms,
+        },
+        audit_detail: "success".into(),
+        cube_body,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::identity::PrincipalKind;
+    use crate::scheduler::select::AgentHandle;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn signed_intent(principal: &Principal, intent_type: &str, slots: HashMap<String, String>) -> Intent {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+        let id = Uuid::new_v4();
+        let user_did = principal.did();
+        let canon = format!("{id}|{user_did}|{intent_type}|{now}");
+        let hash = crate::identity::sha256_hex(canon.as_bytes());
+        let sig_bytes = principal.sign(hash.as_bytes());
+        Intent {
+            schema_version: "1.0".into(),
+            id,
+            user_did,
+            intent_type: intent_type.into(),
+            slots,
+            timestamp_ms: now,
+            ttl_ms: 30_000,
+            signature: Some(IntentSignature {
+                alg: "EdDSA".into(),
+                sig_hex: hex::encode(&sig_bytes),
+                pub_hex: principal.public_hex(),
+            }),
         }
     }
 
-    fn write_audit(&mut self, intent: &Intent, task: &Task, detail: &str) {
-        self.audit.append(
-            &self.principal,
-            "execution",
-            &format!("intent:{}:task:{}:{}", intent.id, task.id, detail),
-        );
+    #[tokio::test]
+    async fn two_same_tier_tasks_both_succeed() {
+        let node = Principal::generate(PrincipalKind::Node);
+        let user = Principal::generate(PrincipalKind::Human);
+        let mut engine = ExecutionEngine::new(node);
+        engine.registry.register(AgentHandle::new("agent-a", vec!["query".into()]));
+        engine.registry.register(AgentHandle::new("agent-b", vec!["plan".into()]));
+
+        let mut slots = HashMap::new();
+        slots.insert("query".into(), "q".into());
+        slots.insert("plan".into(), "p".into());
+        let intent = signed_intent(&user, "query", slots);
+        let result = engine.execute(intent).await.expect("pipeline");
+        assert_eq!(result.task_results.len(), 2);
+        assert!(result
+            .task_results
+            .iter()
+            .all(|t| matches!(t.outcome, Outcome::Success { .. })));
+        assert!(engine.audit.chain_ok());
+        assert!(engine.audit.len() >= 2);
     }
 }
