@@ -26,3 +26,30 @@ pub fn router(state: AppState) -> Router {
         .route("/health", get(routes::health::health))
         .with_state(state)
 }
+
+/// Listed routes. Tests assert this table; no socket bind.
+pub fn listed_paths() -> &'static [&'static str] {
+    &["/intent", "/agents", "/memory", "/audit", "/health"]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn router_builds_without_bind() {
+        let _ = router(AppState::default());
+    }
+
+    #[test]
+    fn listed_paths_cover_health() {
+        assert!(listed_paths().contains(&"/health"));
+        assert_eq!(listed_paths().len(), 5);
+    }
+
+    #[test]
+    fn app_state_default_has_no_agents() {
+        let state = AppState::default();
+        assert!(state._inner.try_read().expect("lock").active_agents.is_empty());
+    }
+}

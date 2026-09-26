@@ -5,12 +5,16 @@ on:
     branches: [main]
     paths:
       - "docs/knowledge/**"
+      - "gaia-spec/knowledge/**"
       - "scripts/validate_catalog.py"
+      - "scripts/validate_crystal_music.py"
       - ".github/workflows/knowledge-catalog.yml"
   pull_request:
     paths:
       - "docs/knowledge/**"
+      - "gaia-spec/knowledge/**"
       - "scripts/validate_catalog.py"
+      - "scripts/validate_crystal_music.py"
       - ".github/workflows/knowledge-catalog.yml"
 
 permissions:
@@ -26,3 +30,5 @@ jobs:
           python-version: "3.12"
       - name: Validate knowledge catalog (#697)
         run: python3 scripts/validate_catalog.py
+      - name: Validate crystals.csv and music.csv (#903)
+        run: python3 scripts/validate_crystal_music.py

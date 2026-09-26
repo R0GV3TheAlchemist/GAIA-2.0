@@ -70,3 +70,33 @@ fn log_boot_complete(ns: u64) {
         ns / 1_000_000
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn boot_returns_result() {
+        let result = boot();
+        assert!(result.total_boot_ns < 60_000_000_000);
+    }
+
+    #[test]
+    fn default_profile_is_tier2() {
+        let p = profiles::active_profile();
+        assert_eq!(p.tier, 2);
+        assert_eq!(p.name, "Desktop / Server");
+    }
+
+    #[test]
+    fn five_profiles_have_distinct_tiers() {
+        let tiers = [
+            profiles::tier0::profile().tier,
+            profiles::tier1::profile().tier,
+            profiles::tier2::profile().tier,
+            profiles::tier3::profile().tier,
+            profiles::tier4::profile().tier,
+        ];
+        assert_eq!(tiers, [0, 1, 2, 3, 4]);
+    }
+}

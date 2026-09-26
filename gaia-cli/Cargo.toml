@@ -12,6 +12,10 @@ description = "GAIA developer CLI — command-line interface for the GAIA runtim
 name = "gaia-cli"
 path = "src/main.rs"
 
+[lib]
+name = "gaia_cli"
+path = "src/lib.rs"
+
 [dependencies]
 clap       = { version = "4", features = ["derive"] }
 tokio      = { version = "1", features = ["full"] }
