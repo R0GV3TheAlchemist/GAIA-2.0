@@ -35,14 +35,14 @@ pub fn mmr_select(hits: &[RankedHit], k: usize, lambda: f32) -> Vec<RankedHit> {
     }
     let lambda = lambda.clamp(0.0, 1.0);
     let mut remaining: Vec<RankedHit> = hits.to_vec();
-    let mut selected = Vec::new();
+    let mut selected: Vec<RankedHit> = Vec::new();
     while selected.len() < k && !remaining.is_empty() {
         let mut best_i = 0;
         let mut best = f32::NEG_INFINITY;
         for (i, cand) in remaining.iter().enumerate() {
             let sim = selected
                 .iter()
-                .map(|s| jaccard(&cand.text, &s.text))
+                .map(|s: &RankedHit| jaccard(&cand.text, &s.text))
                 .fold(0.0_f32, f32::max);
             let mmr = lambda * cand.score - (1.0 - lambda) * sim;
             if mmr > best {
@@ -92,7 +92,7 @@ pub fn flag_hit_conflicts(hits: &[RankedHit]) -> Vec<ContradictionFlag> {
 
 /// FM-8: keep highest-ranked hits whose texts fit `max_chars`.
 pub fn budget_hits(hits: &[RankedHit], max_chars: usize) -> Vec<RankedHit> {
-    let mut used = 0;
+    let mut used: usize = 0;
     let mut out = Vec::new();
     for hit in hits {
         let len = hit.text.len();
