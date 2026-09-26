@@ -39,6 +39,6 @@ Cite the principle(s) this change serves. See `docs/canon/moral-architecture.md`
 - [ ] Claim tags still valid (`python gaia-spec/tools/check_claim_tags.py`)
 - [ ] No silent protocol assumptions — linked an RFC if needed
 - [ ] Tests added or explained why not
-- [ ] If this closes a `bug`/`defect` issue: regression lock added under `gaia-integrity/tests/regression.rs`
+- [ ] If this closes a `bug`/`defect` issue: regression lock added (`gaia-integrity/tests/regression.rs`, see `tests/regression/README.md`)
 - [ ] Signed-off commit (`git commit -s`)
 - [ ] Did not promote a prohibited claim to established
