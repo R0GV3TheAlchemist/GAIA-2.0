@@ -4,6 +4,7 @@ use gaia_ingest::embed::{EmbedError, EmbeddingModel};
 use gaia_ingest::FileChunkStore;
 
 use crate::citations::{citations_from_hits, CitationError};
+use crate::hybrid::rank_hybrid;
 use crate::rank::{rank_persisted, RankedHit};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -47,6 +48,23 @@ pub fn retrieve_and_cite(
     })
 }
 
+/// Same as [`retrieve_and_cite`] using RRF hybrid ranks. `min_score` applies to RRF.
+pub fn retrieve_and_cite_hybrid(
+    query: &str,
+    store: &FileChunkStore,
+    embedder: &dyn EmbeddingModel,
+    k: usize,
+    min_score: f32,
+) -> Result<RetrievedCitations, RetrieveCiteError> {
+    let ranked = rank_hybrid(query, store, embedder, k)?;
+    let hits = RankedHit::filter(ranked, min_score);
+    let citation_ids = citations_from_hits(store.store(), &hits)?;
+    Ok(RetrievedCitations {
+        hits,
+        citation_ids,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -78,5 +96,21 @@ mod tests {
         let store = FileChunkStore::open(&path).unwrap();
         let err = retrieve_and_cite("q", &store, &HashingEmbedder::new(), 3, 0.99).unwrap_err();
         assert!(matches!(err, RetrieveCiteError::Cite(CitationError::Empty)));
+    }
+
+    #[test]
+    fn hybrid_cites_rare_token() {
+        let path = std::env::temp_dir().join(format!("gaia-cite-hyb-{}.jsonl", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let embedder = HashingEmbedder::new();
+        let drug = "patient prescribed lisinopril twenty milligrams daily";
+        let climate = "the earth twin observes climate";
+        let v = embedder.embed(&[drug, climate]).unwrap();
+        let mut store = FileChunkStore::open(&path).unwrap();
+        store.record(drug, embedder.model_id(), Some(&v[0])).unwrap();
+        store.record(climate, embedder.model_id(), Some(&v[1])).unwrap();
+        let out = retrieve_and_cite_hybrid("lisinopril", &store, &embedder, 1, 0.0).unwrap();
+        assert_eq!(out.hits[0].text, drug);
+        assert_eq!(out.citation_ids.len(), 1);
     }
 }
